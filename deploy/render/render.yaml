@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: bms-los-demo
+    runtime: docker
+    dockerfilePath: ./deploy/render/Dockerfile
+    buildContext: .
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MOCK_AGENT
+        value: "true"
+      - key: CORS_ORIGIN
+        value: "*"
+    disk:
+      name: los-data
+      mountPath: /app/data
+      sizeGB: 1

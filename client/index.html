@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BMS — Sistem Informasi Kredit Konsumer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            ink:          '#1a1a1a',
+            'ink-2':      '#4a4a4a',
+            'ink-3':      '#8a8a8a',
+            'ink-4':      '#b8b8b8',
+            line:         '#d8d8d8',
+            'line-strong':'#1a1a1a',
+            bg:           '#ffffff',
+            'bg-2':       '#f6f6f4',
+            'bg-3':       '#ececea',
+            accent:       '#1f3b5c',
+            'accent-bg':  '#e6ecf2',
+            success:      '#1f6b3a',
+            'success-bg': '#e3efe6',
+            warn:         '#b46a00',
+            'warn-bg':    '#fff1d8',
+            danger:       '#a83232',
+            'danger-bg':  '#fbe6e6',
+            /* backward-compat */
+            primary:      '#1f3b5c',
+            'primary-light':'#2d5a8e',
+            muted:        '#8a8a8a',
+            text:         '#1a1a1a',
+            border:       '#d8d8d8',
+            surface:      '#ffffff',
+            warning:      '#b46a00',
+          },
+          fontFamily: {
+            display: ['Inter', 'system-ui', 'sans-serif'],
+            body:    ['Inter', 'system-ui', 'sans-serif'],
+            mono:    ['"IBM Plex Mono"', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    html, body, #app { height: 100%; }
+    body { font-family: 'Inter', system-ui, sans-serif; color: #1a1a1a; }
+    .font-mono, code { font-family: 'IBM Plex Mono', monospace; }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="/main.js"></script>
+</body>
+</html>

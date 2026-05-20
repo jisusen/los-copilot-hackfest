@@ -1,0 +1,24 @@
+{
+  "name": "aji-los-demo",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "bun run --watch server/index.ts",
+    "start": "bun run server/index.ts",
+    "db:seed": "bun run server/db/seed.ts",
+    "db:reset": "bun run server/db/seed.ts --reset",
+    "build": "bun build client/main.tsx --outdir dist --target browser --sourcemap external",
+    "demo": "concurrently --kill-others --names LOS,DASH --prefix-colors cyan,green --prefix \"[{name}]\" \"bun run server/index.ts\" \"cd dashboard && bun run server/index.ts\"",
+    "demo:seed": "bun run server/db/seed.ts --reset && bun run demo"
+  },
+  "dependencies": {
+    "concurrently": "^9.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.5.3"
+  }
+}

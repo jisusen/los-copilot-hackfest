@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>LOS Wireframes · BMS Hackfest</title>
+<meta name="viewport" content="width=1400" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="wireframes.css" />
+<style>
+  body { margin: 0; background: #f0eee9; font-family: 'Inter', system-ui, sans-serif; }
+  .dc-header-note {
+    position: fixed; top: 12px; left: 16px; z-index: 100;
+    background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+    padding: 8px 12px; font-size: 11px; color: #4a4a4a;
+    border: 1px solid #d8d8d8; border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace;
+    pointer-events: none;
+  }
+</style>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="wf-shared.jsx"></script>
+<script type="text/babel" src="wf-login-queue.jsx"></script>
+<script type="text/babel" src="wf-detail-summary.jsx"></script>
+<script type="text/babel" src="wf-tabs-1.jsx"></script>
+<script type="text/babel" src="wf-tabs-2.jsx"></script>
+<script type="text/babel" src="wf-flows.jsx"></script>
+
+<script type="text/babel">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "density": "cozy",
+  "accent": "navy",
+  "crdeState": "approve",
+  "amlBanner": false,
+  "agentOverlay": false
+}/*EDITMODE-END*/;
+
+function Frame({ children, density, accent }) {
+  // Wraps each artboard so density/accent CSS vars apply per-frame
+  return (
+    <div data-density={density} data-accent={accent} style={{ width: '100%', height: '100%' }}>
+      {children}
+    </div>
+  );
+}
+
+function App() {
+  const { values, setTweak } = useTweaks(TWEAK_DEFAULTS);
+  const { density, accent, crdeState, amlBanner, agentOverlay } = values;
+
+  // Wrap any wireframe with the current density+accent
+  const wrap = (Comp, extraProps = {}) => (
+    <Frame density={density} accent={accent}>
+      <Comp crdeState={crdeState} amlBanner={amlBanner} {...extraProps} />
+      {agentOverlay && (
+        <>
+          <div className="wf-agent-cursor" style={{ left: '62%', top: '40%' }} />
+          <div className="wf-agent-highlight" style={{ left: '20%', top: '38%', width: '36%', height: 28 }} />
+        </>
+      )}
+    </Frame>
+  );
+
+  // Standard tab artboard size — fits desktop 1080p target
+  const W = 1280, H = 760;
+  const LOGIN_W = 720, LOGIN_H = 520;
+
+  return (
+    <>
+      <div className="dc-header-note">
+        BMS · Loan Origination System · Lo-fi Wireframes · {Object.keys(APPS).length === 0 ? '' : `${APPS.length} sample applications`}
+      </div>
+
+      <DesignCanvas>
+        <DCSection id="login" title="1 · Login" subtitle="Entry point — three takes from minimal to split-pane">
+          <DCArtboard id="login-a" label="A · Centered card" width={LOGIN_W} height={LOGIN_H}>{wrap(LoginA)}</DCArtboard>
+          <DCArtboard id="login-b" label="B · Split pane (brand)" width={LOGIN_W} height={LOGIN_H}>{wrap(LoginB)}</DCArtboard>
+          <DCArtboard id="login-c" label="C · Marketing-style" width={LOGIN_W} height={LOGIN_H}>{wrap(LoginC)}</DCArtboard>
+        </DCSection>
+
+        <DCSection id="queue" title="2 · Loan Queue" subtitle="10 applications · table vs master-detail vs cards">
+          <DCArtboard id="queue-a" label="A · Dense table (canonical)" width={W} height={H}>{wrap(QueueA)}</DCArtboard>
+          <DCArtboard id="queue-b" label="B · Master-detail split" width={W} height={H}>{wrap(QueueB)}</DCArtboard>
+          <DCArtboard id="queue-c" label="C · Card grid" width={W} height={H}>{wrap(QueueC)}</DCArtboard>
+        </DCSection>
+
+        <DCSection id="shell" title="3 · Detail page shell" subtitle="Tab navigation pattern · how the 8 sections are structured">
+          <DCArtboard id="shell-a" label="A · Horizontal tabs (PRD)" width={W} height={H}>{wrap(DetailShellA)}</DCArtboard>
+          <DCArtboard id="shell-b" label="B · Vertical rail" width={W} height={H}>{wrap(DetailShellB)}</DCArtboard>
+          <DCArtboard id="shell-c" label="C · Single-scroll w/ anchors" width={W} height={H}>{wrap(DetailShellC)}</DCArtboard>
+        </DCSection>
+
+        <DCSection id="summary" title="4 · Summary tab — HERO" subtitle="The fast read · what the agent (and analyst) sees first">
+          <DCArtboard id="summary-a" label="A · Verdict + checklist" width={W} height={H}>{wrap(SummaryA)}</DCArtboard>
+          <DCArtboard id="summary-b" label="B · Memo + sidebar metrics" width={W} height={H}>{wrap(SummaryB)}</DCArtboard>
+          <DCArtboard id="summary-c" label="C · KPI dashboard" width={W} height={H}>{wrap(SummaryC)}</DCArtboard>
+        </DCSection>
+
+        <DCSection id="tabs" title="5 · Per-tab content" subtitle="One canonical layout per tab — switch CRDE state via Tweaks to see all states">
+          <DCArtboard id="tab-profile"    label="Profile · KYC + employment" width={W} height={H}>{wrap(ProfileTab)}</DCArtboard>
+          <DCArtboard id="tab-financials" label="Financials · DTI + income" width={W} height={H}>{wrap(FinancialsTab)}</DCArtboard>
+          <DCArtboard id="tab-slik"       label="SLIK OJK · 24-mo history" width={W} height={H}>{wrap(SlikTab)}</DCArtboard>
+          <DCArtboard id="tab-aml"        label="AML & Fraud · screening" width={W} height={H}>{wrap(AmlTab)}</DCArtboard>
+          <DCArtboard id="tab-crde"       label="CRDE Result · gates + rules" width={W} height={H}>{wrap(CrdeTab)}</DCArtboard>
+          <DCArtboard id="tab-collateral" label="Collateral · KPR (LTV)" width={W} height={H}>{wrap(CollateralTab)}</DCArtboard>
+          <DCArtboard id="tab-application" label="Application · loan + lifecycle" width={W} height={H}>{wrap(ApplicationTab)}</DCArtboard>
+        </DCSection>
+
+        <DCSection id="flows" title="6 · Decision flow" subtitle="Submit dialog → confirmation → printable memo">
+          <DCArtboard id="flow-submit"  label="Submit decision dialog" width={W} height={H}>{wrap(DecisionSubmit)}</DCArtboard>
+          <DCArtboard id="flow-confirm" label="Decision confirmed" width={W} height={H}>{wrap(DecisionConfirm)}</DCArtboard>
+          <DCArtboard id="flow-memo"    label="Print memo (A4)" width={900} height={1180}>{wrap(PrintMemo)}</DCArtboard>
+        </DCSection>
+
+        <DCSection id="disb" title="7 · Disbursement" subtitle="Post-approval workflow — queue and per-disbursement detail">
+          <DCArtboard id="disb-queue"  label="Disbursement queue" width={W} height={H}>{wrap(DisbursementQueue)}</DCArtboard>
+          <DCArtboard id="disb-detail" label="Disbursement detail (stepper)" width={W} height={H}>{wrap(DisbursementDetail)}</DCArtboard>
+        </DCSection>
+
+        <DCSection id="mobile" title="8 · Mobile detail view" subtitle="Field analyst on phone — quick scan + decision">
+          <DCArtboard id="mobile-detail" label="Mobile · APP detail (390 wide)" width={420} height={840}>{wrap(MobileDetail)}</DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="Display">
+          <TweakRadio
+            label="Density"
+            value={density}
+            options={[{ value: 'dense', label: 'Dense' }, { value: 'cozy', label: 'Cozy' }, { value: 'spacious', label: 'Spacious' }]}
+            onChange={(v) => setTweak('density', v)}
+          />
+          <TweakRadio
+            label="Accent"
+            value={accent}
+            options={[{ value: 'navy', label: 'Navy' }, { value: 'ink', label: 'Mono' }, { value: 'green', label: 'Green' }, { value: 'amber', label: 'Amber' }]}
+            onChange={(v) => setTweak('accent', v)}
+          />
+        </TweakSection>
+        <TweakSection label="Application state">
+          <TweakRadio
+            label="CRDE outcome"
+            value={crdeState}
+            options={[{ value: 'approve', label: 'Approve' }, { value: 'refer', label: 'Refer' }, { value: 'reject', label: 'Reject' }]}
+            onChange={(v) => setTweak('crdeState', v)}
+          />
+          <TweakToggle label="AML warning banner" value={amlBanner} onChange={(v) => setTweak('amlBanner', v)} />
+          <TweakToggle label="Agent cursor overlay" value={agentOverlay} onChange={(v) => setTweak('agentOverlay', v)} />
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
+</script>
+</body>
+</html>

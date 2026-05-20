@@ -1,0 +1,172 @@
+# =============================================================================
+# SECURITY — NEVER COMMIT THESE
+# =============================================================================
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+!.env.example
+!.env.example.*
+
+# Secret key files
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Config files that might contain credentials
+config/local*
+config/secrets*
+secrets/
+secrets.*
+
+# =============================================================================
+# DEPENDENCIES — Auto-generated, massive, don't belong in git
+# =============================================================================
+
+# Node.js / Bun
+node_modules/
+*/node_modules/
+.pnpm-store/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Python
+.venv/
+*/.venv/
+venv/
+*/venv/
+env/
+*/env/
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist-packages/
+
+# Playwright
+.playwright/
+*/.playwright/
+
+# =============================================================================
+# BUILD OUTPUTS — Generated at build time
+# =============================================================================
+
+dist/
+*/dist/
+build/
+*/build/
+out/
+*/out/
+
+# Source maps (optional — remove if you want to debug in production)
+# *.map
+
+# =============================================================================
+# DATABASE — SQLite files (data is ephemeral, can be re-seeded)
+# =============================================================================
+
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# BUT keep the data directory structure if needed
+# (the DB files themselves are ignored by patterns above)
+
+# =============================================================================
+# LOGS & TEMP FILES — Can contain sensitive paths or errors
+# =============================================================================
+
+*.log
+*.log.*
+logs/
+*/logs/
+server.err
+server.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.cache/
+*/.cache/
+
+# =============================================================================
+# OS FILES — macOS, Windows, Linux
+# =============================================================================
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =============================================================================
+# IDE / EDITOR — VS Code, JetBrains, Vim, etc.
+# =============================================================================
+
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.code-workspace
+
+# =============================================================================
+# TESTING — Coverage reports, test artifacts
+# =============================================================================
+
+coverage/
+*/coverage/
+.nyc_output/
+*.lcov
+
+# =============================================================================
+# HACKATHON / DEMO SPECIFIC
+# =============================================================================
+
+# Browser agent screenshots or downloaded artifacts
+screenshots/
+*/screenshots/
+downloads/
+*/downloads/
+
+# Kimi / AI agent plans (if they contain project details)
+# .kimi/          # Uncomment if you want to ignore Kimi plan files
+# plans/          # Uncomment if you want to ignore plan files
+
+# =============================================================================
+# DOCKER — Local volumes that might be created
+# =============================================================================
+
+docker-volumes/
+*/docker-volumes/
+
+# =============================================================================
+# BUN SPECIFIC
+# =============================================================================
+
+bun.lockb
