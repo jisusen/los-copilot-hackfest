@@ -171,7 +171,9 @@ async function* streamCustomOpenAI(
       if (trimmed.startsWith("data: ")) {
         try {
           const json = JSON.parse(trimmed.slice(6));
-          const delta = json.choices?.[0]?.delta?.content;
+          const d = json.choices?.[0]?.delta;
+          // Some providers (e.g. glm-5.1 via LiteLLM) stream reasoning_content instead of content
+          const delta = d?.content ?? d?.reasoning_content ?? "";
           if (delta) yield delta;
         } catch {
           /* ignore malformed JSON */

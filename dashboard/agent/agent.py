@@ -8,47 +8,51 @@ EXTRACTION_MODE env var:
 Both modes stream live screenshots. Both generate the memo with Claude/Gemini.
 """
 
-import asyncio
 import argparse
+import asyncio
 import base64
 import json
 import os
 import re
 import sys
+
 import httpx
 
 # Force UTF-8 output on Windows
-if sys.stdout.encoding != 'utf-8':
-    sys.stdout.reconfigure(encoding='utf-8')
-if sys.stderr.encoding != 'utf-8':
-    sys.stderr.reconfigure(encoding='utf-8')
+if sys.stdout.encoding != "utf-8":
+    sys.stdout.reconfigure(encoding="utf-8")
+if sys.stderr.encoding != "utf-8":
+    sys.stderr.reconfigure(encoding="utf-8")
 
-PROVIDER         = os.environ.get("LLM_PROVIDER",    "anthropic")
-GEMINI_MODEL     = os.environ.get("GEMINI_MODEL",    "gemini-2.0-flash")
-ANTHROPIC_MODEL  = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
-EXTRACTION_MODE  = os.environ.get("EXTRACTION_MODE", "browser")  # "browser" | "api"
+PROVIDER = os.environ.get("LLM_PROVIDER", "anthropic")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+ANTHROPIC_MODEL = os.environ.get("ANTHROPIC_MODEL", "claude-sonnet-4-6")
+CUSTOM_ENDPOINT = os.environ.get("CUSTOM_LLM_ENDPOINT", "")
+CUSTOM_MODEL = os.environ.get("CUSTOM_LLM_MODEL", "")
+CUSTOM_API_KEY = os.environ.get("CUSTOM_LLM_API_KEY", "")
+EXTRACTION_MODE = os.environ.get("EXTRACTION_MODE", "browser")  # "browser" | "api"
 
-import google.genai as genai
 import anthropic
-
+import google.genai as genai
 from browser_use import Agent
 from browser_use.browser import BrowserSession
-from browser_use.llm.google.chat import ChatGoogle
 from browser_use.llm.anthropic.chat import ChatAnthropic as BUChatAnthropic
-
+from browser_use.llm.google.chat import ChatGoogle
+from browser_use.llm.openai.chat import ChatOpenAI
+from openai import AsyncOpenAI
 
 STEPS = [
-    ("Launching browser...",               1,   8),
-    ("Navigating to LOS login page...",   2,  14),
-    ("Logging in as analyst...",          3,  20),
-    ("Opening loan application...",       4,  27),
-    ("Reading Debtor Profile tab...",     5,  35),
-    ("Reading Financials tab...",         6,  44),
-    ("Reading SLIK OJK tab...",           7,  54),
-    ("Reading AML & Fraud tab...",        8,  64),
-    ("Reading CRDE Result tab...",        9,  74),
-    ("Compiling data payload...",        10,  88),
-    ("Generating credit memo with AI...", 11,  95),
+    ("Launching browser...", 1, 8),
+    ("Navigating to LOS login page...", 2, 14),
+    ("Logging in as analyst...", 3, 20),
+    ("Opening loan application...", 4, 27),
+    ("Reading Debtor Profile tab...", 5, 35),
+    ("Reading Financials tab...", 6, 44),
+    ("Reading SLIK OJK tab...", 7, 54),
+    ("Reading AML & Fraud tab...", 8, 64),
+    ("Reading CRDE Result tab...", 9, 74),
+    ("Compiling data payload...", 10, 88),
+    ("Generating credit memo with AI...", 11, 95),
 ]
 
 
@@ -65,7 +69,7 @@ def parse_agent_result(result) -> dict:
 
     print(f"[parse] final_result preview: {str(raw)[:200]}", file=sys.stderr)
 
-    json_match = re.search(r'\{[\s\S]*\}', raw or "")
+    json_match = re.search(r"\{[\s\S]*\}", raw or "")
     if json_match:
         try:
             return json.loads(json_match.group())
@@ -76,56 +80,87 @@ def parse_agent_result(result) -> dict:
 
 # ── Progress / reporting helpers ──────────────────────────────────────────────
 
-async def report_progress(backend_url: str, task_id: str, app_id: str,
-                           step: str, step_index: int, pct: int):
+
+async def report_progress(
+    backend_url: str, task_id: str, app_id: str, step: str, step_index: int, pct: int
+):
     try:
         async with httpx.AsyncClient(timeout=5) as http:
-            await http.post(f"{backend_url}/api/internal/progress", json={
-                "taskId": task_id, "appId": app_id,
-                "step": step, "stepIndex": step_index,
-                "totalSteps": len(STEPS), "pct": pct,
-            })
+            await http.post(
+                f"{backend_url}/api/internal/progress",
+                json={
+                    "taskId": task_id,
+                    "appId": app_id,
+                    "step": step,
+                    "stepIndex": step_index,
+                    "totalSteps": len(STEPS),
+                    "pct": pct,
+                },
+            )
     except Exception as e:
         print(f"[progress] {e}", file=sys.stderr)
 
 
-async def report_complete(backend_url: str, task_id: str, app_id: str,
-                           los_data: dict, memo_draft: dict):
+async def report_complete(
+    backend_url: str, task_id: str, app_id: str, los_data: dict, memo_draft: dict
+):
     try:
         async with httpx.AsyncClient(timeout=10) as http:
-            await http.post(f"{backend_url}/api/internal/complete", json={
-                "taskId": task_id, "appId": app_id,
-                "losData": los_data, "memoDraft": memo_draft, "status": "completed",
-            })
+            await http.post(
+                f"{backend_url}/api/internal/complete",
+                json={
+                    "taskId": task_id,
+                    "appId": app_id,
+                    "losData": los_data,
+                    "memoDraft": memo_draft,
+                    "status": "completed",
+                },
+            )
     except Exception as e:
         print(f"[complete] {e}", file=sys.stderr)
 
 
-async def report_error(backend_url: str, task_id: str, app_id: str,
-                        error: str, retryable: bool = True):
+async def report_error(
+    backend_url: str, task_id: str, app_id: str, error: str, retryable: bool = True
+):
     try:
         async with httpx.AsyncClient(timeout=5) as http:
-            await http.post(f"{backend_url}/api/internal/error", json={
-                "taskId": task_id, "appId": app_id,
-                "error": error, "retryable": retryable,
-            })
+            await http.post(
+                f"{backend_url}/api/internal/error",
+                json={
+                    "taskId": task_id,
+                    "appId": app_id,
+                    "error": error,
+                    "retryable": retryable,
+                },
+            )
     except Exception as e:
         print(f"[error] {e}", file=sys.stderr)
 
 
-async def stream_screenshots(backend_url: str, task_id: str, app_id: str,
-                              browser_session: BrowserSession, stop_event: asyncio.Event):
+async def stream_screenshots(
+    backend_url: str,
+    task_id: str,
+    app_id: str,
+    browser_session: BrowserSession,
+    stop_event: asyncio.Event,
+):
     """Stream PNG screenshots every ~1s to dashboard."""
     await asyncio.sleep(5)  # wait for browser to open
     while not stop_event.is_set():
         try:
-            shot = await browser_session.take_screenshot(format='png')
+            shot = await browser_session.take_screenshot(format="png")
             if shot:
                 b64 = base64.b64encode(shot).decode()
                 async with httpx.AsyncClient(timeout=3) as http:
-                    await http.post(f"{backend_url}/api/internal/screenshot", json={
-                        "taskId": task_id, "appId": app_id, "screenshot": b64,
-                    })
+                    await http.post(
+                        f"{backend_url}/api/internal/screenshot",
+                        json={
+                            "taskId": task_id,
+                            "appId": app_id,
+                            "screenshot": b64,
+                        },
+                    )
         except Exception:
             pass
         await asyncio.sleep(1)
@@ -133,12 +168,16 @@ async def stream_screenshots(backend_url: str, task_id: str, app_id: str,
 
 # ── LOS API data fetch ────────────────────────────────────────────────────────
 
+
 async def fetch_loan_from_api(los_url: str, app_id: str, credentials: dict) -> dict:
     """Fetch all loan data from LOS REST API — fast and exact."""
     async with httpx.AsyncClient(timeout=30) as http:
         login = await http.post(
             f"{los_url}/api/auth/login",
-            json={"username": credentials["username"], "password": credentials["password"]},
+            json={
+                "username": credentials["username"],
+                "password": credentials["password"],
+            },
         )
         if login.status_code != 200:
             raise Exception(f"LOS login failed ({login.status_code})")
@@ -152,13 +191,13 @@ async def fetch_loan_from_api(los_url: str, app_id: str, credentials: dict) -> d
 
 def los_loan_to_extracted(loan: dict) -> dict:
     """Map LOS API response fields to the extracted_data structure."""
-    app   = loan.get("application") or {}
-    d     = loan.get("debtor")      or {}
-    fin   = loan.get("financials")  or {}
-    slik  = loan.get("slik")        or {}
-    aml   = loan.get("amlFraud")    or {}
-    crde  = loan.get("crde")        or {}
-    col   = loan.get("collateral")
+    app = loan.get("application") or {}
+    d = loan.get("debtor") or {}
+    fin = loan.get("financials") or {}
+    slik = loan.get("slik") or {}
+    aml = loan.get("amlFraud") or {}
+    crde = loan.get("crde") or {}
+    col = loan.get("collateral")
 
     # rules_triggered may arrive as a JSON string from SQLite
     rules = crde.get("rules_triggered") or []
@@ -177,80 +216,84 @@ def los_loan_to_extracted(loan: dict) -> dict:
 
     return {
         "profil_debitur": {
-            "nama":            d.get("full_name", ""),
-            "nik":             d.get("nik", ""),
-            "npwp":            d.get("npwp", ""),
-            "tanggal_lahir":   d.get("date_of_birth", ""),
+            "nama": d.get("full_name", ""),
+            "nik": d.get("nik", ""),
+            "npwp": d.get("npwp", ""),
+            "tanggal_lahir": d.get("date_of_birth", ""),
             "status_pernikahan": d.get("marital_status", ""),
             "jumlah_tanggungan": str(d.get("dependents", "")),
             "jenis_pekerjaan": d.get("employment_type", ""),
             "nama_perusahaan": d.get("employer_name", ""),
-            "jabatan":         d.get("job_title", ""),
-            "lama_bekerja":    str(d.get("years_employed", "")),
-            "kota":            d.get("domicile_city", ""),   # schema: domicile_city
-            "telepon":         d.get("phone", ""),
-            "email":           d.get("email", ""),
+            "jabatan": d.get("job_title", ""),
+            "lama_bekerja": str(d.get("years_employed", "")),
+            "kota": d.get("domicile_city", ""),  # schema: domicile_city
+            "telepon": d.get("phone", ""),
+            "email": d.get("email", ""),
         },
         "data_keuangan": {
-            "penghasilan_bruto":  fin.get("gross_income", ""),
+            "penghasilan_bruto": fin.get("gross_income", ""),
             "penghasilan_bersih": fin.get("net_income", ""),
             "kewajiban_existing": fin.get("existing_obligations", ""),
-            "cicilan_dimohon":    fin.get("requested_installment", ""),
-            "total_kewajiban":    fin.get("total_obligations", ""),
-            "sisa_penghasilan":   fin.get("remaining_income", ""),
+            "cicilan_dimohon": fin.get("requested_installment", ""),
+            "total_kewajiban": fin.get("total_obligations", ""),
+            "sisa_penghasilan": fin.get("remaining_income", ""),
             # camelCase to match internal.ts: keuangan.dtiRatio
-            "dtiRatio":           pct(fin.get("dti_ratio")),
-            "dti_threshold":      pct(fin.get("dti_threshold", 0.4)),
-            "income_verified":    "Yes" if fin.get("income_verified") else "No",
+            "dtiRatio": pct(fin.get("dti_ratio")),
+            "dti_threshold": pct(fin.get("dti_threshold", 0.4)),
+            "income_verified": "Yes" if fin.get("income_verified") else "No",
         },
         "slik_ojk": {
-            "kolektibilitas":        slik.get("kolektibilitas", 1),
-            "kol_terburuk_12m":      slik.get("worst_kol_12m", ""),
-            "riwayat_24m":           slik.get("payment_history_24m", ""),
-            "bank_existing":         slik.get("existing_bank", ""),    # schema: existing_bank
-            "fasilitas":             slik.get("existing_facility", ""), # schema: existing_facility
+            "kolektibilitas": slik.get("kolektibilitas", 1),
+            "kol_terburuk_12m": slik.get("worst_kol_12m", ""),
+            "riwayat_24m": slik.get("payment_history_24m", ""),
+            "bank_existing": slik.get("existing_bank", ""),  # schema: existing_bank
+            "fasilitas": slik.get("existing_facility", ""),  # schema: existing_facility
             "jumlah_kewajiban_slik": slik.get("existing_amount", ""),
-            "blacklist":             "Listed" if slik.get("blacklist_status") else "Not Listed",
+            "blacklist": "Listed" if slik.get("blacklist_status") else "Not Listed",
         },
         "aml_fraud": {
             # camelCase to match internal.ts: aml.dttotMatch, aml.pepStatus
-            "dttotMatch":        bool(aml.get("dttot_match", False)),
-            "un_sanctions":      bool(aml.get("un_sanctions_match", False)),
-            "pepStatus":         bool(aml.get("pep_status", False)),
-            "pep_edd":           bool(aml.get("pep_edd_required", False)),  # schema: pep_edd_required
+            "dttotMatch": bool(aml.get("dttot_match", False)),
+            "un_sanctions": bool(aml.get("un_sanctions_match", False)),
+            "pepStatus": bool(aml.get("pep_status", False)),
+            "pep_edd": bool(
+                aml.get("pep_edd_required", False)
+            ),  # schema: pep_edd_required
             "income_consistency": bool(aml.get("income_consistent", True)),
-            "address_flag":      bool(aml.get("address_flag", False)),
-            "fraud_signals":     aml.get("fraud_signals", "") or "",
+            "address_flag": bool(aml.get("address_flag", False)),
+            "fraud_signals": aml.get("fraud_signals", "") or "",
         },
         "hasil_crde": {
             # camelCase to match internal.ts: crde.decision, crde.riskScore etc.
-            "decision":      crde.get("decision", ""),
-            "riskScore":     crde.get("risk_score", ""),
-            "numericScore":  int(crde.get("numeric_score", 0)),
-            "dsr_aktual":    pct(crde.get("dti_actual")),
-            "dsr_limit":     pct(crde.get("dti_threshold", 0.4)),
-            "dsr_status":    "PASS" if crde.get("dti_passed") else "FAIL",
-            "kol_status":    "PASS" if crde.get("kol_passed") else "FAIL",
-            "amlStatus":     "PASS" if crde.get("aml_passed") else "FAIL",
-            "fraud_status":  "PASS" if crde.get("fraud_passed") else "FAIL",
+            "decision": crde.get("decision", ""),
+            "riskScore": crde.get("risk_score", ""),
+            "numericScore": int(crde.get("numeric_score", 0)),
+            "dsr_aktual": pct(crde.get("dti_actual")),
+            "dsr_limit": pct(crde.get("dti_threshold", 0.4)),
+            "dsr_status": "PASS" if crde.get("dti_passed") else "FAIL",
+            "kol_status": "PASS" if crde.get("kol_passed") else "FAIL",
+            "amlStatus": "PASS" if crde.get("aml_passed") else "FAIL",
+            "fraud_status": "PASS" if crde.get("fraud_passed") else "FAIL",
             "rulesTriggered": rules,
         },
         "agunan": {
-            "jenis":         col.get("collateral_type", ""),
-            "deskripsi":     col.get("asset_description", ""),
-            "nilai_pasar":   col.get("market_value", ""),
+            "jenis": col.get("collateral_type", ""),
+            "deskripsi": col.get("asset_description", ""),
+            "nilai_pasar": col.get("market_value", ""),
             "nilai_likuidasi": col.get("liquidation_value", ""),
-            "ltv":           col.get("ltv_ratio", ""),
-            "status_hukum":  col.get("legal_status", ""),
-        } if col else None,
+            "ltv": col.get("ltv_ratio", ""),
+            "status_hukum": col.get("legal_status", ""),
+        }
+        if col
+        else None,
         "permohonan_kredit": {
-            "produk":            app.get("product_type", ""),
-            "plafon":            app.get("amount_requested", ""),
-            "tenor":             f"{app.get('tenor_months', '')} months",
-            "suku_bunga":        app.get("interest_rate", ""),
-            "tujuan":            app.get("loan_purpose", ""),
-            "status":            app.get("status", ""),
-            "cabang":            app.get("branch", ""),  # schema: branch
+            "produk": app.get("product_type", ""),
+            "plafon": app.get("amount_requested", ""),
+            "tenor": f"{app.get('tenor_months', '')} months",
+            "suku_bunga": app.get("interest_rate", ""),
+            "tujuan": app.get("loan_purpose", ""),
+            "status": app.get("status", ""),
+            "cabang": app.get("branch", ""),  # schema: branch
             "marketing_officer": app.get("marketing_officer", ""),
         },
     }
@@ -368,6 +411,19 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
             config={"system_instruction": MEMO_SYSTEM},
         )
         raw = response.text.strip()
+    elif PROVIDER == "custom" and CUSTOM_ENDPOINT:
+        client = AsyncOpenAI(
+            base_url=CUSTOM_ENDPOINT, api_key=CUSTOM_API_KEY or "dummy"
+        )
+        response = await client.chat.completions.create(
+            model=CUSTOM_MODEL,
+            max_tokens=4096,
+            messages=[
+                {"role": "system", "content": MEMO_SYSTEM},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        raw = response.choices[0].message.content.strip()
     else:
         client = anthropic.Anthropic()
         response = client.messages.create(
@@ -387,18 +443,33 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
     except Exception:
         return {
             "executive_summary": "Memo generation failed — raw data attached.",
-            "section1_profil":   json.dumps(extracted_data.get("profil_debitur", {}), ensure_ascii=False),
-            "section2_permohonan": json.dumps(extracted_data.get("permohonan_kredit", {}), ensure_ascii=False),
-            "section3_keuangan": json.dumps(extracted_data.get("data_keuangan", {}), ensure_ascii=False),
-            "section4_slik":     json.dumps(extracted_data.get("slik_ojk", {}), ensure_ascii=False),
-            "section5_aml":      json.dumps(extracted_data.get("aml_fraud", {}), ensure_ascii=False),
-            "section6_agunan":   json.dumps(extracted_data.get("agunan"), ensure_ascii=False),
-            "section7_crde":     json.dumps(extracted_data.get("hasil_crde", {}), ensure_ascii=False),
+            "section1_profil": json.dumps(
+                extracted_data.get("profil_debitur", {}), ensure_ascii=False
+            ),
+            "section2_permohonan": json.dumps(
+                extracted_data.get("permohonan_kredit", {}), ensure_ascii=False
+            ),
+            "section3_keuangan": json.dumps(
+                extracted_data.get("data_keuangan", {}), ensure_ascii=False
+            ),
+            "section4_slik": json.dumps(
+                extracted_data.get("slik_ojk", {}), ensure_ascii=False
+            ),
+            "section5_aml": json.dumps(
+                extracted_data.get("aml_fraud", {}), ensure_ascii=False
+            ),
+            "section6_agunan": json.dumps(
+                extracted_data.get("agunan"), ensure_ascii=False
+            ),
+            "section7_crde": json.dumps(
+                extracted_data.get("hasil_crde", {}), ensure_ascii=False
+            ),
             "section8_rekomendasi": "",
         }
 
 
 # ── Main agent run ────────────────────────────────────────────────────────────
+
 
 def _make_browser_task(los_url: str, app_id: str, credentials: dict) -> str:
     """Full browser-use extraction task prompt — reads every field from data-summary tab."""
@@ -470,9 +541,9 @@ Collateral: check summary-value-col-status — if "Not required" set agunan=null
 
 
 async def run_review(task: dict):
-    app_id      = task["appId"]
-    task_id     = task["taskId"]
-    los_url     = task["losUrl"]
+    app_id = task["appId"]
+    task_id = task["taskId"]
+    los_url = task["losUrl"]
     backend_url = task["backendUrl"]
     credentials = task["credentials"]
 
@@ -481,8 +552,16 @@ async def run_review(task: dict):
 
     if PROVIDER == "gemini":
         llm = ChatGoogle(model=GEMINI_MODEL, api_key=os.environ["GEMINI_API_KEY"])
+    elif PROVIDER == "custom" and CUSTOM_ENDPOINT:
+        llm = ChatOpenAI(
+            model=CUSTOM_MODEL,
+            base_url=CUSTOM_ENDPOINT,
+            api_key=CUSTOM_API_KEY or "dummy",
+        )
     else:
-        llm = BUChatAnthropic(model=ANTHROPIC_MODEL, api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        llm = BUChatAnthropic(
+            model=ANTHROPIC_MODEL, api_key=os.environ.get("ANTHROPIC_API_KEY")
+        )
 
     async def progress(step: str, step_index: int, pct: int):
         print(f"[{app_id}] ({pct}%) {step}")
@@ -501,13 +580,15 @@ async def run_review(task: dict):
                     break
                 await progress(step_label, step_idx, pct)
 
-        stop_walk       = asyncio.Event()
+        stop_walk = asyncio.Event()
         stop_screenshots = asyncio.Event()
         extracted_data: dict = {}
 
         # ── Screenshot stream (always active regardless of mode) ──────────────
         screenshot_task = asyncio.create_task(
-            stream_screenshots(backend_url, task_id, app_id, browser_session, stop_screenshots)
+            stream_screenshots(
+                backend_url, task_id, app_id, browser_session, stop_screenshots
+            )
         )
         walk_task = asyncio.create_task(walk_progress(stop_walk))
 
@@ -516,7 +597,7 @@ async def run_review(task: dict):
             visual_agent = Agent(
                 task=f"""
 Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extraction.
-1. Go to {los_url}/login, login with "{credentials['username']}" / "{credentials['password']}"
+1. Go to {los_url}/login, login with "{credentials["username"]}" / "{credentials["password"]}"
 2. Go to {los_url}/loans/{app_id}
 3. Click each tab and scroll: tab-profil-debitur, tab-data-keuangan, tab-slik-ojk,
    tab-aml-fraud, tab-hasil-crde (spend ~6s on each)
@@ -530,16 +611,21 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
             try:
                 loan_raw = await fetch_loan_from_api(los_url, app_id, credentials)
                 extracted_data = los_loan_to_extracted(loan_raw)
-                print(f"[{app_id}] ✓ API fetch — "
-                      f"{extracted_data['profil_debitur'].get('nama','?')} "
-                      f"/ {extracted_data['hasil_crde'].get('decision','?')}")
+                print(
+                    f"[{app_id}] ✓ API fetch — "
+                    f"{extracted_data['profil_debitur'].get('nama', '?')} "
+                    f"/ {extracted_data['hasil_crde'].get('decision', '?')}"
+                )
             except Exception as api_err:
                 print(f"[{app_id}] ✗ API fetch failed: {api_err}", file=sys.stderr)
 
             try:
                 await asyncio.wait_for(asyncio.shield(visual_future), timeout=100)
             except (asyncio.TimeoutError, Exception) as e:
-                print(f"[{app_id}] Visual browse ended: {type(e).__name__}", file=sys.stderr)
+                print(
+                    f"[{app_id}] Visual browse ended: {type(e).__name__}",
+                    file=sys.stderr,
+                )
                 visual_future.cancel()
 
         else:
@@ -556,9 +642,16 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
                 print(f"[{app_id}] ⚠ Agent run error: {agent_err}", file=sys.stderr)
                 agent_result_raw = str(agent_err)
 
-            extracted_data = parse_agent_result(agent_result_raw) if agent_result_raw else {}
-            if not extracted_data or (len(extracted_data) == 1 and "extraction_raw" in extracted_data):
-                print(f"[{app_id}] ⚠ Browser extraction returned no structured data", file=sys.stderr)
+            extracted_data = (
+                parse_agent_result(agent_result_raw) if agent_result_raw else {}
+            )
+            if not extracted_data or (
+                len(extracted_data) == 1 and "extraction_raw" in extracted_data
+            ):
+                print(
+                    f"[{app_id}] ⚠ Browser extraction returned no structured data",
+                    file=sys.stderr,
+                )
                 extracted_data = {}
 
             print(f"[{app_id}] Browser extraction keys: {list(extracted_data.keys())}")
@@ -572,17 +665,22 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
 
         if not extracted_data:
             extracted_data = {
-                "profil_debitur": {}, "data_keuangan": {}, "slik_ojk": {},
-                "aml_fraud": {}, "hasil_crde": {}, "agunan": None, "permohonan_kredit": {},
+                "profil_debitur": {},
+                "data_keuangan": {},
+                "slik_ojk": {},
+                "aml_fraud": {},
+                "hasil_crde": {},
+                "agunan": None,
+                "permohonan_kredit": {},
             }
 
         los_data = {
-            "profilDebitur":    extracted_data.get("profil_debitur", {}),
-            "dataKeuangan":     extracted_data.get("data_keuangan", {}),
-            "slikOjk":          extracted_data.get("slik_ojk", {}),
-            "amlFraud":         extracted_data.get("aml_fraud", {}),
-            "hasilCrde":        extracted_data.get("hasil_crde", {}),
-            "agunan":           extracted_data.get("agunan"),
+            "profilDebitur": extracted_data.get("profil_debitur", {}),
+            "dataKeuangan": extracted_data.get("data_keuangan", {}),
+            "slikOjk": extracted_data.get("slik_ojk", {}),
+            "amlFraud": extracted_data.get("aml_fraud", {}),
+            "hasilCrde": extracted_data.get("hasil_crde", {}),
+            "agunan": extracted_data.get("agunan"),
             "permohonanKredit": extracted_data.get("permohonan_kredit", {}),
         }
 
