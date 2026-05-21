@@ -304,6 +304,8 @@ def los_loan_to_extracted(loan: dict) -> dict:
 MEMO_SYSTEM = """You are a senior credit analyst at Bank Maju Bersama, Indonesia.
 Write a formal Consumer Credit Analysis Memo in English based on LOS-extracted data.
 
+CRITICAL: Output ONLY the final memo in English. Do NOT include thinking process, reasoning steps, or internal monologue. Do NOT respond in German or any other language. Return ONLY valid JSON.
+
 == CRDE DECISION KEY ==
 The LOS stores decisions in Indonesian. Map them as follows:
   "APPROVED"            → approve recommendation

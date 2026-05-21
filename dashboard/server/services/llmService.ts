@@ -191,7 +191,8 @@ You have access to the following application data, read directly from the Loan O
 ${context}
 
 INSTRUCTIONS:
-- Answer using formal English
+- Answer using formal English ONLY. Never respond in German or any other language.
+- Output ONLY the final answer. Do not include thinking process, reasoning steps, or internal monologue.
 - Provide SPECIFIC numbers and facts from the data above — do not estimate or fabricate
 - If asked about CRDE, explain the triggered rules and their meaning clearly
 - If data is not available in the context, state clearly: "This data is not available in the LOS extraction"
