@@ -140,7 +140,14 @@ function Topbar({
         <span className="dot" />
         Live view {liveOn ? "ON" : "OFF"}
       </button>
-      <div className="user-pill">
+      <div
+        className="user-pill"
+        style={{ cursor: "pointer" }}
+        onClick={async () => {
+          await fetch("/api/auth/logout", { method: "POST" });
+          window.location.href = "/login";
+        }}
+      >
         <span>analyst01</span>
         <span className="avatar">A</span>
       </div>

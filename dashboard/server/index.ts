@@ -7,6 +7,7 @@ import { handleChat } from "./routes/chat";
 import { handleDecisions, handleSessions } from "./routes/decisions";
 import { handleInternal } from "./routes/internal";
 import { handleSettings } from "./routes/settings";
+import { handleAuth, getSession } from "./routes/auth";
 
 const PORT = parseInt(process.env.PORT ?? "3003");
 const ROOT = join(import.meta.dir, "..");
@@ -78,10 +79,30 @@ async function handleRequest(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const pathname = url.pathname;
 
+  // Auth routes (public)
+  if (pathname.startsWith("/api/auth/")) {
+    const res = await handleAuth(req, pathname);
+    if (res) return withCors(res, req);
+  }
+
   // Internal agent callbacks (no auth)
   if (pathname.startsWith("/api/internal/")) {
     const res = await handleInternal(req, pathname);
     if (res) return withCors(res, req);
+  }
+
+  // ── Protected routes: require session ──
+  const session = getSession(req);
+  const isProtected =
+    pathname.startsWith("/api/") &&
+    !pathname.startsWith("/api/auth/") &&
+    !pathname.startsWith("/api/internal/");
+
+  if (isProtected && !session) {
+    return withCors(
+      Response.json({ error: "Unauthorized" }, { status: 401 }),
+      req,
+    );
   }
 
   // Public API routes

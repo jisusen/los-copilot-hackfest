@@ -58,24 +58,56 @@ STEPS = [
 
 def parse_agent_result(result) -> dict:
     """Extract structured JSON from browser-use agent output.
-    Uses result.final_result() to get the agent's last output (not the full action history).
+    Tries multiple strategies: final_result(), raw text, regex extraction.
     """
-    # browser_use AgentHistoryList exposes final_result() for the last extracted content
     raw = None
     if hasattr(result, "final_result"):
         raw = result.final_result()
     if not raw:
         raw = str(result)
 
-    print(f"[parse] final_result preview: {str(raw)[:200]}", file=sys.stderr)
+    text = str(raw).strip()
+    print(f"[parse] final_result preview: {text[:200]}", file=sys.stderr)
 
-    json_match = re.search(r"\{[\s\S]*\}", raw or "")
+    # Strategy 1: strip markdown fences then parse
+    cleaned = text
+    if cleaned.startswith("```"):
+        lines = cleaned.split("\n")
+        cleaned = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+
+    # Strategy 2: direct JSON parse
+    for candidate in [cleaned, text]:
+        try:
+            return json.loads(candidate)
+        except (json.JSONDecodeError, ValueError):
+            pass
+
+    # Strategy 3: regex extraction of outermost JSON object
+    brace_depth = 0
+    start = -1
+    for i, ch in enumerate(cleaned):
+        if ch == "{":
+            if start == -1:
+                start = i
+            brace_depth += 1
+        elif ch == "}":
+            brace_depth -= 1
+            if brace_depth == 0 and start != -1:
+                try:
+                    return json.loads(cleaned[start:i+1])
+                except json.JSONDecodeError:
+                    pass
+                start = -1
+
+    # Strategy 4: fallback regex
+    json_match = re.search(r"\{[\s\S]*\}", text)
     if json_match:
         try:
             return json.loads(json_match.group())
         except json.JSONDecodeError:
             pass
-    return {"extraction_raw": str(raw)[:2000]}
+
+    return {"extraction_raw": text[:2000]}
 
 
 # ── Progress / reporting helpers ──────────────────────────────────────────────
@@ -161,8 +193,8 @@ async def stream_screenshots(
                             "screenshot": b64,
                         },
                     )
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[screenshot] {e}", file=sys.stderr)
         await asyncio.sleep(1)
 
 
@@ -407,7 +439,7 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
 
     if PROVIDER == "gemini":
         client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
-        response = client.models.generate_content(
+        response = await client.aio.models.generate_content(
             model=GEMINI_MODEL,
             contents=prompt,
             config={"system_instruction": MEMO_SYSTEM},
@@ -427,8 +459,8 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
         )
         raw = response.choices[0].message.content.strip()
     else:
-        client = anthropic.Anthropic()
-        response = client.messages.create(
+        client = anthropic.AsyncAnthropic()
+        response = await client.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=4096,
             system=MEMO_SYSTEM,
@@ -539,6 +571,12 @@ Collateral: check summary-value-col-status — if "Not required" set agunan=null
     "tujuan":"","status":"","cabang":"","marketing_officer":""
   }}
 }}
+
+== STOP CONDITION ==
+Return ONLY the JSON above — no markdown, no preamble, no explanation.
+Once you have returned the complete JSON, you are DONE.
+Do NOT re-read fields, do NOT verify, do NOT continue browsing.
+Do NOT take any further actions after returning the JSON.
 """
 
 
@@ -577,7 +615,7 @@ async def run_review(task: dict):
         # ── Walk progress (fake tab-navigation labels, runs while agent/api works) ──
         async def walk_progress(stop_event: asyncio.Event):
             for step_label, step_idx, pct in STEPS[1:10]:
-                await asyncio.sleep(13)
+                await asyncio.sleep(1)
                 if stop_event.is_set():
                     break
                 await progress(step_label, step_idx, pct)
@@ -608,7 +646,7 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
                 llm=llm,
                 browser_session=browser_session,
             )
-            visual_future = asyncio.create_task(visual_agent.run())
+            visual_future = asyncio.create_task(visual_agent.run(max_steps=30))
 
             try:
                 loan_raw = await fetch_loan_from_api(los_url, app_id, credentials)
@@ -622,41 +660,60 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
                 print(f"[{app_id}] ✗ API fetch failed: {api_err}", file=sys.stderr)
 
             try:
-                await asyncio.wait_for(asyncio.shield(visual_future), timeout=100)
+                await asyncio.wait_for(visual_future, timeout=100)
             except (asyncio.TimeoutError, Exception) as e:
                 print(
                     f"[{app_id}] Visual browse ended: {type(e).__name__}",
                     file=sys.stderr,
                 )
                 visual_future.cancel()
+                try:
+                    await visual_future
+                except (asyncio.CancelledError, Exception):
+                    pass
 
         else:
             # ── BROWSER MODE: browser_use reads every field from data-summary ──
-            extraction_agent = Agent(
-                task=_make_browser_task(los_url, app_id, credentials),
-                llm=llm,
-                browser_session=browser_session,
-            )
-            agent_result_raw = None
-            try:
-                agent_result_raw = await extraction_agent.run()
-            except Exception as agent_err:
-                print(f"[{app_id}] ⚠ Agent run error: {agent_err}", file=sys.stderr)
-                agent_result_raw = str(agent_err)
-
-            extracted_data = (
-                parse_agent_result(agent_result_raw) if agent_result_raw else {}
-            )
-            if not extracted_data or (
-                len(extracted_data) == 1 and "extraction_raw" in extracted_data
-            ):
-                print(
-                    f"[{app_id}] ⚠ Browser extraction returned no structured data",
-                    file=sys.stderr,
+            attempt = 0
+            max_attempts = 2
+            extracted_data = {}
+            while attempt < max_attempts and not extracted_data.get("profil_debitur"):
+                attempt += 1
+                extraction_agent = Agent(
+                    task=_make_browser_task(los_url, app_id, credentials),
+                    llm=llm,
+                    browser_session=browser_session,
                 )
-                extracted_data = {}
+                agent_result_raw = None
+                try:
+                    agent_result_raw = await extraction_agent.run(max_steps=25)
+                except Exception as agent_err:
+                    print(f"[{app_id}] ⚠ Agent run error (attempt {attempt}): {agent_err}", file=sys.stderr)
+                    agent_result_raw = str(agent_err)
 
-            print(f"[{app_id}] Browser extraction keys: {list(extracted_data.keys())}")
+                extracted_data = (
+                    parse_agent_result(agent_result_raw) if agent_result_raw else {}
+                )
+                if not extracted_data or (
+                    len(extracted_data) == 1 and "extraction_raw" in extracted_data
+                ):
+                    print(
+                        f"[{app_id}] ⚠ Browser extraction returned no structured data (attempt {attempt})",
+                        file=sys.stderr,
+                    )
+                    extracted_data = {}
+                else:
+                    print(f"[{app_id}] ✓ Browser extraction keys (attempt {attempt}): {list(extracted_data.keys())}")
+
+            # Fallback: if browser extraction failed, try API mode
+            if not extracted_data.get("profil_debitur"):
+                print(f"[{app_id}] ⚠ Browser extraction failed, falling back to API mode", file=sys.stderr)
+                try:
+                    loan_raw = await fetch_loan_from_api(los_url, app_id, credentials)
+                    extracted_data = los_loan_to_extracted(loan_raw)
+                    print(f"[{app_id}] ✓ API fallback — {extracted_data['profil_debitur'].get('nama', '?')}")
+                except Exception as api_err:
+                    print(f"[{app_id}] ✗ API fallback also failed: {api_err}", file=sys.stderr)
 
         # ── Finish ────────────────────────────────────────────────────────────
         stop_walk.set()
