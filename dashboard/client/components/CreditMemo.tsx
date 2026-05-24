@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import type { MemoDraft, AgentResult } from "../lib/types";
+import { useToast } from "./Toast";
 import { CRDE_COLOR, CRDE_SOFT, CRDE_BORDER, RISK_COLOR, crdeCls } from "../lib/format";
 
 const SECTIONS: { key: keyof MemoDraft; label: string; n: number }[] = [
@@ -56,7 +57,10 @@ function MemoSection({ s, content, editable, onChange }: {
   editable?: boolean;
   onChange?: (v: string) => void;
 }) {
-  function copy() { navigator.clipboard.writeText(content).catch(() => {}); }
+  const toast = useToast();
+  function copy() {
+    navigator.clipboard.writeText(content).then(() => toast?.("Copied to clipboard", "info")).catch(() => {});
+  }
 
   return (
     <section data-testid={`memo-section-${s.n}`} style={{ padding: "22px 0", borderTop: "1px solid var(--line)" }}>

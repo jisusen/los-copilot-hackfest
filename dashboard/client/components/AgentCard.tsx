@@ -109,8 +109,8 @@ export function AgentCard({ appId, loan, state, screenshot }: {
             )}
           </div>
           <div className="space-y-0.5 min-h-20 overflow-hidden">
-            {state.logs.slice(-6).map((log, i) => {
-              const isLast = i === Math.min(state.logs.length, 6) - 1;
+            {state.logs.slice(-20).map((log, i) => {
+              const isLast = i === Math.min(state.logs.length, 20) - 1;
               return (
                 <div key={i} className="font-mono text-xs" style={{ color: isLast ? '#e8edf5' : '#8892a4' }}>
                   {isLast ? (

@@ -1,8 +1,7 @@
 import { randomUUID } from 'crypto';
 import { sessionStore } from '../services/sessionStore';
 import { wsManager } from '../services/wsManager';
-import { getLosDb } from '../db/losClient';
-import { getDecision, getAllDecisions } from '../db/dashboardDb';
+import { getDecision, getAllDecisions, saveDecision } from '../db/dashboardDb';
 
 const DECISION_TO_STATUS: Record<string, string> = {
   approve: 'Approved',
@@ -22,7 +21,8 @@ export async function handleDecisions(req: Request, pathname: string): Promise<R
     }
 
     const decidedAt = new Date().toISOString();
-    sessionStore.setDecision(appId, { decision, note, analystId, decidedAt });
+    const auditId = randomUUID();
+    saveDecision(auditId, appId, decision, note, analystId, decidedAt);
 
     // Sync status back to LOS DB
     try {
@@ -45,7 +45,7 @@ export async function handleDecisions(req: Request, pathname: string): Promise<R
       decidedAt,
     });
 
-    return Response.json({ ok: true, auditId: randomUUID() });
+    return Response.json({ ok: true, auditId });
   }
 
   // GET /api/decisions — list all decisions

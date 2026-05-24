@@ -3,16 +3,15 @@ import React, {
   useContext,
   useState,
   useCallback,
-  useEffect,
 } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
-import { LoginPage } from "./pages/LoginPage";
 import { useAgentSessions } from "./hooks/useAgentSessions";
 import { useWebSocket } from "./hooks/useWebSocket";
 import type { AgentState } from "./lib/types";
+import { ToastProvider } from "./components/Toast";
 
 type SessionsCtx = {
   sessions: Map<string, AgentState>;
@@ -29,40 +28,7 @@ export function useSessions() {
   return useContext(SessionsContext);
 }
 
-function useAuth() {
-  const [user, setUser] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setUser(data?.username ?? null))
-      .finally(() => setLoading(false));
-  }, []);
-
-  return { user, loading };
-}
-
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "var(--font-mono)",
-          fontSize: 12,
-          color: "var(--ink-3)",
-        }}
-      >
-        Loading…
-      </div>
-    );
-  }
-  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
@@ -88,10 +54,10 @@ export function App() {
   useWebSocket(handleAllWs);
 
   return (
+    <ToastProvider>
     <SessionsContext.Provider value={{ sessions, screenshots, dispatch }}>
       <BrowserRouter>
         <Routes>
-          <Route path="/login" element={<LoginPage />} />
           <Route
             path="/"
             element={
@@ -120,5 +86,6 @@ export function App() {
         </Routes>
       </BrowserRouter>
     </SessionsContext.Provider>
+    </ToastProvider>
   );
 }

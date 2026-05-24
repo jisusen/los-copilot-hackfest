@@ -3,6 +3,8 @@ import { useParams, useNavigate } from "react-router-dom";
 import { CreditMemo } from "../components/CreditMemo";
 import { CopilotChat } from "../components/CopilotChat";
 import { DecisionFooter } from "../components/DecisionFooter";
+import { UserMenu } from "../components/UserMenu";
+import { Skeleton, SkeletonBlock } from "../components/Skeleton";
 import { useSessions } from "../App";
 import { apiFetch } from "../lib/api";
 import { formatRpShort, CRDE_COLOR, crdeCls } from "../lib/format";
@@ -118,17 +120,7 @@ function Topbar({ crumbs = [] }: { crumbs?: string[] }) {
         ))}
       </div>
       <div className="spacer" />
-      <div
-        className="user-pill"
-        style={{ cursor: "pointer" }}
-        onClick={async () => {
-          await fetch("/api/auth/logout", { method: "POST" });
-          window.location.href = "/login";
-        }}
-      >
-        <span>analyst01</span>
-        <span className="avatar">A</span>
-      </div>
+      <UserMenu username="analyst01" />
     </div>
   );
 }
@@ -157,28 +149,20 @@ export function ReviewPage() {
   if (loading) {
     return (
       <div className="app">
-        <div className="app-rail">
-          <NavRail active="dash" />
-        </div>
-        <div className="app-top">
-          <Topbar crumbs={["Pipeline", appId, "Review"]} />
-        </div>
-        <div
-          className="app-main"
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 13,
-              color: "var(--ink-3)",
-              fontFamily: "var(--font-mono)",
-            }}
-          >
-            Loading review session…
+        <div className="app-rail"><NavRail active="dash" /></div>
+        <div className="app-top"><Topbar crumbs={["Pipeline", appId, "Review"]} /></div>
+        <div className="app-main" style={{ padding: "24px 32px", overflow: "auto" }}>
+          <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", gap: 24 }}>
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
+              <Skeleton width="60%" height={22} />
+              <Skeleton width="40%" height={16} />
+              <SkeletonBlock lines={4} />
+              <SkeletonBlock lines={3} />
+            </div>
+            <div style={{ width: 380, display: "flex", flexDirection: "column", gap: 12 }}>
+              <SkeletonBlock lines={5} />
+              <SkeletonBlock lines={3} />
+            </div>
           </div>
         </div>
       </div>

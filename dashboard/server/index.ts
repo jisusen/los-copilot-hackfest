@@ -7,7 +7,7 @@ import { handleChat } from "./routes/chat";
 import { handleDecisions, handleSessions } from "./routes/decisions";
 import { handleInternal } from "./routes/internal";
 import { handleSettings } from "./routes/settings";
-import { handleAuth, getSession } from "./routes/auth";
+import { handleAuth } from "./routes/auth";
 
 const PORT = parseInt(process.env.PORT ?? "3003");
 const ROOT = join(import.meta.dir, "..");
@@ -91,19 +91,18 @@ async function handleRequest(req: Request): Promise<Response> {
     if (res) return withCors(res, req);
   }
 
-  // ── Protected routes: require session ──
-  const session = getSession(req);
-  const isProtected =
-    pathname.startsWith("/api/") &&
-    !pathname.startsWith("/api/auth/") &&
-    !pathname.startsWith("/api/internal/");
-
-  if (isProtected && !session) {
-    return withCors(
-      Response.json({ error: "Unauthorized" }, { status: 401 }),
-      req,
-    );
-  }
+  // ── Auth check (disabled for demo) ──
+  // const session = getSession(req);
+  // const isProtected =
+  //   pathname.startsWith("/api/") &&
+  //   !pathname.startsWith("/api/auth/") &&
+  //   !pathname.startsWith("/api/internal/");
+  // if (isProtected && !session) {
+  //   return withCors(
+  //     Response.json({ error: "Unauthorized" }, { status: 401 }),
+  //     req,
+  //   );
+  // }
 
   // Public API routes
   if (pathname === "/api/loans" && req.method === "GET") {
@@ -168,6 +167,7 @@ async function handleRequest(req: Request): Promise<Response> {
 
 const server = Bun.serve({
   port: PORT,
+  idleTimeout: 120,
   fetch(req, server) {
     if (req.headers.get("upgrade") === "websocket") {
       server.upgrade(req);

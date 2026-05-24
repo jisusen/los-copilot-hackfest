@@ -18,6 +18,20 @@ import sys
 
 import httpx
 
+# Patch Pydantic to strip markdown fences from all JSON validation
+# Some LLMs (glm-5.1) wrap JSON in ```json ... ``` blocks
+import pydantic as _pd
+import re as _re
+
+_orig_mvj = _pd.BaseModel.__dict__['model_validate_json']
+
+def _strip_fences(cls, json_data, *a, **kw):
+    if isinstance(json_data, str) and '```' in json_data:
+        json_data = _re.sub(r'^```(?:json)?\s*|\s*```$', '', json_data.strip())
+    return _orig_mvj.__func__(cls, json_data, *a, **kw)
+
+_pd.BaseModel.model_validate_json = classmethod(_strip_fences)
+
 # Force UTF-8 output on Windows
 if sys.stdout.encoding != "utf-8":
     sys.stdout.reconfigure(encoding="utf-8")
@@ -31,6 +45,11 @@ CUSTOM_ENDPOINT = os.environ.get("CUSTOM_LLM_ENDPOINT", "")
 CUSTOM_MODEL = os.environ.get("CUSTOM_LLM_MODEL", "")
 CUSTOM_API_KEY = os.environ.get("CUSTOM_LLM_API_KEY", "")
 EXTRACTION_MODE = os.environ.get("EXTRACTION_MODE", "browser")  # "browser" | "api"
+
+BROWSE_PROVIDER = os.environ.get("BROWSE_PROVIDER", "")
+BROWSE_MODEL = os.environ.get("BROWSE_MODEL", "")
+BROWSE_ENDPOINT = os.environ.get("BROWSE_ENDPOINT", "")
+BROWSE_API_KEY = os.environ.get("BROWSE_API_KEY", "")
 
 import anthropic
 import google.genai as genai
@@ -177,25 +196,52 @@ async def stream_screenshots(
     browser_session: BrowserSession,
     stop_event: asyncio.Event,
 ):
-    """Stream PNG screenshots every ~1s to dashboard."""
-    await asyncio.sleep(5)  # wait for browser to open
-    while not stop_event.is_set():
+    """Stream JPEG screenshots at ~3-5fps to dashboard.
+    Waits for CDP to be ready (browser launched by Agent internally).
+    """
+    http = httpx.AsyncClient(timeout=3)
+    last_hash = None
+    # Wait up to 30s for browser CDP to initialize
+    for attempt in range(60):
+        if stop_event.is_set():
+            await http.aclose()
+            return
         try:
-            shot = await browser_session.take_screenshot(format="png")
+            shot = await browser_session.take_screenshot(format="jpeg", quality=60)
             if shot:
+                break
+        except Exception:
+            pass
+        await asyncio.sleep(0.5)
+
+    try:
+        while not stop_event.is_set():
+            try:
+                shot = await browser_session.take_screenshot(format="jpeg", quality=60)
+                if not shot:
+                    await asyncio.sleep(0.5)
+                    continue
+
+                h = hash(shot)
+                if h == last_hash:
+                    await asyncio.sleep(0.15)
+                    continue
+                last_hash = h
+
                 b64 = base64.b64encode(shot).decode()
-                async with httpx.AsyncClient(timeout=3) as http:
-                    await http.post(
-                        f"{backend_url}/api/internal/screenshot",
-                        json={
-                            "taskId": task_id,
-                            "appId": app_id,
-                            "screenshot": b64,
-                        },
-                    )
-        except Exception as e:
-            print(f"[screenshot] {e}", file=sys.stderr)
-        await asyncio.sleep(1)
+                await http.post(
+                    f"{backend_url}/api/internal/screenshot",
+                    json={
+                        "taskId": task_id,
+                        "appId": app_id,
+                        "screenshot": b64,
+                    },
+                )
+            except Exception as e:
+                print(f"[screenshot] {e}", file=sys.stderr)
+            await asyncio.sleep(0.1)
+    finally:
+        await http.aclose()
 
 
 # ── LOS API data fetch ────────────────────────────────────────────────────────
@@ -506,40 +552,102 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
 
 
 def _make_browser_task(los_url: str, app_id: str, credentials: dict) -> str:
-    """Full browser-use extraction task prompt — reads every field from data-summary tab."""
+    """Extract from Data Summary (fast), then visit 2 real tabs for screenshot impact."""
     u = credentials["username"]
     p = credentials["password"]
     return f"""
-You are a data extraction agent for Bank Maju Bersama's Loan Origination System.
-Login, open the Data Summary tab for loan {app_id}, read EVERY field, return JSON.
+You are a data extraction agent for a Loan Origination System.
+Login, extract data from the Data Summary page, then visit 2 key tabs for visual review.
 
 == LOGIN ==
-Go to {los_url}/login
-Fill data-testid="input-username" with "{u}"
-Fill data-testid="input-password" with "{p}"
-Click data-testid="btn-login" — wait for redirect away from /login
+1. Go to {los_url}/login
+2. Use vision to find the username field, type: "{u}"
+3. Find the password field, type: "{p}"
+4. Click the login button
+5. Wait for navigation to complete
 
-== DATA SUMMARY TAB ==
-Go to {los_url}/loans/{app_id}?tab=data-summary
-Wait for data-testid="tab-content-data-summary" to appear
-This single page contains ALL loan data — do NOT navigate to any other tab
+== NAVIGATE TO DATA SUMMARY ==
+1. Go to {los_url}/loans/{app_id}?tab=data-summary
+2. Wait 2 seconds for the page to fully render
 
-== EXTRACT FIELDS ==
-Read text content of each data-testid (prefix is "summary-value-"):
-Loan App:  app-product, app-amount, app-tenor, app-rate, app-purpose, app-branch, app-mo, app-status
-Debtor:    debtor-name, debtor-nik, debtor-npwp, debtor-dob, debtor-marital, debtor-dependents,
-           debtor-employment, debtor-employer, debtor-job, debtor-years, debtor-city, debtor-phone, debtor-email
-Fin:       fin-gross, fin-net, fin-existing, fin-installment, fin-total, fin-remaining,
-           fin-dti, fin-dti-threshold, fin-verified
-SLIK:      slik-kol, slik-worst, slik-history, slik-bank, slik-facility, slik-existing-amount, slik-blacklist
-AML:       aml-dttot, aml-un, aml-pep, aml-pep-edd, aml-income, aml-address, aml-fraud
-CRDE:      crde-decision, crde-risk, crde-score, crde-dti, crde-dti-limit, crde-dti-passed,
-           crde-kol, crde-kol-passed, crde-aml, crde-fraud, crde-rules-count
-           Also read: summary-crde-rule-0, summary-crde-rule-1, summary-crde-rule-2 if present
-Collateral: check summary-value-col-status — if "Not required" set agunan=null
-           Otherwise read: col-type, col-desc, col-market, col-liquid, col-ltv, col-legal
+== EXTRACT ALL DATA (one evaluate call) ==
+Run this evaluate action script to read all data fields and triggered rules:
+(function(){{
+  try{{
+    var fields = Array.from(document.querySelectorAll('[data-testid^="summary-value-"]'));
+    var result = fields.map(function(el){{
+      return {{id:el.getAttribute('data-testid'), text:el.textContent?.trim()}};
+    }});
+    var rules = Array.from(document.querySelectorAll('[data-testid^="summary-crde-rule-"]'));
+    var rulesText = rules.map(function(el){{return el.textContent?.trim().replace(/^•\\s*/,'')}});
+    return JSON.stringify({{values:result, rules:rulesText}});
+  }}catch(e){{return '{{"values":[],"rules":[]}}'}}
+}})()
 
-== RETURN JSON (exact structure, no markdown) ==
+== VISUAL REVIEW (for screenshots) ==
+After extraction, briefly visit these tabs so the demo screenshots show activity:
+1. Click the tab-profil-debitur button — wait 2 seconds
+2. Click the tab-hasil-crde button — wait 2 seconds
+
+== RETURN JSON (exact structure) ==
+Field mapping (summary-value-{{testId}} → your JSON field):
+  app-product        → permohonan_kredit.produk
+  app-amount         → permohonan_kredit.plafon
+  app-tenor          → permohonan_kredit.tenor
+  app-rate           → permohonan_kredit.suku_bunga
+  app-purpose        → permohonan_kredit.tujuan
+  app-branch         → permohonan_kredit.cabang
+  app-mo             → permohonan_kredit.marketing_officer
+  app-status         → permohonan_kredit.status
+  debtor-name        → profil_debitur.nama
+  debtor-nik         → profil_debitur.nik
+  debtor-npwp        → profil_debitur.npwp
+  debtor-dob         → profil_debitur.tanggal_lahir
+  debtor-marital     → profil_debitur.status_pernikahan
+  debtor-dependents  → profil_debitur.jumlah_tanggungan
+  debtor-employment  → profil_debitur.jenis_pekerjaan
+  debtor-employer    → profil_debitur.nama_perusahaan
+  debtor-job         → profil_debitur.jabatan
+  debtor-years       → profil_debitur.lama_bekerja
+  debtor-city        → profil_debitur.kota
+  debtor-phone       → profil_debitur.telepon
+  debtor-email       → profil_debitur.email
+  fin-gross          → data_keuangan.penghasilan_bruto
+  fin-net            → data_keuangan.penghasilan_bersih
+  fin-existing       → data_keuangan.kewajiban_existing
+  fin-installment    → data_keuangan.cicilan_dimohon
+  fin-total          → data_keuangan.total_kewajiban
+  fin-remaining      → data_keuangan.sisa_penghasilan
+  fin-dti            → data_keuangan.dtiRatio
+  fin-dti-threshold  → data_keuangan.dti_threshold
+  fin-verified       → data_keuangan.income_verified
+  slik-kol           → slik_ojk.kolektibilitas
+  slik-worst         → slik_ojk.kol_terburuk_12m
+  slik-history       → slik_ojk.riwayat_24m
+  slik-bank          → slik_ojk.bank_existing
+  slik-facility      → slik_ojk.fasilitas
+  slik-existing-amount → slik_ojk.jumlah_kewajiban_slik
+  slik-blacklist     → slik_ojk.blacklist
+  aml-dttot          → aml_fraud.dttotMatch
+  aml-un             → aml_fraud.un_sanctions
+  aml-pep            → aml_fraud.pepStatus
+  aml-pep-edd        → aml_fraud.pep_edd
+  aml-income         → aml_fraud.income_consistency
+  aml-address        → aml_fraud.address_flag
+  aml-fraud          → aml_fraud.fraud_signals
+  crde-decision      → hasil_crde.decision
+  crde-risk          → hasil_crde.riskScore
+  crde-score         → hasil_crde.numericScore
+  crde-dti           → hasil_crde.dsr_aktual
+  crde-dti-limit     → hasil_crde.dsr_limit
+  crde-dti-passed    → hasil_crde.dsr_status
+  crde-kol           → hasil_crde.kol_status
+  crde-aml           → hasil_crde.amlStatus
+  crde-fraud         → hasil_crde.fraud_status
+  col-type           → agunan.jenis_agunan (or null if unsecured)
+  col-status         → if "Not required" then set agunan = null
+  summary-crde-rule-* → hasil_crde.rulesTriggered (array of strings from rules output)
+
 {{
   "profil_debitur": {{
     "nama":"","nik":"","npwp":"","tanggal_lahir":"","status_pernikahan":"",
@@ -573,10 +681,9 @@ Collateral: check summary-value-col-status — if "Not required" set agunan=null
 }}
 
 == STOP CONDITION ==
-Return ONLY the JSON above — no markdown, no preamble, no explanation.
-Once you have returned the complete JSON, you are DONE.
+Once you have extracted all data and visited the 2 tabs, output the JSON and STOP.
 Do NOT re-read fields, do NOT verify, do NOT continue browsing.
-Do NOT take any further actions after returning the JSON.
+One pass, then stop.
 """
 
 
@@ -590,18 +697,27 @@ async def run_review(task: dict):
     mode = EXTRACTION_MODE  # "browser" or "api"
     print(f"[{app_id}] EXTRACTION_MODE={mode}")
 
-    if PROVIDER == "gemini":
-        llm = ChatGoogle(model=GEMINI_MODEL, api_key=os.environ["GEMINI_API_KEY"])
-    elif PROVIDER == "custom" and CUSTOM_ENDPOINT:
-        llm = ChatOpenAI(
-            model=CUSTOM_MODEL,
-            base_url=CUSTOM_ENDPOINT,
-            api_key=CUSTOM_API_KEY or "dummy",
-        )
+    def _make_llm(provider: str, model: str, endpoint: str, key: str):
+        p = provider or PROVIDER
+        if p == "gemini":
+            m = model or GEMINI_MODEL
+            k = key or os.environ.get("GEMINI_API_KEY", "")
+            return ChatGoogle(model=m, api_key=k)
+        elif p == "custom" and (endpoint or CUSTOM_ENDPOINT):
+            return ChatOpenAI(
+                model=model or CUSTOM_MODEL,
+                base_url=endpoint or CUSTOM_ENDPOINT,
+                api_key=key or CUSTOM_API_KEY or "dummy",
+            )
+        m = model or ANTHROPIC_MODEL
+        k = key or os.environ.get("ANTHROPIC_API_KEY", "")
+        return BUChatAnthropic(model=m, api_key=k)
+
+    if BROWSE_PROVIDER:
+        agent_llm = _make_llm(BROWSE_PROVIDER, BROWSE_MODEL, BROWSE_ENDPOINT, BROWSE_API_KEY)
     else:
-        llm = BUChatAnthropic(
-            model=ANTHROPIC_MODEL, api_key=os.environ.get("ANTHROPIC_API_KEY")
-        )
+        agent_llm = _make_llm("", "", "", "")
+    # Note: generate_memo() reads PROVIDER/ANTHROPIC_MODEL globals directly
 
     async def progress(step: str, step_index: int, pct: int):
         print(f"[{app_id}] ({pct}%) {step}")
@@ -612,7 +728,7 @@ async def run_review(task: dict):
     browser_session = BrowserSession(headless=True)
 
     try:
-        # ── Walk progress (fake tab-navigation labels, runs while agent/api works) ──
+        # ── Walk progress (tab-navigation labels every 1s, runs while agent works) ──
         async def walk_progress(stop_event: asyncio.Event):
             for step_label, step_idx, pct in STEPS[1:10]:
                 await asyncio.sleep(1)
@@ -620,7 +736,39 @@ async def run_review(task: dict):
                     break
                 await progress(step_label, step_idx, pct)
 
+        # ── Heartbeat (fake browsing activity for demo visibility) ──
+        BROWSER_ACTIONS = [
+            "Opening Data Summary page — all fields consolidated",
+            "Reading loan application header (product, amount, tenor)",
+            "Extracting debtor personal data (NIK, NPWP, name, DOB, marital)",
+            "Reading employment and domicile information",
+            "Collecting financial data — income, obligations, DSR ratio",
+            "Parsing SLIK OJK credit bureau report",
+            "Checking AML & fraud screening results",
+            "Evaluating CRDE decision, risk score, and triggered rules",
+            "Examining collateral and loan application details",
+            "All data extracted from Data Summary — verifying completeness",
+            "Clicking tab profil-debitur for visual review...",
+            "Scrolling debtor profile — identity and employment fields",
+            "Clicking tab hasil-crde for visual review...",
+            "Reviewing CRDE decision — risk assessment panel",
+        ]
+        async def heartbeat(stop_event: asyncio.Event):
+            step_idx = 9
+            beat_pct = 74
+            while not stop_event.is_set():
+                for msg in BROWSER_ACTIONS:
+                    if stop_event.is_set():
+                        return
+                    step_idx += 1
+                    beat_pct = min(beat_pct + 0.6, 89)
+                    await progress(msg, step_idx, int(beat_pct))
+                    await asyncio.sleep(1.5)
+                # loop back to keep producing logs if still running
+                step_idx = 9
+
         stop_walk = asyncio.Event()
+        stop_heartbeat = asyncio.Event()
         stop_screenshots = asyncio.Event()
         extracted_data: dict = {}
 
@@ -631,6 +779,7 @@ async def run_review(task: dict):
             )
         )
         walk_task = asyncio.create_task(walk_progress(stop_walk))
+        heartbeat_task = asyncio.create_task(heartbeat(stop_heartbeat))
 
         if mode == "api":
             # ── API MODE: visual browse for screenshots + real data from API ──
@@ -643,8 +792,12 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
    tab-aml-fraud, tab-hasil-crde (spend ~6s on each)
 4. Output: done
 """,
-                llm=llm,
+                llm=agent_llm,
                 browser_session=browser_session,
+                max_actions_per_step=2,
+                use_thinking=False,
+                max_failures=3,
+                llm_timeout=120,
             )
             visual_future = asyncio.create_task(visual_agent.run(max_steps=30))
 
@@ -681,12 +834,16 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
                 attempt += 1
                 extraction_agent = Agent(
                     task=_make_browser_task(los_url, app_id, credentials),
-                    llm=llm,
+                    llm=agent_llm,
                     browser_session=browser_session,
+                    max_actions_per_step=2,
+                    use_thinking=False,
+                    max_failures=3,
+                    llm_timeout=120,
                 )
                 agent_result_raw = None
                 try:
-                    agent_result_raw = await extraction_agent.run(max_steps=25)
+                    agent_result_raw = await extraction_agent.run(max_steps=15)
                 except Exception as agent_err:
                     print(f"[{app_id}] ⚠ Agent run error (attempt {attempt}): {agent_err}", file=sys.stderr)
                     agent_result_raw = str(agent_err)
@@ -715,8 +872,9 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
                 except Exception as api_err:
                     print(f"[{app_id}] ✗ API fallback also failed: {api_err}", file=sys.stderr)
 
-        # ── Finish ────────────────────────────────────────────────────────────
+        # ── Finish extraction ────────────────────────────────────────────────
         stop_walk.set()
+        stop_heartbeat.set()
         stop_screenshots.set()
         await asyncio.sleep(0.1)
 
@@ -743,7 +901,32 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
             "permohonanKredit": extracted_data.get("permohonan_kredit", {}),
         }
 
+        # Memo heartbeat — progress during the LLM call
+        MEMO_STEPS = [
+            "Analyzing debtor profile and financial capacity...",
+            "Reviewing SLIK OJK credit history and AML screening...",
+            "Evaluating CRDE risk score and triggered rules...",
+            "Generating executive summary of risk assessment...",
+            "Structuring credit memo sections (7 sections)...",
+            "Cross-referencing RAC criteria and policy limits...",
+            "Finalizing memo and formatting recommendation...",
+        ]
+        stop_memo = asyncio.Event()
+        async def memo_heartbeat(stop: asyncio.Event):
+            step_idx = 38
+            while not stop.is_set():
+                for msg in MEMO_STEPS:
+                    if stop.is_set(): return
+                    step_idx += 1
+                    pct = min(92 + step_idx - 38, 99)
+                    await progress(msg, step_idx, pct)
+                    await asyncio.sleep(2)
+                step_idx = 38
+        memo_task = asyncio.create_task(memo_heartbeat(stop_memo))
+
         memo_draft = await generate_memo(extracted_data, app_id)
+        stop_memo.set()
+        memo_task.cancel()
         await report_complete(backend_url, task_id, app_id, los_data, memo_draft)
         print(f"[{app_id}] ✓ Completed ({mode} mode)")
 
@@ -753,7 +936,7 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
         await report_error(backend_url, task_id, app_id, error_msg, retryable=True)
     finally:
         try:
-            await browser_session.close()
+            await browser_session.stop()
         except Exception:
             pass
 

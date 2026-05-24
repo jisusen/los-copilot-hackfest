@@ -16,7 +16,15 @@ export function AgentGrid({
   // Only render non-idle sessions (running/error — ready/decided shown in DashboardPage)
   const entries = Array.from(sessions.entries()).filter(([, s]) => s.status === "running" || s.status === "error");
 
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "32px 16px", color: "var(--ink-3)", fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.6 }}>
+        <div style={{ fontSize: 28, marginBottom: 8, opacity: 0.3 }}>◌</div>
+        No agents running.<br />
+        Select loans from the queue and click <strong>Run review</strong> to start.
+      </div>
+    );
+  }
 
   return (
     <div

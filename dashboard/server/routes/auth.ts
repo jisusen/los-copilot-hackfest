@@ -32,8 +32,17 @@ export function getSession(req: Request): { username: string } | null {
 export async function handleAuth(req: Request, pathname: string): Promise<Response | null> {
   // POST /api/auth/login
   if (pathname === '/api/auth/login' && req.method === 'POST') {
-    const body = await req.json() as { username?: string; password?: string };
+    let body: { username?: string; password?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+    }
     const { username, password } = body;
+
+    if (!username || !password) {
+      return Response.json({ error: 'Username and password required' }, { status: 400 });
+    }
 
     const settings = getSettings();
     const validUser = settings.losUsername ?? 'analyst01';

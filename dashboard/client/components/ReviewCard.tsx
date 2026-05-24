@@ -1,7 +1,29 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type { AgentState, LoanSummary } from "../lib/types";
 import { formatElapsed, formatRpShort } from "../lib/format";
+
+const LOG_HEIGHT = 12;
+
+function LogPanel({ logs }: { logs: string[] }) {
+  const endRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { endRef.current?.scrollIntoView(); }, [logs.length]);
+
+  return (
+    <div style={{ marginTop: 8, background: "#0d1117", borderRadius: 6, padding: "6px 8px", maxHeight: LOG_HEIGHT * 10, overflowY: "auto", fontFamily: "var(--font-mono)", fontSize: 10, lineHeight: `${LOG_HEIGHT}px` }}>
+      {logs.length === 0 && <span style={{ color: "#666" }}>Waiting…</span>}
+      {logs.map((log, i) => {
+        const isLast = i === logs.length - 1;
+        return (
+          <div key={i} style={{ color: isLast ? "#e8edf5" : "#8892a4", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {isLast ? <><span>▶ {log}</span><span className="blink">▌</span></> : <span>✓ {log}</span>}
+          </div>
+        );
+      })}
+      <div ref={endRef} />
+    </div>
+  );
+}
 
 export function ReviewCard({ appId, loan, state, screenshot }: {
   appId: string; loan?: LoanSummary; state: AgentState; screenshot?: string;
@@ -77,10 +99,7 @@ export function ReviewCard({ appId, loan, state, screenshot }: {
               {formatElapsed(elapsed)}
             </span>
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-3)", marginTop: 6 }}>
-            ▶ {state.logs[state.logs.length - 1] ?? "Starting…"}
-            <span className="blink" style={{ marginLeft: 4 }}>▌</span>
-          </div>
+          <LogPanel logs={state.logs} />
         </>
       )}
 

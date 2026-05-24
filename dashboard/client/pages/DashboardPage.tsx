@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ApplicationList } from "../components/ApplicationList";
+import { UserMenu } from "../components/UserMenu";
 import { useSessions } from "../App";
 import { apiFetch } from "../lib/api";
+import { Skeleton } from "../components/Skeleton";
 import {
   formatElapsed,
   formatRpShort,
@@ -140,17 +142,7 @@ function Topbar({
         <span className="dot" />
         Live view {liveOn ? "ON" : "OFF"}
       </button>
-      <div
-        className="user-pill"
-        style={{ cursor: "pointer" }}
-        onClick={async () => {
-          await fetch("/api/auth/logout", { method: "POST" });
-          window.location.href = "/login";
-        }}
-      >
-        <span>analyst01</span>
-        <span className="avatar">A</span>
-      </div>
+      <UserMenu username="analyst01" />
     </div>
   );
 }
@@ -762,7 +754,7 @@ export function DashboardPage() {
           <div className="stats" style={{ minWidth: 680 }}>
             <div className="stat">
               <span className="lbl">In queue</span>
-              <span className="val">{loading ? "—" : loans.length}</span>
+              <span className="val">{loading ? <Skeleton width={24} height={14} /> : loans.length}</span>
             </div>
             <div className="stat">
               <span className="lbl">Running</span>
@@ -870,15 +862,11 @@ export function DashboardPage() {
             </div>
 
             {loading ? (
-              <div
-                style={{
-                  padding: 16,
-                  color: "var(--ink-3)",
-                  fontSize: 12,
-                  fontFamily: "var(--font-mono)",
-                }}
-              >
-                Loading…
+              <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+                <Skeleton height={32} />
+                <Skeleton height={32} />
+                <Skeleton height={32} />
+                <Skeleton height={32} />
               </div>
             ) : (
               <ApplicationList
