@@ -14,7 +14,7 @@ import { DataSummaryTab } from '../components/tabs/DataSummaryTab';
 import { PrintMemoView } from '../components/PrintMemoView';
 import { NotesTab } from '../components/tabs/NotesTab';
 import { apiFetch, formatRp } from '../lib/api';
-import { getUser } from '../lib/auth';
+
 
 type LoanDetail = {
   application: {
@@ -35,12 +35,6 @@ const STATUS_STYLES: Record<string, { bg: string; color: string; border: string 
   'Rejected':     { bg: '#fbe6e6', color: '#a83232', border: '#a83232' },
   'Under Review': { bg: '#fff1d8', color: '#b46a00', border: '#b46a00' },
   'Cancelled':    { bg: '#f6f6f4', color: '#8a8a8a', border: '#d8d8d8' },
-};
-
-const CRDE_STYLES: Record<string, { bg: string; color: string; border: string }> = {
-  'APPROVED':         { bg: '#e3efe6', color: '#1f6b3a', border: '#1f6b3a' },
-  'COMMITTEE REVIEW': { bg: '#fff1d8', color: '#b46a00', border: '#b46a00' },
-  'REJECTED':         { bg: '#fbe6e6', color: '#a83232', border: '#a83232' },
 };
 
 const STAGE_ACTIONS = [
@@ -77,12 +71,11 @@ export function LoanDetailPage() {
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
   const [confirmAction, setConfirmAction] = useState<{ label: string; next: string; bg: string } | null>(null);
-  const [assignedAnalyst, setAssignedAnalyst] = useState<string | null>(null);
   const [showPrint, setShowPrint] = useState(false);
   const [hasAiMemo, setHasAiMemo] = useState(false);
+  const [toast, setToast] = useState<{ text: string; bg: string } | null>(null);
 
   const activeTab = searchParams.get('tab') ?? 'profil-debitur';
-  const user = getUser();
 
   useEffect(() => {
     if (id) {
@@ -96,23 +89,7 @@ export function LoanDetailPage() {
     apiFetch<{ loan: LoanDetail }>(`/api/loans/${id}`)
       .then(data => {
         setLoan(data.loan);
-        setAssignedAnalyst(data.loan.application.analyst_id ?? null);
         setLoading(false);
-        // Auto-assign if not already assigned
-        if (!data.loan.application.analyst_id && user?.username) {
-          apiFetch(`/api/loans/${id}/assign`, {
-            method: 'POST',
-            body: JSON.stringify({ analystId: user.username }),
-          }).then((res: any) => {
-            if (res?.assigned?.analyst_id) {
-              setAssignedAnalyst(res.assigned.analyst_id);
-              setLoan(prev => prev ? {
-                ...prev,
-                application: { ...prev.application, analyst_id: res.assigned.analyst_id }
-              } : prev);
-            }
-          }).catch(() => {});
-        }
       })
       .catch(() => { setError('Application not found.'); setLoading(false); });
   }, [id]);
@@ -127,6 +104,9 @@ export function LoanDetailPage() {
       });
       const data = await apiFetch<{ loan: LoanDetail }>(`/api/loans/${id}`);
       setLoan(data.loan);
+      const s = STAGE_ACTIONS.find(a => a.next === next)!;
+      setToast({ text: `Application ${next}`, bg: s.bg });
+      setTimeout(() => setToast(null), 3500);
     } catch {
       // silently ignore — status display will be stale until next load
     } finally {
@@ -157,7 +137,6 @@ export function LoanDetailPage() {
 
   const { application, debtor, financials, slik, amlFraud, crde, collateral } = loan;
   const statusStyle = STATUS_STYLES[application.status] ?? { bg: '#f6f6f4', color: '#8a8a8a', border: '#d8d8d8' };
-  const crdeStyle = CRDE_STYLES[crde?.decision] ?? { bg: '#f6f6f4', color: '#8a8a8a', border: '#d8d8d8' };
   const isUnderwriting = application.status === 'Under Review';
 
   // AML warning check
@@ -185,7 +164,7 @@ export function LoanDetailPage() {
             fontFamily: 'Inter, system-ui, sans-serif',
           }}
         >
-          ‹ Loan Queue
+          ‹ Task List
         </button>
         <span style={{ color: '#b8b8b8', fontSize: 12 }}>·</span>
         <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 12, color: '#1f3b5c' }}>
@@ -200,13 +179,8 @@ export function LoanDetailPage() {
           {application.product_type} · {formatRp(application.amount_requested)}
         </span>
 
-        {/* Right side: CRDE pill + status pill */}
+        {/* Right side: status pill */}
         <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span
-            data-testid="loan-detail-crde-badge"
-          >
-            <Pill text={`CRDE: ${crde?.decision ?? '—'}`} style={crdeStyle} />
-          </span>
           <span
             data-testid="loan-detail-status"
           >
@@ -326,37 +300,14 @@ export function LoanDetailPage() {
           alignItems: 'center',
           gap: 10,
         }}>
-          <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, fontWeight: 600, background: '#1f3b5c', color: '#fff', padding: '1px 6px' }}>AI</span>
-          <span>AI analysis memo is available for this application.</span>
+          <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontSize: 10, fontWeight: 600, background: '#9b1c2c', color: '#fff', padding: '1px 6px' }}>Copilot</span>
+          <span>Copilot Analyst memo available for this application.</span>
           <button
             onClick={() => navigate(`/loans/${application.id}?tab=notes`)}
             style={{ marginLeft: 'auto', fontSize: 11, color: '#1f3b5c', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontFamily: 'Inter, sans-serif' }}
           >
             View in Notes & Memo →
           </button>
-        </div>
-      )}
-
-      {/* Assignment info */}
-      {assignedAnalyst && (
-        <div style={{
-          background: '#e6ecf2',
-          border: '1px solid #1f3b5c',
-          padding: '8px 12px',
-          marginBottom: 16,
-          fontSize: 12,
-          color: '#1f3b5c',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-        }}>
-          <span>Under review by:</span>
-          <span style={{ fontFamily: '"IBM Plex Mono", monospace', fontWeight: 500 }}>{assignedAnalyst}</span>
-          {application.assigned_at && (
-            <span style={{ marginLeft: 'auto', color: '#4a4a4a', fontSize: 11 }}>
-              Assigned: {new Date(application.assigned_at).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}
-            </span>
-          )}
         </div>
       )}
 
@@ -369,13 +320,13 @@ export function LoanDetailPage() {
           borderTop: 'none',
         }}>
           {activeTab === 'data-summary'      && <DataSummaryTab application={application} debtor={debtor} financials={financials} slik={slik} aml={amlFraud} crde={crde} collateral={collateral} />}
+          {activeTab === 'permohonan-kredit' && <PermohonanKreditTab application={application} financials={financials} />}
           {activeTab === 'profil-debitur'    && debtor    && <ProfilDebiturTab debtor={debtor} />}
           {activeTab === 'data-keuangan'     && financials && <DataKeuanganTab financials={financials} />}
           {activeTab === 'slik-ojk'          && slik      && <SlikOjkTab slik={slik} />}
           {activeTab === 'aml-fraud'         && amlFraud  && <AmlFraudTab aml={amlFraud} />}
           {activeTab === 'hasil-crde'        && crde      && <CrdeResultTab crde={crde} />}
           {activeTab === 'agunan'            && collateral && <AgunanTab collateral={collateral} />}
-          {activeTab === 'permohonan-kredit' && <PermohonanKreditTab application={application} financials={financials} />}
           {activeTab === 'audit-log'         && <AuditLogTab loanId={application.id} />}
           {activeTab === 'notes'             && <NotesTab loanId={application.id} />}
         </div>
@@ -450,6 +401,29 @@ export function LoanDetailPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Success toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed',
+          top: 20,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 200,
+          background: toast.bg,
+          color: '#fff',
+          padding: '12px 28px',
+          fontSize: 14,
+          fontWeight: 500,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+        }}>
+          <span style={{ fontSize: 16 }}>{toast.text.includes('Approved') ? '✓' : toast.text.includes('Rejected') ? '✗' : '–'}</span>
+          {toast.text}
         </div>
       )}
     </Layout>

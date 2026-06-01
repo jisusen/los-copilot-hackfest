@@ -42,31 +42,6 @@ function statusPill(status: string) {
   );
 }
 
-function crdePill(decision: string) {
-  const map: Record<string, { bg: string; color: string; border: string }> = {
-    'APPROVED':         { bg: '#e3efe6', color: '#1f6b3a', border: '#1f6b3a' },
-    'COMMITTEE REVIEW': { bg: '#fff1d8', color: '#b46a00', border: '#b46a00' },
-    'REJECTED':         { bg: '#fbe6e6', color: '#a83232', border: '#a83232' },
-  };
-  const s = map[decision] ?? { bg: '#f6f6f4', color: '#4a4a4a', border: '#d8d8d8' };
-  return (
-    <span style={{
-      display: 'inline-flex',
-      alignItems: 'center',
-      height: 20,
-      padding: '0 8px',
-      background: s.bg,
-      border: `1px solid ${s.border}`,
-      fontSize: 11,
-      fontWeight: 500,
-      color: s.color,
-      whiteSpace: 'nowrap',
-    }}>
-      {decision || '—'}
-    </span>
-  );
-}
-
 function productPill(product: string) {
   return (
     <span style={{
@@ -128,7 +103,7 @@ export function LoanQueuePage() {
       {/* Page head */}
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '-0.01em', color: '#1a1a1a' }}>
-          Consumer Credit Application Queue
+          Consumer Credit Task List
         </div>
         <div style={{ fontSize: 12, color: '#8a8a8a', marginTop: 4 }}>
           {total} applications · last refresh {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
@@ -214,7 +189,7 @@ export function LoanQueuePage() {
         >
           <thead>
             <tr style={{ background: '#f6f6f4' }}>
-              {['App No.', 'Debtor Name', 'Product', 'Amount', 'Tenor', 'Date', 'Status', 'Analyst', 'CRDE', 'Action'].map(h => (
+              {['App No.', 'Debtor Name', 'Product', 'Amount', 'Tenor', 'Date', 'Status', 'Analyst', 'Action'].map(h => (
                 <th key={h} style={{
                   fontSize: 10,
                   textTransform: 'uppercase',
@@ -234,7 +209,7 @@ export function LoanQueuePage() {
           <tbody>
             {loans.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ textAlign: 'center', padding: 40, fontSize: 13, color: '#8a8a8a' }}>
+                <td colSpan={9} style={{ textAlign: 'center', padding: 40, fontSize: 13, color: '#8a8a8a' }}>
                   No applications found
                 </td>
               </tr>
@@ -276,9 +251,6 @@ export function LoanQueuePage() {
                     ? <span style={{ fontFamily: '"IBM Plex Mono", monospace', color: '#1f3b5c', fontSize: 11 }}>{loan.analyst_id}</span>
                     : <span style={{ color: '#b8b8b8' }}>—</span>
                   }
-                </td>
-                <td style={{ padding: '8px 10px', fontSize: 12 }}>
-                  {crdePill(loan.crde_decision)}
                 </td>
                 <td style={{ padding: '8px 10px', fontSize: 12 }}>
                   <Link

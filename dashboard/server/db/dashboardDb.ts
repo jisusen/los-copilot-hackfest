@@ -22,11 +22,16 @@ function initSchema(db: Database) {
       author TEXT NOT NULL,
       author_type TEXT NOT NULL DEFAULT 'manual',
       content TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT 'General',
       memo_json TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_loan_notes_app_id ON loan_notes(app_id);
   `);
+
+  // Migration: add category column if table exists from LOS schema
+  try { db.exec(`ALTER TABLE loan_notes ADD COLUMN category TEXT DEFAULT 'General'`); } catch {}
+  try { db.exec(`ALTER TABLE loan_notes ADD COLUMN memo_json TEXT`); } catch {}
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS decisions (
@@ -51,6 +56,15 @@ function initSchema(db: Database) {
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
     CREATE INDEX IF NOT EXISTS idx_audit_app_id ON audit_logs(app_id);
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS agent_sessions (
+      app_id TEXT PRIMARY KEY,
+      los_data TEXT NOT NULL,
+      memo_draft TEXT NOT NULL,
+      completed_at TEXT NOT NULL
+    );
   `);
 }
 
@@ -94,8 +108,8 @@ export function saveLoanNote(
     db.query('DELETE FROM loan_notes WHERE app_id = ? AND author_type = ?').run(appId, 'agent');
   }
   db.query(
-    'INSERT INTO loan_notes (app_id, author, author_type, content, memo_json, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(appId, author, authorType, content, memoJson ?? null, new Date().toISOString());
+    'INSERT INTO loan_notes (app_id, author, author_type, content, category, memo_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(appId, author, authorType, content, 'Copilot Analyst', memoJson ?? null, new Date().toISOString());
 }
 
 export function getLoanNotes(appId: string): Array<{ id: number; app_id: string; author: string; author_type: string; content: string; memo_json: string | null; created_at: string }> {
@@ -113,4 +127,34 @@ export function addAuditLog(appId: string, actor: string, action: string, detail
 export function getAuditLogs(appId: string): Array<{ id: number; app_id: string; actor: string; action: string; detail: string | null; created_at: string }> {
   const db = getDashboardDb();
   return db.query('SELECT * FROM audit_logs WHERE app_id = ? ORDER BY created_at ASC').all(appId) as any[];
+}
+
+export function saveAgentSession(appId: string, losData: unknown, memoDraft: unknown, completedAt: string): void {
+  const db = getDashboardDb();
+  db.query(`
+    INSERT OR REPLACE INTO agent_sessions (app_id, los_data, memo_draft, completed_at)
+    VALUES (?, ?, ?, ?)
+  `).run(appId, JSON.stringify(losData), JSON.stringify(memoDraft), completedAt);
+}
+
+export function getAgentSession(appId: string): { losData: unknown; memoDraft: unknown; completedAt: string } | null {
+  const db = getDashboardDb();
+  const row = db.query('SELECT * FROM agent_sessions WHERE app_id = ?').get(appId) as { los_data: string; memo_draft: string; completed_at: string } | null;
+  if (!row) return null;
+  return {
+    losData: JSON.parse(row.los_data),
+    memoDraft: JSON.parse(row.memo_draft),
+    completedAt: row.completed_at,
+  };
+}
+
+export function getAllAgentSessions(): Array<{ appId: string; losData: unknown; memoDraft: unknown; completedAt: string }> {
+  const db = getDashboardDb();
+  const rows = db.query('SELECT * FROM agent_sessions ORDER BY completed_at DESC').all() as Array<{ app_id: string; los_data: string; memo_draft: string; completed_at: string }>;
+  return rows.map(r => ({
+    appId: r.app_id,
+    losData: JSON.parse(r.los_data),
+    memoDraft: JSON.parse(r.memo_draft),
+    completedAt: r.completed_at,
+  }));
 }

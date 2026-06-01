@@ -6,12 +6,12 @@
   <title>Credit Analyst Copilot — BMS</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&display=swap" rel="stylesheet" />
   <style>
     /* ─── Design system — corporate banking, light theme ─── */
     :root {
       --font-serif: "Source Serif 4", "Source Serif Pro", Georgia, serif;
-      --font-sans:  "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --font-sans:  "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
       --font-mono:  "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
       /* Ink */
@@ -28,11 +28,11 @@
       --line:    #e5e3dc;
       --line-2:  #d2cfc5;
 
-      /* Accent — navy */
-      --accent:      #1a3d6e;
-      --accent-deep: #15325a;
-      --accent-soft: #e6edf6;
-      --accent-line: #b9c8de;
+      /* Accent — corporate red */
+      --accent:      #9b1c2c;
+      --accent-deep: #7a1622;
+      --accent-soft: #fbe5e7;
+      --accent-line: #efb2b8;
 
       /* Status */
       --green:      #0d6e3f;
@@ -240,6 +240,12 @@
     .slide-up { animation: slide-up 0.2s ease-out; }
     @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
     .fade-in { animation: fade-in 0.15s ease-out; }
+
+    /* ─── Live screenshot pulsing border ─── */
+    @keyframes pulse-border-running { 0%, 100% { box-shadow: 0 0 0 2px #e8a020; } 50% { box-shadow: 0 0 0 4px rgba(232, 160, 32, 0.4); } }
+    @keyframes pulse-border-ready { 0%, 100% { box-shadow: 0 0 0 2px #1a7f4b; } 50% { box-shadow: 0 0 0 4px rgba(26, 127, 75, 0.4); } }
+    .live-shot-running { animation: pulse-border-running 1.4s ease-in-out infinite; }
+    .live-shot-ready { animation: pulse-border-ready 1.4s ease-in-out infinite; }
   </style>
 </head>
 <body>

@@ -44,7 +44,7 @@ export type WsMessage =
   | { type: 'agent:complete'; appId: string; result: AgentResult; elapsedMs: number }
   | { type: 'agent:error'; appId: string; error: string; retryable: boolean }
   | { type: 'agent:decided'; appId: string; decision: string; analystId: string; decidedAt: string }
-  | { type: 'agent:screenshot'; appId: string; screenshot: string }
+  | { type: 'agent:screenshot'; appId: string; tabId?: string; screenshot: string }
   | { type: 'pong' };
 
 export type Decision = 'approve' | 'reject' | 'cancel';

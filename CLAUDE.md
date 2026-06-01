@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **greenfield implementation** of a demo Loan Origination System (LOS) for Indonesian personal loans. The full spec lives in `PRD-demo-los.md`. The app is the "victim" system that Browser Use AI agents navigate autonomously during a hackfest demo — every UI element must have `data-testid` attributes for reliable agent extraction.
 
-**Bank identity:** Bank Maju Bersama (BMB) — fictional, internal banking tool aesthetic.
+**Bank identity:** Bank Maju Bersama Gibran (BMB) — fictional, internal banking tool aesthetic.
 
 ## Tech Stack
 

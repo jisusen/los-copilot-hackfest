@@ -74,10 +74,11 @@ export async function handleInternal(req: Request, pathname: string): Promise<Re
   }
 
   if (pathname === '/api/internal/screenshot') {
-    const body = await req.json() as { taskId: string; appId: string; screenshot: string };
+    const body = await req.json() as { taskId: string; appId: string; tabId?: string; screenshot: string };
     wsManager.broadcast({
       type: 'agent:screenshot',
       appId: body.appId,
+      tabId: body.tabId ?? '',
       screenshot: body.screenshot,
     });
     return Response.json({ ok: true });

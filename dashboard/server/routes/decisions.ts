@@ -1,55 +1,44 @@
 import { randomUUID } from 'crypto';
 import { sessionStore } from '../services/sessionStore';
 import { wsManager } from '../services/wsManager';
-import { getDecision, getAllDecisions, saveDecision } from '../db/dashboardDb';
-
-const DECISION_TO_STATUS: Record<string, string> = {
-  approve: 'Approved',
-  reject: 'Rejected',
-  cancel: 'Cancelled',
-};
+import { saveLoanNote } from '../db/dashboardDb';
 
 export async function handleDecisions(req: Request, pathname: string): Promise<Response | null> {
   const match = pathname.match(/^\/api\/decisions\/(APP-\d{3})$/);
   if (match && req.method === 'POST') {
     const appId = match[1];
-    const body = await req.json() as { decision?: string; note?: string; analystId?: string };
-    const { decision, note = '', analystId = 'analyst01' } = body;
+    const body = await req.json() as { memo?: Record<string, string>; note?: string; analystId?: string };
+    const { memo, note = '', analystId = 'analyst01' } = body;
 
-    if (!decision || !['approve', 'reject', 'cancel'].includes(decision)) {
-      return Response.json({ error: 'Invalid decision' }, { status: 400 });
+    if (!memo) {
+      return Response.json({ error: 'Memo content required' }, { status: 400 });
     }
 
-    const decidedAt = new Date().toISOString();
-    const auditId = randomUUID();
-    saveDecision(auditId, appId, decision, note, analystId, decidedAt);
+    // Only the recommendation section + optional additional note in content
+    const contentLines = [
+      memo.section8_rekomendasi ?? '',
+      ...(note ? [`**Additional Note:** ${note}`] : []),
+    ].filter(Boolean);
+    const content = contentLines.join('\n\n');
 
-    // Sync status back to LOS DB
-    try {
-      const newStatus = DECISION_TO_STATUS[decision];
-      const { Database } = await import('bun:sqlite');
-      const { join } = await import('path');
-      const dbPath = process.env.DB_PATH ?? join(import.meta.dir, '../../data/los.db');
-      const writableDb = new Database(dbPath);
-      writableDb.query('UPDATE loan_applications SET status = ?, decided_at = datetime("now") WHERE id = ?').run(newStatus, appId);
-      writableDb.close();
-    } catch (e) {
-      console.error('[decisions] Failed to sync status to LOS DB:', e);
-    }
+    // Save memo as agent note in LOS loan_notes table (shared SQLite DB)
+    const memoJson = JSON.stringify(memo);
+    saveLoanNote(appId, 'Copilot Analyst', 'agent', content, memoJson);
 
     wsManager.broadcast({
       type: 'agent:decided',
       appId,
-      decision,
+      decision: 'memo_submitted',
       analystId,
-      decidedAt,
+      decidedAt: new Date().toISOString(),
     });
 
-    return Response.json({ ok: true, auditId });
+    return Response.json({ ok: true });
   }
 
   // GET /api/decisions — list all decisions
   if (pathname === '/api/decisions' && req.method === 'GET') {
+    const { getAllDecisions } = await import('../db/dashboardDb');
     const decisions = getAllDecisions();
     return Response.json({ decisions });
   }
@@ -57,6 +46,7 @@ export async function handleDecisions(req: Request, pathname: string): Promise<R
   // GET /api/decisions/:appId — get single decision
   const singleMatch = pathname.match(/^\/api\/decisions\/(APP-\d{3})$/);
   if (singleMatch && req.method === 'GET') {
+    const { getDecision } = await import('../db/dashboardDb');
     const appId = singleMatch[1];
     const decision = getDecision(appId);
     if (!decision) return Response.json({ error: 'Not found' }, { status: 404 });

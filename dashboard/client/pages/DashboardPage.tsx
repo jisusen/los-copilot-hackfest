@@ -40,7 +40,7 @@ function NavRail({ active = "dash" }: { active?: string }) {
       d: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z",
       path: "/",
     },
-    { k: "queue", label: "Queue", d: "M3 6h18M3 12h18M3 18h18", path: null },
+    { k: "queue", label: "Task List", d: "M3 6h18M3 12h18M3 18h18", path: null },
     {
       k: "agents",
       label: "Agents",
@@ -108,7 +108,7 @@ function Topbar({
   return (
     <div className="top">
       <div className="brand">
-        Bank Maju Bersama
+        Bank Maju Bersama Gibran
         <span className="sub">Credit Analyst Copilot</span>
       </div>
       <div className="crumb">
@@ -126,13 +126,13 @@ function Topbar({
           className={agentMode === "real" ? "on real" : ""}
           onClick={() => onAgentMode("real")}
         >
-          Real
+          Browser Agent
         </button>
         <button
           className={agentMode === "sim" ? "on sim" : ""}
           onClick={() => onAgentMode("sim")}
         >
-          Sim
+          API Agent
         </button>
       </div>
       <button
@@ -147,8 +147,8 @@ function Topbar({
   );
 }
 
-// ─── Attention card (ready sessions) ──────────────────────────────────────
-function AttentionCard({
+// ─── Compact ready card (horizontal, same info as old card) ────────────────
+function CompactReadyCard({
   appId,
   loan,
   state,
@@ -159,223 +159,75 @@ function AttentionCard({
 }) {
   const navigate = useNavigate();
   const r = state.result;
-  const isReject =
-    r.crdeDecision === "DITOLAK" || r.crdeDecision === "REJECTED";
+  const isReject = r.crdeDecision === "DITOLAK" || r.crdeDecision === "REJECTED";
   const cls = crdeCls(r.crdeDecision);
   const recBg = isReject ? "var(--red-soft)" : "var(--amber-soft)";
   const recBorder = isReject ? "var(--red-line)" : "var(--amber-line)";
   const recColor = isReject ? "var(--red)" : "var(--amber)";
 
   const flags: string[] = [];
-  if (r.dtiActual > 0.4)
-    flags.push(
-      `DTI ${(r.dtiActual * 100).toFixed(1)}% exceeds RAC limit (40%)`,
-    );
-  if (r.slikKol > 1)
-    flags.push(`SLIK Kol.${r.slikKol} — substandard payment history`);
-  if (!r.amlClear) flags.push("AML flag detected");
-  if (r.rulesTriggered.length > 0) flags.push(...r.rulesTriggered.slice(0, 2));
+  if (r.dtiActual > 0.4) flags.push(`DBR ${(r.dtiActual * 100).toFixed(1)}% > 40%`);
+  if (r.slikKol > 1) flags.push(`SLIK Kol.${r.slikKol}`);
+  if (!r.amlClear) flags.push("AML flag");
+  if (r.rulesTriggered.length > 0) flags.push(r.rulesTriggered[0]);
 
   return (
     <div
-      data-testid={`agent-card-${appId}`}
       className={`card hot${isReject ? " red" : ""}`}
-      style={{ cursor: "pointer" }}
+      style={{ minWidth: 320, width: 320, cursor: "pointer", flexShrink: 0, padding: 14 }}
       onClick={() => navigate(`/review/${appId}`)}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "baseline",
-          gap: 8,
-          marginBottom: 8,
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            color: "var(--ink-3)",
-          }}
-        >
-          {appId}
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            color: "var(--ink-4)",
-          }}
-        >
-          ·
-        </span>
-        <span
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            color: "var(--ink-4)",
-          }}
-        >
-          agent done · {formatElapsed(state.elapsedMs)}
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-3)" }}>{appId}</span>
+        <span style={{ color: "var(--ink-4)", fontSize: 9 }}>·</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--ink-4)" }}>
+          {formatElapsed(state.elapsedMs)}
         </span>
         <div style={{ flex: 1 }} />
-        <span
-          className={`tag ${RISK_COLOR[r.riskScore] === "var(--red)" ? "red" : r.riskScore === "LOW" ? "green" : "amber"}`}
-        >
+        <span className={`tag ${RISK_COLOR[r.riskScore] === "var(--red)" ? "red" : r.riskScore === "LOW" ? "green" : "amber"}`} style={{ fontSize: 9, padding: "1px 6px" }}>
           {r.riskScore}
         </span>
       </div>
-      <h3
-        style={{
-          margin: "0 0 2px",
-          fontFamily: "var(--font-serif)",
-          fontSize: 22,
-          fontWeight: 600,
-          letterSpacing: "-0.015em",
-          color: "var(--ink)",
-        }}
-      >
+      {/* Name */}
+      <div style={{ fontWeight: 600, fontSize: 14, color: "var(--ink)", marginBottom: 1 }}>
         {loan?.debtor_name ?? appId}
-      </h3>
-      <div
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          color: "var(--ink-3)",
-          marginBottom: 14,
-          letterSpacing: ".02em",
-        }}
-      >
-        {loan?.product_type ?? ""}
-        {loan ? ` · ${formatRpShort(loan.amount_requested)}` : ""}
       </div>
-
-      {/* AI rec block */}
-      <div
-        style={{
-          padding: "12px 14px",
-          background: recBg,
-          border: `1px solid ${recBorder}`,
-          borderRadius: "var(--r)",
-          marginBottom: 12,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            marginBottom: flags.length > 0 ? 8 : 0,
-          }}
-        >
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 9,
-              textTransform: "uppercase",
-              letterSpacing: ".1em",
-              color: recColor,
-            }}
-          >
-            AI recommendation
-          </span>
-          <span className={`tag solid-${cls}`}>{r.crdeDecision}</span>
-          <div style={{ flex: 1 }} />
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: 11,
-              color: recColor,
-            }}
-          >
-            Score {r.numericScore}/1000
-          </span>
+      {/* Product + amount */}
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-3)", marginBottom: 8 }}>
+        {loan?.product_type ?? ""}{loan ? ` · ${formatRpShort(loan.amount_requested)}` : ""}
+      </div>
+      {/* CRDE recommendation line */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
+        <span className={`tag solid-${cls}`} style={{ fontSize: 9, padding: "1px 6px" }}>{r.crdeDecision}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: recColor, fontWeight: 500 }}>
+          Score {r.numericScore}/1000
+        </span>
+      </div>
+      {/* Flags */}
+      {flags.length > 0 && (
+        <div style={{ marginBottom: 6 }}>
+          {flags.slice(0, 2).map((f, i) => (
+            <div key={i} style={{ fontSize: 10, color: "var(--red)", lineHeight: 1.5 }}>
+              ⚑ {f}
+            </div>
+          ))}
         </div>
-        {flags.length > 0 && (
-          <ul
-            style={{
-              margin: 0,
-              paddingLeft: 18,
-              fontSize: 12,
-              lineHeight: 1.6,
-              color: "var(--ink-2)",
-            }}
-          >
-            {flags.slice(0, 3).map((f, i) => (
-              <li key={i}>{f}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-
+      )}
       {/* Metrics strip */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4,1fr)",
-          marginBottom: 14,
-          border: "1px solid var(--line)",
-          borderRadius: "var(--r)",
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", border: "1px solid var(--line)", borderRadius: "var(--r)" }}>
         {[
-          [
-            "DTI",
-            `${(r.dtiActual * 100).toFixed(1)}%`,
-            r.dtiActual > 0.4 ? "red" : "",
-          ],
+          ["DBR", `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
           ["SLIK", `Kol.${r.slikKol}`, r.slikKol > 1 ? "amber" : ""],
           ["AML", r.amlClear ? "Clear" : "Flag", !r.amlClear ? "red" : ""],
-          [
-            "Rules",
-            String(r.rulesTriggered.length),
-            r.rulesTriggered.length > 0 ? "amber" : "",
-          ],
+          ["Rules", String(r.rulesTriggered.length), r.rulesTriggered.length > 0 ? "amber" : ""],
         ].map(([k, v, color], i) => (
-          <div
-            key={k}
-            style={{
-              padding: "8px 12px",
-              borderRight: i < 3 ? "1px solid var(--line)" : 0,
-            }}
-          >
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 9,
-                color: "var(--ink-4)",
-                textTransform: "uppercase",
-                letterSpacing: ".08em",
-              }}
-            >
-              {k}
-            </div>
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 14,
-                fontWeight: 500,
-                color:
-                  color === "red"
-                    ? "var(--red)"
-                    : color === "amber"
-                      ? "var(--amber)"
-                      : "var(--ink)",
-              }}
-            >
-              {v}
-            </div>
+          <div key={k} style={{ padding: "5px 8px", borderRight: i < 3 ? "1px solid var(--line)" : 0 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--ink-4)", textTransform: "uppercase", letterSpacing: ".08em" }}>{k}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 500, color: color === "red" ? "var(--red)" : color === "amber" ? "var(--amber)" : "var(--ink)" }}>{v}</div>
           </div>
         ))}
       </div>
-
-      <button
-        className="btn primary"
-        style={{ width: "100%" }}
-        onClick={() => navigate(`/review/${appId}`)}
-      >
-        Open &amp; decide →
-      </button>
     </div>
   );
 }
@@ -555,7 +407,7 @@ function RunningCard({
   );
 }
 
-// ─── Decided row ───────────────────────────────────────────────────────────
+// ─── Memo submitted row ──────────────────────────────────────────────────────
 function DecidedRow({
   appId,
   loan,
@@ -566,19 +418,11 @@ function DecidedRow({
   state: AgentState & { status: "decided" };
 }) {
   const navigate = useNavigate();
-  const dec = state.decision;
-  const cls = dec === "approve" ? "green" : dec === "reject" ? "red" : "";
-  const label =
-    dec === "approve"
-      ? "APPROVED"
-      : dec === "reject"
-        ? "REJECTED"
-        : dec.toUpperCase();
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "auto 1fr auto auto auto",
+        gridTemplateColumns: "auto 1fr auto auto",
         gap: 14,
         alignItems: "center",
         padding: "10px 0",
@@ -612,20 +456,7 @@ function DecidedRow({
         {loan?.product_type ?? ""}
         {loan ? ` · ${formatRpShort(loan.amount_requested)}` : ""}
       </span>
-      <span className={`tag ${cls}`}>{label}</span>
-      <span
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          color: "var(--ink-4)",
-        }}
-      >
-        analyst01 ·{" "}
-        {new Date(state.decidedAt).toLocaleTimeString("id-ID", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}
-      </span>
+      <span className="tag" style={{ background: "var(--paper-2)", color: "var(--ink-3)" }}>Memo sent</span>
     </div>
   );
 }
@@ -721,7 +552,7 @@ export function DashboardPage() {
       {/* Topbar */}
       <div className="app-top">
         <Topbar
-          crumbs={["Pipeline", "Triage"]}
+          crumbs={["Task List"]}
           agentMode={agentMode}
           onAgentMode={setAgentMode}
           liveOn={liveOn}
@@ -729,228 +560,191 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Main content */}
-      <div className="app-main">
-        {/* Sim mode banner */}
-        {agentMode === "sim" && (
-          <div className="sim-banner">
-            <span>⚙</span>
-            <span>
-              <b>SIMULATION MODE</b> — agents replay seeded fixtures from
-              /data/los.db (no live LOS calls).
-            </span>
+      {/* Main content: Task List sidebar + activity feed */}
+      <div className="app-main" style={{ display: "flex", overflow: "hidden" }}>
+        {/* Left: Permanent Task List panel */}
+        <div
+          className="card"
+          style={{
+            width: 380,
+            flexShrink: 0,
+            padding: 0,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            borderRight: "1px solid var(--line)",
+            borderRadius: 0,
+          }}
+        >
+          <div className="section-head" style={{ padding: "18px 20px 12px" }}>
+            <div>
+              <h2 style={{ fontSize: 14 }}>Task List</h2>
+              <div className="sub">
+                {loading ? "…" : `${loans.length} pending`}
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Page header + stats */}
-        <div className="page-head">
-          <div>
-            <h1>Pipeline · Triage</h1>
-            <div className="sub">
-              {today} · {loans.length} active applications
+          {loading ? (
+            <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+              <Skeleton height={32} />
+              <Skeleton height={32} />
+              <Skeleton height={32} />
+              <Skeleton height={32} />
             </div>
-          </div>
-          <div style={{ flex: 1 }} />
-          <div className="stats" style={{ minWidth: 680 }}>
-            <div className="stat">
-              <span className="lbl">In queue</span>
-              <span className="val">{loading ? <Skeleton width={24} height={14} /> : loans.length}</span>
-            </div>
-            <div className="stat">
-              <span className="lbl">Running</span>
-              <span className="val accent">{runningEntries.length}</span>
-              <span className="delta">
-                {runningEntries.length} of 5 max parallel
+          ) : (
+            <ApplicationList
+              loans={loans}
+              selected={selected}
+              sessions={sessions}
+              onToggle={toggle}
+            />
+          )}
+
+          <div
+            style={{
+              padding: 14,
+              borderTop: "1px solid var(--line)",
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              flexShrink: 0,
+            }}
+          >
+            {selected.size >= 5 && (
+              <span
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 10,
+                  color: "var(--amber)",
+                  textTransform: "uppercase",
+                }}
+              >
+                Max 5
               </span>
-            </div>
-            <div className="stat">
-              <span className="lbl">Ready · need decision</span>
-              <span className={`val${readyEntries.length > 0 ? " red" : ""}`}>
-                {readyEntries.length}
-              </span>
-              {readyEntries.some(([, s]) => s.result.riskScore === "HIGH") && (
-                <span className="delta down">1 high-risk</span>
-              )}
-            </div>
-            <div className="stat">
-              <span className="lbl">Decided today</span>
-              <span className="val">{decidedEntries.length}</span>
-              {decidedEntries.length > 0 && (
-                <span className="delta up">↑ this session</span>
-              )}
-            </div>
-            <div className="stat">
-              <span className="lbl">Avg agent time</span>
-              <span className="val">3:42</span>
-              <span className="delta">vs 47 min manual</span>
-            </div>
+            )}
+            <span
+              data-testid="selected-count-label"
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 11,
+                color: "var(--ink-3)",
+              }}
+            >
+              {selected.size} selected
+            </span>
+            <div style={{ flex: 1 }} />
+            <button
+              data-testid="btn-run-review"
+              className="btn primary"
+              disabled={selected.size === 0 || runLoading}
+              onClick={runReview}
+              style={{ padding: "8px 14px" }}
+            >
+              {runLoading ? "⟳ Starting…" : "▶ Run review"}
+            </button>
           </div>
         </div>
 
-        {/* Needs attention — ready sessions */}
-        {readyEntries.length > 0 && (
-          <div style={{ padding: "0 24px" }}>
-            <div className="section-head">
-              <div>
-                <h2>Needs your attention</h2>
-                <div className="sub">
-                  {readyEntries.length} application
-                  {readyEntries.length !== 1 ? "s" : ""} ready · sorted by risk
-                </div>
-              </div>
-              <div className="spacer" />
-            </div>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3,1fr)",
-                gap: 14,
-                padding: "14px 0 0",
-              }}
-            >
-              {[...readyEntries]
-                .sort((a, b) => {
-                  const order: Record<string, number> = {
-                    HIGH: 0,
-                    MEDIUM: 1,
-                    LOW: 2,
-                  };
-                  return (
-                    (order[a[1].result.riskScore] ?? 3) -
-                    (order[b[1].result.riskScore] ?? 3)
-                  );
-                })
-                .map(([appId, state]) => (
-                  <AttentionCard
-                    key={appId}
-                    appId={appId}
-                    loan={loanMap.get(appId)}
-                    state={state}
-                  />
-                ))}
-            </div>
-          </div>
-        )}
-
-        {/* Bottom: Queue (left) + Agents working (right) */}
-        <div
-          style={{
-            padding: "24px",
-            display: "grid",
-            gridTemplateColumns: "380px 1fr",
-            gap: 14,
-          }}
-        >
-          {/* Queue panel */}
-          <div
-            className="card"
-            style={{
-              padding: 0,
-              overflow: "hidden",
-              display: "flex",
-              flexDirection: "column",
-              alignSelf: "flex-start",
-            }}
-          >
-            <div className="section-head" style={{ padding: "18px 20px 12px" }}>
-              <div>
-                <h2>Loan queue</h2>
-                <div className="sub">
-                  {loading ? "…" : `${loans.length} pending`}
-                </div>
-              </div>
-            </div>
-
-            {loading ? (
-              <div style={{ padding: "12px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
-                <Skeleton height={32} />
-                <Skeleton height={32} />
-                <Skeleton height={32} />
-                <Skeleton height={32} />
-              </div>
-            ) : (
-              <ApplicationList
-                loans={loans}
-                selected={selected}
-                sessions={sessions}
-                onToggle={toggle}
-              />
-            )}
-
-            <div
-              style={{
-                padding: 14,
-                borderTop: "1px solid var(--line)",
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-              }}
-            >
-              {selected.size >= 5 && (
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: 10,
-                    color: "var(--amber)",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Max 5
-                </span>
-              )}
-              <span
-                data-testid="selected-count-label"
-                style={{
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  color: "var(--ink-3)",
-                }}
-              >
-                {selected.size} selected
+        {/* Right: Activity feed */}
+        <div style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
+          {/* Agent mode banner */}
+          {agentMode === "sim" && (
+            <div className="sim-banner">
+              <span>⚙</span>
+              <span>
+                <b>API AGENT MODE</b> — agents use LOS REST API for data extraction (fast, no browser).
               </span>
-              <div style={{ flex: 1 }} />
-              <button
-                data-testid="btn-run-review"
-                className="btn primary"
-                disabled={selected.size === 0 || runLoading}
-                onClick={runReview}
-                style={{ padding: "8px 14px" }}
-              >
-                {runLoading ? "⟳ Starting…" : "▶ Run review"}
-              </button>
+            </div>
+          )}
+          {agentMode === "real" && (
+            <div className="sim-banner" style={{ background: "var(--accent-soft)", borderColor: "var(--accent-line)" }}>
+              <span>🌐</span>
+              <span>
+                <b>BROWSER AGENT MODE</b> — agents use browser automation (Playwright) to navigate LOS UI and extract data.
+              </span>
+            </div>
+          )}
+
+          {/* Stats */}
+          <div className="page-head" style={{ padding: "18px 24px 0" }}>
+            <div className="stats" style={{ width: "100%" }}>
+              <div className="stat">
+                <span className="lbl">In review</span>
+                <span className="val">{loading ? <Skeleton width={24} height={14} /> : loans.length}</span>
+              </div>
+              <div className="stat">
+                <span className="lbl">Running</span>
+                <span className="val accent">{runningEntries.length}</span>
+                <span className="delta">
+                  {runningEntries.length} of 5
+                </span>
+              </div>
+              <div className="stat">
+                <span className="lbl">Ready for review</span>
+                <span className={`val${readyEntries.length > 0 ? " red" : ""}`}>
+                  {readyEntries.length}
+                </span>
+                {readyEntries.some(([, s]) => s.result.riskScore === "HIGH") && (
+                  <span className="delta down">high-risk</span>
+                )}
+              </div>
+              <div className="stat">
+                <span className="lbl">Memo submitted</span>
+                <span className="val">{decidedEntries.length}</span>
+                {decidedEntries.length > 0 && (
+                  <span className="delta up">↑ today</span>
+                )}
+              </div>
+              <div className="stat">
+                <span className="lbl">Avg agent time</span>
+                <span className="val">3:42</span>
+                <span className="delta">vs 47 min manual</span>
+              </div>
             </div>
           </div>
 
-          {/* Agents working + Decided */}
-          <div>
+          {/* Ready for review — horizontal scroll */}
+          {readyEntries.length > 0 && (
+            <div style={{ padding: "4px 24px 0" }}>
+              <div className="section-head" style={{ padding: "8px 0" }}>
+                <div>
+                  <h2 style={{ fontSize: 13 }}>Ready for review</h2>
+                  <div className="sub" style={{ fontSize: 11 }}>
+                    {readyEntries.length} app{readyEntries.length !== 1 ? "s" : ""} ready
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
+                {[...readyEntries]
+                  .sort((a, b) => {
+                    const order: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+                    return (order[a[1].result.riskScore] ?? 3) - (order[b[1].result.riskScore] ?? 3);
+                  })
+                  .map(([appId, state]) => (
+                    <CompactReadyCard key={appId} appId={appId} loan={loanMap.get(appId)} state={state} />
+                  ))}
+              </div>
+            </div>
+          )}
+
+          {/* Activity sections */}
+          <div style={{ padding: "12px 24px 24px" }}>
             {runningEntries.length > 0 ? (
               <>
-                <div
-                  className="section-head"
-                  style={{ padding: "18px 0 12px" }}
-                >
+                <div className="section-head" style={{ padding: "12px 0" }}>
                   <div>
-                    <h2>Agents working</h2>
+                    <h2 style={{ fontSize: 14 }}>Agents working</h2>
                     <div className="sub">
                       {runningEntries.length} of 5 max parallel
                     </div>
                   </div>
                   <div className="spacer" />
-                  <button
-                    className="btn outline"
-                    style={{ padding: "5px 10px", fontSize: 12 }}
-                  >
+                  <button className="btn outline" style={{ padding: "5px 10px", fontSize: 12 }}>
                     Cinema mode
                   </button>
                 </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 14,
-                    paddingTop: 14,
-                  }}
-                >
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, paddingTop: 14 }}>
                   {runningEntries.map(([appId, state]) => (
                     <RunningCard
                       key={appId}
@@ -975,57 +769,35 @@ export function DashboardPage() {
                 }}
               >
                 <div style={{ fontSize: 40 }}>◫</div>
-                <div
-                  style={{
-                    fontSize: 15,
-                    fontWeight: 500,
-                    color: "var(--ink-3)",
-                  }}
-                >
-                  Select applications to begin
+                <div style={{ fontSize: 15, fontWeight: 500, color: "var(--ink-3)" }}>
+                  No agents running
                 </div>
-                <div
-                  style={{
-                    fontSize: 12,
-                    color: "var(--ink-4)",
-                    fontFamily: "var(--font-mono)",
-                  }}
-                >
-                  Check loans in the queue, then click Run review
+                <div style={{ fontSize: 12, color: "var(--ink-4)", fontFamily: "var(--font-mono)" }}>
+                  Select loans from the task list and click Run review
                 </div>
               </div>
             ) : null}
 
-            {/* Decided today */}
+            {/* Memo submitted */}
             {decidedEntries.length > 0 && (
               <div style={{ marginTop: runningEntries.length > 0 ? 24 : 0 }}>
-                <div
-                  className="section-head"
-                  style={{ padding: "18px 0 12px" }}
-                >
+                <div className="section-head" style={{ padding: "12px 0" }}>
                   <div>
-                    <h2>Decided today</h2>
-                    <div className="sub">
-                      {decidedEntries.length} applications
-                    </div>
+                    <h2 style={{ fontSize: 14 }}>Memo submitted</h2>
+                    <div className="sub">{decidedEntries.length} applications</div>
                   </div>
                 </div>
                 <div style={{ paddingTop: 8 }}>
                   {decidedEntries.map(([appId, state]) => (
-                    <DecidedRow
-                      key={appId}
-                      appId={appId}
-                      loan={loanMap.get(appId)}
-                      state={state}
-                    />
+                    <DecidedRow key={appId} appId={appId} loan={loanMap.get(appId)} state={state} />
                   ))}
                 </div>
               </div>
             )}
           </div>
-        </div>
 
-        <div style={{ height: 32 }} />
+          <div style={{ height: 32 }} />
+        </div>
       </div>
     </div>
   );

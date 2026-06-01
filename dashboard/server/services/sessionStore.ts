@@ -1,4 +1,4 @@
-import { getDecision, saveDecision, addAuditLog, saveLoanNote } from '../db/dashboardDb';
+import { getDecision, saveDecision, addAuditLog, saveLoanNote, saveAgentSession, getAgentSession } from '../db/dashboardDb';
 
 export type LosData = {
   profilDebitur: Record<string, string>;
@@ -41,11 +41,18 @@ class SessionStore {
 
   set(appId: string, session: ReviewSession) {
     this.store.set(appId, session);
+    // Persist to SQLite so it survives server restart
+    try {
+      saveAgentSession(appId, session.losData, session.memoDraft, session.completedAt.toISOString());
+    } catch (e) {
+      console.error('[sessionStore] Failed to persist session to SQLite:', e);
+    }
     // Persist AI memo to shared DB so LOS can display it
     try {
       const crde = session.losData.hasilCrde;
       const rec = session.memoDraft.section8_rekomendasi || '';
-      const content = `CRDE: ${crde.decision} · Risk: ${crde.riskScore} · Score: ${crde.numericScore}/1000${crde.rulesTriggered?.length ? `\nRules: ${crde.rulesTriggered.join('; ')}` : ''}\n\n${rec}`.trim();
+      const rules = Array.isArray(crde.rulesTriggered) ? crde.rulesTriggered : [];
+      const content = `CRDE: ${crde.decision} · Risk: ${crde.riskScore} · Score: ${crde.numericScore}/1000${rules.length ? `\nRules: ${rules.join('; ')}` : ''}\n\n${rec}`.trim();
       saveLoanNote(appId, 'agent', 'agent', content, JSON.stringify(session.memoDraft));
     } catch (e) {
       console.error('[sessionStore] Failed to persist AI memo:', e);
@@ -63,7 +70,20 @@ class SessionStore {
   }
 
   get(appId: string): ReviewSession | undefined {
-    const session = this.store.get(appId);
+    let session = this.store.get(appId);
+    if (!session) {
+      // Fallback to SQLite (survives server restart)
+      const persisted = getAgentSession(appId);
+      if (persisted) {
+        session = {
+          appId,
+          completedAt: new Date(persisted.completedAt),
+          losData: persisted.losData as LosData,
+          memoDraft: persisted.memoDraft as MemoDraft,
+        };
+        this.store.set(appId, session);
+      }
+    }
     if (session && !session.decision) {
       // Hydrate from DB on demand
       const persisted = getDecision(appId);

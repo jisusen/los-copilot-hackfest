@@ -148,7 +148,7 @@ export function AgentCard({ appId, loan, state, screenshot }: {
               Risk: {state.result.riskScore} · Score: {state.result.numericScore}/1000
             </div>
             <div className="font-mono text-xs text-muted">
-              DSR: {(state.result.dtiActual * 100).toFixed(1)}% ·{' '}
+              DBR: {(state.result.dtiActual * 100).toFixed(1)}% ·{' '}
               SLIK: Kol.{state.result.slikKol} ·{' '}
               AML: {state.result.amlClear ? 'Clear ✓' : 'Flag ⚠'}
             </div>

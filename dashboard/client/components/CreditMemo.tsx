@@ -11,7 +11,7 @@ const SECTIONS: { key: keyof MemoDraft; label: string; n: number }[] = [
   { key: "section5_aml",         label: "AML & Fraud Screening",                    n: 5 },
   { key: "section6_agunan",      label: "Collateral",                               n: 6 },
   { key: "section7_crde",        label: "CRDE Decision",                            n: 7 },
-  { key: "section8_rekomendasi", label: "Notes & Analyst Recommendations",          n: 8 },
+  { key: "section8_rekomendasi", label: "Notes & Analyst Recommendation",          n: 8 },
 ];
 
 function renderInline(text: string): React.ReactNode {
@@ -89,12 +89,12 @@ function MemoSection({ s, content, editable, onChange }: {
           onChange={e => onChange?.(e.target.value)}
           placeholder="Add your override notes, mitigating factors, or final reasoning…"
           style={{
-            width: "100%", minHeight: 120, padding: 14,
-            border: "1px dashed var(--accent-line)",
-            background: "var(--accent-soft)",
+            width: "100%", minHeight: 140, padding: 14,
+            border: "1px solid var(--line)",
+            background: "#fff",
             borderRadius: "var(--r)",
             fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ink)",
-            resize: "vertical", outline: "none",
+            resize: "vertical", outline: "none", lineHeight: 1.6,
           }}
         />
       ) : (
@@ -107,7 +107,7 @@ function MemoSection({ s, content, editable, onChange }: {
 function KeyMetrics({ result }: { result: AgentResult }) {
   const r = result;
   const items: [string, string, string][] = [
-    ["DTI",   `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
+    ["DBR",   `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
     ["SLIK",  `Kol.${r.slikKol}`,                   r.slikKol > 1 ? "amber" : ""],
     ["AML",   r.amlClear ? "Clear" : "Flag",        !r.amlClear ? "red" : ""],
     ["Score", `${r.numericScore}`,                  r.numericScore < 500 ? "red" : r.numericScore < 750 ? "amber" : ""],
@@ -132,7 +132,7 @@ function KeyMetrics({ result }: { result: AgentResult }) {
         ))}
       </dl>
       <div style={{ marginTop: 18, padding: "10px 12px", borderRadius: "var(--r)", background: CRDE_SOFT[r.crdeDecision] ?? "var(--paper-2)", border: `1px solid ${CRDE_BORDER[r.crdeDecision] ?? "var(--line)"}` }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: CRDE_COLOR[r.crdeDecision] ?? "var(--ink-3)", fontWeight: 600, marginBottom: 4 }}>AI Decision</div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: CRDE_COLOR[r.crdeDecision] ?? "var(--ink-3)", fontWeight: 600, marginBottom: 4 }}>CRDE Decision</div>
         <div style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontWeight: 600, color: CRDE_COLOR[r.crdeDecision] ?? "var(--ink)" }}>
           {r.crdeDecision}
         </div>

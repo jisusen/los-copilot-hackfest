@@ -108,7 +108,7 @@ function Topbar({ crumbs = [] }: { crumbs?: string[] }) {
   return (
     <div className="top">
       <div className="brand">
-        Bank Maju Bersama
+        Bank Maju Bersama Gibran
         <span className="sub">Credit Analyst Copilot</span>
       </div>
       <div className="crumb">
@@ -150,7 +150,7 @@ export function ReviewPage() {
     return (
       <div className="app">
         <div className="app-rail"><NavRail active="dash" /></div>
-        <div className="app-top"><Topbar crumbs={["Pipeline", appId, "Review"]} /></div>
+        <div className="app-top"><Topbar crumbs={["Task List", appId, "Review"]} /></div>
         <div className="app-main" style={{ padding: "24px 32px", overflow: "auto" }}>
           <div style={{ maxWidth: 960, margin: "0 auto", display: "flex", gap: 24 }}>
             <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 16 }}>
@@ -176,7 +176,7 @@ export function ReviewPage() {
           <NavRail active="dash" />
         </div>
         <div className="app-top">
-          <Topbar crumbs={["Pipeline", appId ?? "", "Review"]} />
+          <Topbar crumbs={["Task List", appId ?? "", "Review"]} />
         </div>
         <div
           className="app-main"
@@ -276,7 +276,7 @@ export function ReviewPage() {
         <NavRail active="dash" />
       </div>
       <div className="app-top">
-        <Topbar crumbs={["Pipeline", appId, "Review"]} />
+        <Topbar crumbs={["Task List", appId, "Review"]} />
       </div>
 
       <div
@@ -403,7 +403,7 @@ export function ReviewPage() {
                 onMemoChange={setMemo}
               />
             </div>
-            <DecisionFooter appId={appId} debtorName={debtorName} />
+            <DecisionFooter appId={appId} debtorName={debtorName} memo={memo} />
           </div>
 
           {/* Chat — must be a constrained flex column so messages scroll */}

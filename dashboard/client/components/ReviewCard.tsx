@@ -25,8 +25,8 @@ function LogPanel({ logs }: { logs: string[] }) {
   );
 }
 
-export function ReviewCard({ appId, loan, state, screenshot }: {
-  appId: string; loan?: LoanSummary; state: AgentState; screenshot?: string;
+export function ReviewCard({ appId, loan, state, screenshot, tabId }: {
+  appId: string; loan?: LoanSummary; state: AgentState; screenshot?: string; tabId?: string;
 }) {
   const navigate = useNavigate();
   const [elapsed, setElapsed] = useState(0);
@@ -41,6 +41,18 @@ export function ReviewCard({ appId, loan, state, screenshot }: {
   const page = state.status === "running"
     ? (state.pct < 30 ? "data-keuangan" : state.pct < 60 ? "slik-ojk" : "hasil-crde")
     : "profil-debitur";
+
+  // Format tabId for badge: "tab-hasil-crde" → "Hasil CRDE"
+  const TAB_LABELS: Record<string, string> = {
+    "tab-profil-debitur": "Profil Debitur",
+    "tab-data-keuangan": "Data Keuangan",
+    "tab-slik-ojk": "SLIK OJK",
+    "tab-aml-fraud": "AML & Fraud",
+    "tab-hasil-crde": "Hasil CRDE",
+    "tab-agunan": "Agunan",
+    "tab-permohonan-kredit": "Permohonan Kredit",
+  };
+  const currentTabLabel = tabId && TAB_LABELS[tabId] ? TAB_LABELS[tabId] : null;
 
   return (
     <div
@@ -58,6 +70,9 @@ export function ReviewCard({ appId, loan, state, screenshot }: {
           </span>
         )}
         <div style={{ flex: 1 }} />
+        {currentTabLabel && state.status === "running" && (
+          <span className="tag amber" style={{ fontWeight: 600 }}>📍 {currentTabLabel}</span>
+        )}
         {state.status === "running" && (
           <span className="tag run blue"><span className="dot" /> RUNNING · {state.pct}%</span>
         )}
@@ -74,7 +89,7 @@ export function ReviewCard({ appId, loan, state, screenshot }: {
             <div className="browser">
               <div className="url">
                 <i style={{ background: "#e87b6e" }} /><i style={{ background: "#e8c46e" }} /><i style={{ background: "#7bbb6e" }} />
-                <span className="addr">los.bms.local/loans/{appId}?tab={page}</span>
+                <span className="addr">los.bms.local/loans/{appId}{tabId ? `?tab=${tabId.replace("tab-", "")}` : `?tab=${page}`}</span>
               </div>
               <div className="body">
                 <div className="skel h12 w40 bg-accent" /><div style={{ height: 6 }} />
@@ -119,9 +134,15 @@ export function ReviewCard({ appId, loan, state, screenshot }: {
           <img
             src={`data:image/png;base64,${screenshot}`}
             alt="Live browser view"
+            className={state.status === "ready" ? "live-shot-ready" : "live-shot-running"}
             style={{ width: "100%", border: "1px solid var(--line)", display: "block", borderRadius: "var(--r)" }}
           />
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-4)", marginTop: 4 }}>Auto-refreshes every 2s</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-4)", marginTop: 4, display: "flex", justifyContent: "space-between" }}>
+            <span>Auto-refreshes every 2s{currentTabLabel ? ` · ${currentTabLabel}` : ""}</span>
+            <span style={{ color: state.status === "ready" ? "var(--green)" : "var(--amber)" }}>
+              {state.status === "ready" ? "● CAPTURED" : "● LIVE"}
+            </span>
+          </div>
         </div>
       )}
     </div>

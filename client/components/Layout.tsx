@@ -91,7 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {/* Bank name */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <span style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a', lineHeight: 1 }}>
-            Bank Maju Bersama
+            Bank Maju Bersama Gibran
           </span>
           <span style={{ fontSize: 10, color: '#8a8a8a', lineHeight: 1 }}>
             Sistem Informasi Kredit Konsumer
@@ -148,7 +148,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           <PlaceholderLink label="Dashboard" />
-          <NavLink to="/loans" label="Loan Queue" />
+          <NavLink to="/loans" label="Task List" />
           <PlaceholderLink label="Reports" />
 
           {/* Separator */}

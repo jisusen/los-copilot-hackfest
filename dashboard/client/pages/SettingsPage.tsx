@@ -78,7 +78,7 @@ function NavRail({ active = "set" }: { active?: string }) {
 function Topbar({ crumbs = [] }: { crumbs?: string[] }) {
   return (
     <div className="top">
-      <div className="brand">Bank Maju Bersama<span className="sub">Credit Analyst Copilot</span></div>
+      <div className="brand">Bank Maju Bersama Gibran<span className="sub">Credit Analyst Copilot</span></div>
       <div className="crumb">{crumbs.map((c, i) => (<span key={i}>{" / "}{i === crumbs.length - 1 ? <b>{c}</b> : c}</span>))}</div>
       <div className="spacer" />
       <UserMenu username="analyst01" />
@@ -239,8 +239,8 @@ export function SettingsPage() {
   }
 
   const extractionOptions = [
-    { value: "browser", label: "Browser (LLM navigates LOS UI)" },
-    { value: "api", label: "API (direct REST calls — fast)" },
+    { value: "browser", label: "Browser Mode Agent — browse & extract via browser UI" },
+    { value: "api", label: "API Agent — use LOS REST API (fast)" },
   ];
 
   return (
@@ -265,13 +265,24 @@ export function SettingsPage() {
             <>
               <CollapsibleSection title="Analysis LLM" desc="Used for data extraction and memo generation" icon="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" status={settings.llmProvider ? "ok" : "empty"}>
                 <LlmProviderFields
-                  provider={settings.llmProvider} model={settings.anthropicModel} apiKey={settings.anthropicApiKey} endpoint={settings.customEndpoint}
-                  onProvider={(v) => { update("llmProvider", v); }} onModel={(v) => update("anthropicModel", v)} onKey={(v) => update("anthropicApiKey", v)} onEndpoint={(v) => update("customEndpoint", v)}
+                  provider={settings.llmProvider}
+                  model={settings.llmProvider === "gemini" ? settings.geminiModel : settings.llmProvider === "custom" ? settings.customModel : settings.anthropicModel}
+                  apiKey={settings.llmProvider === "gemini" ? settings.geminiApiKey : settings.llmProvider === "custom" ? settings.customApiKey : settings.anthropicApiKey}
+                  endpoint={settings.customEndpoint}
+                  onProvider={(v) => { update("llmProvider", v); }}
+                  onModel={(v) => {
+                    if (settings.llmProvider === "gemini") update("geminiModel", v);
+                    else if (settings.llmProvider === "custom") update("customModel", v);
+                    else update("anthropicModel", v);
+                  }}
+                  onKey={(v) => {
+                    if (settings.llmProvider === "gemini") update("geminiApiKey", v);
+                    else if (settings.llmProvider === "custom") update("customApiKey", v);
+                    else update("anthropicApiKey", v);
+                  }}
+                  onEndpoint={(v) => update("customEndpoint", v)}
                   showEndpoint
                 />
-                {settings.llmProvider === "gemini" && (
-                  <Field label="Gemini API Key" value={settings.geminiApiKey} onChange={(v) => update("geminiApiKey", v)} password />
-                )}
               </CollapsibleSection>
 
               <CollapsibleSection title="Browsing LLM" desc="Fast/cheap model for vendor UI navigation. Leave empty to reuse Analysis LLM." icon="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" defaultOpen={false} status={settings.browseProvider ? "ok" : "empty"}>
@@ -284,7 +295,7 @@ export function SettingsPage() {
                 )}
               </CollapsibleSection>
 
-              <CollapsibleSection title="LOS Connection" desc="Bank Maju Bersama Loan Origination System" icon="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" status={settings.losUrl ? "ok" : "empty"}>
+              <CollapsibleSection title="LOS Connection" desc="Bank Maju Bersama Gibran Loan Origination System" icon="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" status={settings.losUrl ? "ok" : "empty"}>
                 <Field label="LOS Base URL" value={settings.losUrl} onChange={(v) => update("losUrl", v)} placeholder="http://localhost:3333" />
                 <Field label="Username" value={settings.losUsername} onChange={(v) => update("losUsername", v)} />
                 <Field label="Password" value={settings.losPassword} onChange={(v) => update("losPassword", v)} password />
@@ -296,7 +307,7 @@ export function SettingsPage() {
                 <Select label="Extraction mode" value={settings.extractionMode} onChange={(v) => update("extractionMode", v)} options={extractionOptions} />
                 <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                   <input type="checkbox" id="mockAgent" checked={settings.mockAgent} onChange={(e) => update("mockAgent", e.target.checked)} style={{ accentColor: "var(--accent)" }} />
-                  <label htmlFor="mockAgent" style={{ fontSize: 13, color: "var(--ink-2)", cursor: "pointer" }}>Mock agent mode (no Python, uses seeded fixtures)</label>
+                  <label htmlFor="mockAgent" style={{ fontSize: 13, color: "var(--ink-2)", cursor: "pointer" }}>Use API Agent (bypass browser, fetch LOS data via REST API)</label>
                 </div>
               </CollapsibleSection>
 

@@ -3,7 +3,7 @@ import { useChat } from '../hooks/useChat';
 
 const SUGGESTED = [
   'Why did CRDE recommend this decision?',
-  'What is the applicant\'s DSR and how does it compare to the RAC limit?',
+  'What is the applicant\'s DBR and how does it compare to the RAC limit?',
   'What are the applicant\'s existing credit obligations?',
   'Are there any AML flags or fraud indicators?',
   'How is the applicant\'s payment history in SLIK OJK?',

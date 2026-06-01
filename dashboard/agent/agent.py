@@ -132,61 +132,64 @@ def parse_agent_result(result) -> dict:
 # ── Progress / reporting helpers ──────────────────────────────────────────────
 
 
+async def _http_post_with_retry(url: str, json_data: dict, timeout: int = 10, max_retries: int = 3):
+    for attempt in range(max_retries):
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as http:
+                await http.post(url, json=json_data)
+            return
+        except Exception as e:
+            if attempt < max_retries - 1:
+                await asyncio.sleep(1 * (attempt + 1))
+    print(f"[http] Failed after {max_retries} attempts: {e}", file=sys.stderr)
+
+
 async def report_progress(
     backend_url: str, task_id: str, app_id: str, step: str, step_index: int, pct: int
 ):
-    try:
-        async with httpx.AsyncClient(timeout=5) as http:
-            await http.post(
-                f"{backend_url}/api/internal/progress",
-                json={
-                    "taskId": task_id,
-                    "appId": app_id,
-                    "step": step,
-                    "stepIndex": step_index,
-                    "totalSteps": len(STEPS),
-                    "pct": pct,
-                },
-            )
-    except Exception as e:
-        print(f"[progress] {e}", file=sys.stderr)
+    await _http_post_with_retry(
+        f"{backend_url}/api/internal/progress",
+        {
+            "taskId": task_id,
+            "appId": app_id,
+            "step": step,
+            "stepIndex": step_index,
+            "totalSteps": len(STEPS),
+            "pct": pct,
+        },
+        timeout=5,
+    )
 
 
 async def report_complete(
     backend_url: str, task_id: str, app_id: str, los_data: dict, memo_draft: dict
 ):
-    try:
-        async with httpx.AsyncClient(timeout=10) as http:
-            await http.post(
-                f"{backend_url}/api/internal/complete",
-                json={
-                    "taskId": task_id,
-                    "appId": app_id,
-                    "losData": los_data,
-                    "memoDraft": memo_draft,
-                    "status": "completed",
-                },
-            )
-    except Exception as e:
-        print(f"[complete] {e}", file=sys.stderr)
+    await _http_post_with_retry(
+        f"{backend_url}/api/internal/complete",
+        {
+            "taskId": task_id,
+            "appId": app_id,
+            "losData": los_data,
+            "memoDraft": memo_draft,
+            "status": "completed",
+        },
+        timeout=10,
+    )
 
 
 async def report_error(
     backend_url: str, task_id: str, app_id: str, error: str, retryable: bool = True
 ):
-    try:
-        async with httpx.AsyncClient(timeout=5) as http:
-            await http.post(
-                f"{backend_url}/api/internal/error",
-                json={
-                    "taskId": task_id,
-                    "appId": app_id,
-                    "error": error,
-                    "retryable": retryable,
-                },
-            )
-    except Exception as e:
-        print(f"[error] {e}", file=sys.stderr)
+    await _http_post_with_retry(
+        f"{backend_url}/api/internal/error",
+        {
+            "taskId": task_id,
+            "appId": app_id,
+            "error": error,
+            "retryable": retryable,
+        },
+        timeout=5,
+    )
 
 
 async def stream_screenshots(
@@ -379,7 +382,7 @@ def los_loan_to_extracted(loan: dict) -> dict:
 
 # ── Memo generation ───────────────────────────────────────────────────────────
 
-MEMO_SYSTEM = """You are a senior credit analyst at Bank Maju Bersama, Indonesia.
+MEMO_SYSTEM = """You are a senior credit analyst at Bank Maju Bersama Gibran, Indonesia.
 Write a formal Consumer Credit Analysis Memo in English based on LOS-extracted data.
 
 CRITICAL: Output ONLY the final memo in English. Do NOT include thinking process, reasoning steps, or internal monologue. Do NOT respond in German or any other language. Return ONLY valid JSON.
@@ -392,10 +395,10 @@ The LOS stores decisions in Indonesian. Map them as follows:
   "COMMITTEE REVIEW"    → refer to credit committee (English variant)
   "REJECTED"            → reject recommendation (English variant)
 
-== DSR / DTI ==
-The LOS calls this "DSR" (Debt Service Ratio). RAC limit is typically 40%.
-DSR = (existing obligations + new installment) / net income × 100%.
-A DSR above 40% is a deal-breaker unless mitigated.
+== DBR / DTI ==
+The LOS calls this "DBR" (Debt Burden Ratio). RAC limit is typically 40%.
+DBR = (existing obligations + new installment) / net income × 100%.
+A DBR above 40% is a deal-breaker unless mitigated.
 
 == OUTPUT FORMAT ==
 Return ONLY valid JSON with exactly these 9 keys. No markdown wrapper, no extra text:
@@ -416,7 +419,7 @@ Return ONLY valid JSON with exactly these 9 keys. No markdown wrapper, no extra 
 executive_summary:
   Exactly 4 sentences:
   1. Who the applicant is and what product/amount they want.
-  2. The 1-2 biggest risk factors (DSR level, SLIK collectability, AML flags, triggered rules).
+  2. The 1-2 biggest risk factors (DBR level, SLIK collectability, AML flags, triggered rules).
   3. What the CRDE engine recommends and the numeric score.
   4. The key thing the analyst must verify or decide.
 
@@ -430,9 +433,9 @@ section2_permohonan:
 
 section3_keuangan:
   3-4 sentences. Net monthly income, existing obligations, new installment, total burden.
-  State DSR explicitly: "DSR of **X%** against a RAC threshold of **Y%** — [PASS/FAIL]."
+  State DBR explicitly: "DBR of **X%** against a RAC threshold of **Y%** — [PASS/FAIL]."
   State remaining income after all obligations.
-  Use **bold** for all Rp amounts and DSR percentages.
+  Use **bold** for all Rp amounts and DBR percentages.
 
 section4_slik:
   2-3 sentences. Current collectability (1=Current, 2=Special Mention, 3+=Non-performing).
@@ -742,7 +745,7 @@ async def run_review(task: dict):
             "Reading loan application header (product, amount, tenor)",
             "Extracting debtor personal data (NIK, NPWP, name, DOB, marital)",
             "Reading employment and domicile information",
-            "Collecting financial data — income, obligations, DSR ratio",
+            "Collecting financial data — income, obligations, DBR ratio",
             "Parsing SLIK OJK credit bureau report",
             "Checking AML & fraud screening results",
             "Evaluating CRDE decision, risk score, and triggered rules",
@@ -785,7 +788,7 @@ async def run_review(task: dict):
             # ── API MODE: visual browse for screenshots + real data from API ──
             visual_agent = Agent(
                 task=f"""
-Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extraction.
+Navigate loan {app_id} at Bank Maju Bersama Gibran LOS — visual review only, no extraction.
 1. Go to {los_url}/login, login with "{credentials["username"]}" / "{credentials["password"]}"
 2. Go to {los_url}/loans/{app_id}
 3. Click each tab and scroll: tab-profil-debitur, tab-data-keuangan, tab-slik-ojk,
@@ -843,7 +846,7 @@ Navigate loan {app_id} at Bank Maju Bersama LOS — visual review only, no extra
                 )
                 agent_result_raw = None
                 try:
-                    agent_result_raw = await extraction_agent.run(max_steps=15)
+                    agent_result_raw = await extraction_agent.run(max_steps=8)
                 except Exception as agent_err:
                     print(f"[{app_id}] ⚠ Agent run error (attempt {attempt}): {agent_err}", file=sys.stderr)
                     agent_result_raw = str(agent_err)

@@ -1,7 +1,7 @@
 # Credit Analyst Copilot — Demo Architecture
 
 **Hackathon:** Browser Use Hackfest  
-**Team:** Bank Maju Bersama (BMB)  
+**Team:** Bank Maju Bersama Gibran (BMB)  
 **Stack:** Bun + React + Python + browser-use
 
 ---
@@ -161,7 +161,7 @@ The dashboard shows real-time agent logs via WebSocket. Progress messages cycle 
 ✓ Opening Data Summary page — all fields consolidated
 ✓ Reading loan application header (product, amount, tenor)
 ✓ Extracting debtor personal data (NIK, NPWP, name, DOB, marital)
-✓ Collecting financial data — income, obligations, DSR ratio
+✓ Collecting financial data — income, obligations, DBR ratio
 ✓ Parsing SLIK OJK credit bureau report
 ✓ Checking AML & fraud screening results
 ✓ Evaluating CRDE decision, risk score, and triggered rules

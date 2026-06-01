@@ -10,7 +10,7 @@ export function AgentGrid({
   sessions: ReturnType<typeof useSessions>["sessions"];
   loans: LoanSummary[];
 }) {
-  const { screenshots } = useSessions();
+  const { screenshots, tabIds } = useSessions();
   const loanMap = new Map(loans.map(l => [l.id, l]));
 
   // Only render non-idle sessions (running/error — ready/decided shown in DashboardPage)
@@ -38,6 +38,7 @@ export function AgentGrid({
           loan={loanMap.get(appId)}
           state={state}
           screenshot={screenshots.get(appId)}
+          tabId={tabIds.get(appId)}
         />
       ))}
     </div>

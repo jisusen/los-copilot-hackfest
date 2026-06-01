@@ -191,7 +191,7 @@ export function spawnMockAgent(task: AgentTask): void {
     },
     { step: `Tab: Financials — clicking tab element`, pct: 43 },
     {
-      step: `Read DSR ratio, income, obligations — ${pick(SCROLL_VARIANTS)}`,
+      step: `Read DBR ratio, income, obligations — ${pick(SCROLL_VARIANTS)}`,
       pct: 48,
     },
     { step: `Tab: SLIK OJK — ${pick(WAIT_VARIANTS, 1)}`, pct: 53 },
@@ -299,7 +299,7 @@ export function spawnMockAgent(task: AgentTask): void {
   const isLowRisk = crdeDecision === "APPROVED" && numericScore >= 750;
 
   const redFlags: string[] = [];
-  if (dtiActual > 0.4) redFlags.push(`DSR ${dtiPct}% exceeds RAC limit (40%)`);
+  if (dtiActual > 0.4) redFlags.push(`DBR ${dtiPct}% exceeds RAC limit (40%)`);
   if (slikKol > 1)
     redFlags.push(
       `SLIK collectability ${slikKol} — ${d?.kolektibilitas_label ?? "watchlist"}`,
@@ -313,20 +313,20 @@ export function spawnMockAgent(task: AgentTask): void {
   const execSummary = isHighRisk
     ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **high-risk profile**. Key concerns: ${redFlags.slice(0, 2).join("; ")}. CRDE recommends **REJECTION** with a score of **${numericScore}/1000**. The analyst should verify if any mitigating factors exist before overriding.`
     : isMediumRisk
-      ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **moderate-risk profile**. DSR ${dtiPct}% and collectability ${slikKol} require closer review. CRDE recommends **COMMITTEE REVIEW** with a score of **${numericScore}/1000**. The analyst should assess compensating factors.`
-      : `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **low-risk profile**. DSR ${dtiPct}% is within limits and SLIK is clean. CRDE recommends **APPROVAL** with a score of **${numericScore}/1000**. Standard terms apply.`;
+      ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **moderate-risk profile**. DBR ${dtiPct}% and collectability ${slikKol} require closer review. CRDE recommends **COMMITTEE REVIEW** with a score of **${numericScore}/1000**. The analyst should assess compensating factors.`
+      : `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **low-risk profile**. DBR ${dtiPct}% is within limits and SLIK is clean. CRDE recommends **APPROVAL** with a score of **${numericScore}/1000**. Standard terms apply.`;
 
   const section3 = isHighRisk
-    ? `Net monthly income **Rp ${netM}M** is insufficient for the requested obligation burden. **DSR ${dtiPct}% far exceeds** the RAC limit of 40%, leaving minimal disposable income. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** strain repayment capacity significantly.`
+    ? `Net monthly income **Rp ${netM}M** is insufficient for the requested obligation burden. **DBR ${dtiPct}% far exceeds** the RAC limit of 40%, leaving minimal disposable income. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** strain repayment capacity significantly.`
     : isMediumRisk
-      ? `Net monthly income **Rp ${netM}M** provides adequate but tight coverage. **DSR ${dtiPct}%** is ${dtiActual <= 0.4 ? "within" : "marginally above"} the 40% RAC threshold. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave limited buffer for unexpected expenses.`
-      : `Net monthly income **Rp ${netM}M** provides comfortable coverage. **DSR ${dtiPct}%** is well within the 40% RAC limit. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave healthy disposable income.`;
+      ? `Net monthly income **Rp ${netM}M** provides adequate but tight coverage. **DBR ${dtiPct}%** is ${dtiActual <= 0.4 ? "within" : "marginally above"} the 40% RAC threshold. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave limited buffer for unexpected expenses.`
+      : `Net monthly income **Rp ${netM}M** provides comfortable coverage. **DBR ${dtiPct}%** is well within the 40% RAC limit. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave healthy disposable income.`;
 
   const section8 = isHighRisk
     ? `**Recommended: REJECT**\n\nApplication does not meet minimum credit standards. ${redFlags.length > 0 ? "Key deal-breakers: " + redFlags.join("; ") + "." : ""} Risk profile is unacceptable for the requested product. Suggest regret letter with explanation of RAC non-compliance.`
     : isMediumRisk
       ? `**Recommended: REFER TO CREDIT COMMITTEE**\n\nApplication requires committee review due to: ${redFlags.join("; ")}. While some criteria are met, the combination of risk factors exceeds delegated authority. Enhanced due diligence and compensating documentation recommended.`
-      : `**Recommended: APPROVE**\n\nApplication meets all RAC criteria. DSR is within limit, SLIK collectability is good, and AML screening is clear. No triggered rules or red flags. **Suggest approval with standard terms.**`;
+      : `**Recommended: APPROVE**\n\nApplication meets all RAC criteria. DBR is within limit, SLIK collectability is good, and AML screening is clear. No triggered rules or red flags. **Suggest approval with standard terms.**`;
 
   const mockMemo: MemoDraft = {
     executive_summary: execSummary,

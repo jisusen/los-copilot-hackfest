@@ -121,6 +121,6 @@ const server = Bun.serve({
   },
 });
 
-console.log(`\n🏦 Bank Maju Bersama — Demo LOS`);
+console.log(`\n🏦 Bank Maju Bersama Gibran — Demo LOS`);
 console.log(`🚀 Server running at http://localhost:${PORT}`);
 console.log(`\nCredentials: analyst01 / analyst02 / supervisor — password: bms2025\n`);

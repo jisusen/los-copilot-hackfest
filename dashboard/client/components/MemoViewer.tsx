@@ -167,7 +167,7 @@ export function MemoViewer({
 
   const redFlags: string[] = [];
   if (result) {
-    if (result.dtiActual > 0.4) redFlags.push(`DSR ${(result.dtiActual * 100).toFixed(1)}% exceeds RAC limit (40%)`);
+    if (result.dtiActual > 0.4) redFlags.push(`DBR ${(result.dtiActual * 100).toFixed(1)}% exceeds RAC limit (40%)`);
     if (result.slikKol > 1) redFlags.push(`SLIK collectability ${result.slikKol} — substandard`);
     if (!result.amlClear) redFlags.push(`AML flag detected`);
     if (result.rulesTriggered.length > 0) redFlags.push(...result.rulesTriggered);
@@ -306,7 +306,7 @@ export function MemoViewer({
             <div style={{ background: '#192033', border: '1px solid #2a3a52', padding: 16 }}>
               <div className="font-display text-xs font-bold uppercase text-muted mb-3">Key Metrics</div>
               <KeyMetric
-                label="DSR"
+                label="DBR"
                 value={`${(result.dtiActual * 100).toFixed(1)}%`}
                 pass={result.dtiActual <= 0.35 ? 'pass' : result.dtiActual <= 0.4 ? 'warn' : 'fail'}
               />

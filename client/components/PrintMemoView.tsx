@@ -56,7 +56,7 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
         <div id="print-memo-content" style={{ padding: 40 }}>
           {/* Bank Header */}
           <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: '2px solid #1a3a5c', paddingBottom: 16 }}>
-            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#1a3a5c' }}>Bank Maju Bersama</div>
+            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#1a3a5c' }}>Bank Maju Bersama Gibran</div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Consumer Credit Information System</div>
             <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a3a5c', marginTop: 12 }}>CREDIT ANALYSIS MEMO</div>
           </div>
@@ -126,8 +126,8 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
             <Field label="Existing Obligations" value={financials?.existing_obligations ? formatRp(financials.existing_obligations) : '—'} />
             <Field label="Requested Installment" value={financials?.requested_installment ? formatRp(financials.requested_installment) : '—'} />
             <Field label="Total Obligations" value={financials?.total_obligations ? formatRp(financials.total_obligations) : '—'} />
-            <Field label="DSR Ratio" value={financials?.dti_ratio ? formatPercent(financials.dti_ratio) : '—'} />
-            <Field label="DSR Threshold" value={financials?.dti_threshold ? `${Math.round(financials.dti_threshold * 100)}%` : '—'} />
+            <Field label="DBR Ratio" value={financials?.dti_ratio ? formatPercent(financials.dti_ratio) : '—'} />
+            <Field label="DBR Threshold" value={financials?.dti_threshold ? `${Math.round(financials.dti_threshold * 100)}%` : '—'} />
             <Field label="Remaining Income" value={financials?.remaining_income ? formatRp(financials.remaining_income) : '—'} />
           </Section>
 
@@ -173,8 +173,8 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
             <Field label="Risk Score" value={crde?.risk_score} />
             <Field label="Decision" value={crde?.decision} />
             <Field label="Numeric Score" value={`${crde?.numeric_score}/1000`} />
-            <Field label="DSR Actual" value={crde?.dti_actual ? formatPercent(crde.dti_actual) : '—'} />
-            <Field label="DSR Passed" value={crde?.dti_passed ? '✅ Yes' : '❌ No'} />
+            <Field label="DBR Actual" value={crde?.dti_actual ? formatPercent(crde.dti_actual) : '—'} />
+            <Field label="DBR Passed" value={crde?.dti_passed ? '✅ Yes' : '❌ No'} />
             <Field label="Kol Passed" value={crde?.kol_passed ? '✅ Yes' : '❌ No'} />
             <Field label="AML Passed" value={crde?.aml_passed ? '✅ Yes' : '❌ No'} />
             <Field label="Fraud Passed" value={crde?.fraud_passed ? '✅ Yes' : '❌ No'} />
@@ -184,7 +184,7 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
 
           {/* Footer */}
           <div style={{ marginTop: 40, borderTop: '1px solid #d1d9e0', paddingTop: 16, fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>
-            Bank Maju Bersama — Consumer Credit Information System v2.5.1<br />
+            Bank Maju Bersama Gibran — Consumer Credit Information System v2.5.1<br />
             This document is generated electronically and is valid without signature.
           </div>
         </div>

@@ -51,12 +51,21 @@ export async function handleLoans(req: Request, pathname: string, url: URL): Pro
       return Response.json({ notes });
     }
     if (req.method === 'POST') {
-      const body = await req.json() as { content?: string; author?: string };
+      const body = await req.json() as { content?: string; author?: string; category?: string };
       if (!body.content?.trim()) return Response.json({ error: 'content required' }, { status: 400 });
-      db.query('INSERT INTO loan_notes (app_id, author, author_type, content, created_at) VALUES (?, ?, ?, ?, ?)')
-        .run(id, body.author ?? 'analyst01', 'manual', body.content.trim(), new Date().toISOString());
+      db.query('INSERT INTO loan_notes (app_id, author, author_type, content, category, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+        .run(id, body.author ?? 'analyst01', 'manual', body.content.trim(), body.category ?? 'General', new Date().toISOString());
       return Response.json({ ok: true });
     }
+  }
+
+  // DELETE /api/loans/:id/notes/:noteId
+  const deleteNoteMatch = pathname.match(/^\/api\/loans\/(APP-\d{3})\/notes\/(\d+)$/);
+  if (deleteNoteMatch && req.method === 'DELETE') {
+    const [, id, noteId] = deleteNoteMatch;
+    const db = getDb();
+    db.query('DELETE FROM loan_notes WHERE id = ? AND app_id = ?').run(noteId, id);
+    return Response.json({ ok: true });
   }
 
   if (req.method !== 'GET') return null;
@@ -124,7 +133,192 @@ export async function handleLoans(req: Request, pathname: string, url: URL): Pro
       }
     }
 
-    return Response.json({ loan: { application, debtor, financials, slik, amlFraud, crde, collateral } });
+    // Synthetic enrichments for demo complexity
+    const f = financials as Record<string, unknown> | null;
+    const netIncome = typeof f?.net_income === 'number' ? f.net_income : 5000000;
+    const requested = typeof f?.requested_installment === 'number' ? f.requested_installment : 3000000;
+    const seed = id.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+    const baseBal = netIncome * (2 + (seed % 5) * 0.5);
+
+    const cities = ['Jakarta Selatan', 'Jakarta Pusat', 'Jakarta Barat', 'Jakarta Timur', 'Jakarta Utara', 'Bandung', 'Surabaya', 'Tangerang', 'Bekasi', 'Depok'];
+    const subdistricts = ['Menteng', 'Kebayoran Baru', 'Setiabudi', 'Tanah Abang', 'Senayan', 'Pondok Indah', 'Kemang', 'Cilandak', 'Pancoran', 'Tebet'];
+    const districts = ['Kebayoran Lama', 'Kebayoran Baru', 'Pasar Minggu', 'Cilandak', 'Pesanggrahan', 'Setiabudi', 'Menteng', 'Tebet', 'Mampang', 'Pancoran'];
+    const education = ['S1', 'S2', 'SMA', 'S3', 'D3', 'SMA', 'S1', 'S1', 'S2', 'D3'];
+    const religions = ['Islam', 'Kristen', 'Katolik', 'Hindu', 'Budha', 'Islam', 'Islam', 'Kristen', 'Islam', 'Katolik'];
+    const genders = ['Laki-laki', 'Perempuan', 'Laki-laki', 'Laki-laki', 'Perempuan', 'Laki-laki', 'Perempuan', 'Laki-laki', 'Perempuan', 'Laki-laki'];
+    const homeStatus = ['Milik Sendiri', 'Sewa', 'Keluarga', 'Milik Sendiri', 'Milik Sendiri', 'Sewa', 'Milik Sendiri', 'Keluarga', 'Sewa', 'Milik Sendiri'];
+    const refSources = ['Digital', 'Walk-in', 'Agent', 'Digital', 'Walk-in', 'Digital', 'Agent', 'Walk-in', 'Digital', 'Agent'];
+    const products = ['KTA', 'KPR', 'KKB', 'Multiguna'];
+
+    const d = debtor as Record<string, unknown> | null;
+    const app = application as Record<string, unknown> | null;
+    const loanAmount = typeof app?.amount_requested === 'number' ? app.amount_requested : 50000000;
+    const product = typeof app?.product_type === 'string' ? app.product_type : 'KTA';
+    const cityIdx = seed % cities.length;
+
+    const enrichedDebtor = d ? {
+      ...d,
+      tempat_lahir: cities[(seed + 3) % cities.length],
+      jenis_kelamin: genders[seed % genders.length],
+      agama: religions[seed % religions.length],
+      pendidikan_terakhir: education[seed % education.length],
+      nama_ibu_kandung: `Ibu ${d.full_name ?? 'Kandung'}`,
+      kewarganegaraan: 'WNI',
+      kode_pos: `${10000 + (seed % 90000)}`,
+      kelurahan: subdistricts[seed % subdistricts.length],
+      kecamatan: districts[seed % districts.length],
+      rt_rw: `00${(seed % 9) + 1}/00${(seed + 3) % 9 + 1}`,
+      masa_berlaku_ktp: `20${25 + (seed % 10)}-${String((seed % 12) + 1).padStart(2, '0')}-${String((seed % 28) + 1).padStart(2, '0')}`,
+      status_rumah: homeStatus[seed % homeStatus.length],
+      lama_tinggal: `${2 + (seed % 20)} years`,
+      tagihan_bulanan: Math.round(netIncome * (0.05 + (seed % 5) * 0.02)),
+    } : null;
+
+    const pepPositions = ['Komisaris Utama', 'Direktur Keuangan', 'Kepala Divisi Pengadaan', 'Anggota DPR', 'Walikota', 'Pejabat Eselon II', 'Komisaris Independen', 'Direktur Utama', 'Kepala Satuan Kerja', 'Anggota DPRD'];
+    const pepSources = ['PEP Database PPATK', 'KPK LHKPN', 'Internal Screening', 'PEP Database PPATK', 'World Bank PEP List', 'PEP Database PPATK', 'KPK LHKPN', 'PEP Database PPATK', 'Internal Screening', 'PEP Database PPATK'];
+    const pepCountries = ['Indonesia', 'Indonesia', 'Indonesia', 'Indonesia', 'Indonesia', 'Indonesia', 'Indonesia', 'Indonesia', 'Singapore', 'Malaysia'];
+    const adverseDetails = ['Media mention: unnamed source linked to procurement case (2019)', 'Negative news: connected party in customs investigation', 'Media mention: family member named in graft probe (2020)', '—', '—', '—', '—', 'Adverse media: named in NGO corruption watchlist report', '—', '—'];
+    const eddStatuses = ['Completed', 'Completed', 'Completed', 'N/A', 'N/A', 'In Progress', 'N/A', 'Completed', 'N/A', 'N/A'];
+    const txBehaviorNotes = ['No anomalous pattern detected', 'No anomalous pattern detected', 'Large cash deposits flagged (reviewed, source verified)', 'No anomalous pattern detected', 'Frequent third-party transfers noted (under review)', 'No anomalous pattern detected', 'No anomalous pattern detected', 'No anomalous pattern detected', 'Unusual cross-border transaction pattern (reviewed)', 'No anomalous pattern detected'];
+    const watchlistDetails = ['—', '—', '—', '—', '—', '—', '—', '—', 'Name variant match: PT GRM (false positive, cleared)', '—'];
+    const screeningRefs = ['SCR-2025-000' + (seed % 9 + 1), 'SCR-2025-001' + (seed % 9 + 1), 'SCR-2025-002' + (seed % 9 + 1), 'SCR-2025-000' + (seed % 9 + 1), 'SCR-2025-001' + (seed % 9 + 1), 'SCR-2025-002' + (seed % 9 + 1), 'SCR-2025-000' + (seed % 9 + 1), 'SCR-2025-001' + (seed % 9 + 1), 'SCR-2025-002' + (seed % 9 + 1), 'SCR-2025-003' + (seed % 9 + 1)];
+
+    const enrichedAmlFraud = amlFraud ? {
+      ...(amlFraud as Record<string, unknown>),
+      screening_reference_id: screeningRefs[seed % screeningRefs.length],
+      screening_type: seed % 3 === 0 ? 'Batch (Daily)' : 'Real-time',
+      data_source: 'PPATK SIPTV, UN Sanctions, DTTOT, World Bank',
+      dttot_list_name: (amlFraud as Record<string, unknown>).dttot_match ? ['ABDUL MUKTI NASUTION', 'SITI NURHALIZA', 'BAMBANG SUTRISNO', 'RISTANTO PRABOWO'][seed % 4] : null,
+      dttot_category: (amlFraud as Record<string, unknown>).dttot_match ? ['Terrorist Financing', 'Terrorist Financing', 'Terrorist Organization Affiliate', 'Terrorist Financing'][seed % 4] : null,
+      dttot_match_date: (amlFraud as Record<string, unknown>).dttot_match ? `20${20 + (seed % 5)}-${String((seed % 12) + 1).padStart(2, '0')}-${String((seed % 28) + 1).padStart(2, '0')}` : null,
+      un_list_name: (amlFraud as Record<string, unknown>).un_sanctions_match ? ['MOHAMMED AL-HADI', 'ALI ABDULLAH SALEH', 'HO CHIH-MIN', 'SALIM RASHID'][seed % 4] : null,
+      un_category: (amlFraud as Record<string, unknown>).un_sanctions_match ? ['UNSC 1267/1989', 'UNSC 2140', 'UNSC 1718', 'UNSC 1988'][seed % 4] : null,
+      pep_position: pepPositions[seed % pepPositions.length],
+      pep_country: pepCountries[seed % pepCountries.length],
+      pep_scope: ['Nasional', 'Nasional', 'Nasional', 'Nasional', 'Nasional', 'Nasional', 'Nasional', 'Nasional', 'Internasional', 'Regional'][seed % 10],
+      pep_source: pepSources[seed % pepSources.length],
+      adverse_media_match: seed % 7 < 2 ? 1 : 0,
+      adverse_media_count: seed % 7 < 2 ? 1 + (seed % 2) : 0,
+      adverse_media_details: adverseDetails[seed % adverseDetails.length],
+      edd_status: eddStatuses[seed % eddStatuses.length],
+      edd_completed_date: eddStatuses[seed % eddStatuses.length] === 'Completed' ? `20${25}-${String((seed % 12) + 1).padStart(2, '0')}-${String((seed % 28) + 1).padStart(2, '0')}` : null,
+      edd_notes: eddStatuses[seed % eddStatuses.length] === 'Completed' ? 'All enhanced checks cleared.' : null,
+      domestic_watchlist_match: seed % 8 === 0 ? 1 : 0,
+      domestic_watchlist_detail: watchlistDetails[seed % watchlistDetails.length],
+      tx_behavior_flagged: seed % 5 < 1 ? 1 : 0,
+      tx_behavior_note: txBehaviorNotes[seed % txBehaviorNotes.length],
+      overall_aml_score: [15, 20, 35, 8, 12, 55, 10, 40, 25, 60][seed % 10],
+      overall_aml_verdict: ['Low Risk', 'Low Risk', 'Medium Risk', 'Low Risk', 'Low Risk', 'High Risk', 'Low Risk', 'Medium Risk', 'Low Risk', 'High Risk'][seed % 10],
+      reviewed_by: ['Analyst Budi', 'Analyst Sari', 'Analyst Dimas', 'Analyst Budi', 'Analyst Rina', 'Analyst Dimas', 'Analyst Sari', 'Analyst Rina', 'Analyst Budi', 'Analyst Dimas'][seed % 10],
+      review_date: `20${25}-${String((seed % 12) + 1).padStart(2, '0')}-${String((seed % 28) + 1).padStart(2, '0')}`,
+    } : null;
+
+    const enrichedApplication = app ? {
+      ...app,
+      disbursement_date: `20${25}-${String((seed % 12) + 1).padStart(2, '0')}-${String((seed % 28) + 1).padStart(2, '0')}`,
+      disbursement_method: seed % 3 === 0 ? 'Tunai' : 'Transfer Rekening',
+      repayment_account: `${String(100 + (seed % 900)).padStart(3, '0')}-${String(1000 + (seed % 9000))}`,
+      repayment_method: seed % 2 === 0 ? 'Auto-debit (Rekening BMS)' : 'Auto-debit (Rekening Bank Lain)',
+      insurance_required: product !== 'KTA' ? 'Yes' : 'No',
+      insurance_type: product !== 'KTA' ? 'Jiwa Kredit + Kebakaran' : '—',
+      provisi_fee: `${(0.5 + (seed % 5) * 0.25).toFixed(2)}%`,
+      admin_fee: Math.round(loanAmount * (0.005 + (seed % 3) * 0.003)),
+      legal_docs_complete: seed % 5 === 0 ? 'In Progress' : 'Complete',
+      credit_committee_date: null,
+      special_rate: seed % 7 === 0 ? `${(9 + (seed % 3)).toFixed(2)}% p.a. (special promo)` : null,
+      referral_source: refSources[seed % refSources.length],
+    } : null;
+
+    const financialsWithCasa = f ? {
+      ...f,
+      casa_avg_balance_3m: Math.round(baseBal * (0.9 + (seed % 3) * 0.05)),
+      casa_avg_balance_6m: Math.round(baseBal * (1.1 + (seed % 4) * 0.08)),
+      casa_avg_balance_12m: Math.round(baseBal * (1.3 + (seed % 5) * 0.1)),
+      casa_tenure_months: 12 + (seed % 73),
+      casa_funding_ratio: +(baseBal / requested).toFixed(2),
+      past_loans: [
+        { product: 'KTA', amount: 15000000 + (seed % 7) * 5000000, status: 'Paid', year: 2021 + (seed % 2), tenure_months: 12 + (seed % 13) },
+        { product: 'KPR', amount: 150000000 + (seed % 5) * 50000000, status: 'Paid', year: 2018 + (seed % 3), tenure_months: 60 + (seed % 25) },
+        { product: 'Multiguna', amount: 30000000 + (seed % 4) * 10000000, status: 'Paid', year: 2023, tenure_months: 24 + (seed % 13) },
+      ].filter((_, i) => i < 1 + (seed % 3)),
+    } : null;
+
+    const kol = (slik as Record<string, unknown>)?.kolektibilitas ?? 1;
+    const kolScore = typeof kol === 'number' ? kol : parseInt(String(kol), 10) || 1;
+    const bankNames = ['Bank Central Asia', 'Bank Mandiri', 'Bank BNI', 'Bank CIMB Niaga', 'Bank Danamon', 'Bank Permata', 'Bank Panin', 'Bank OCBC NISP', 'Bank Mega', 'Bank BTN'];
+    const facilityTypes = ['KTA (Unsecured)', 'Credit Card', 'Mortgage (KPR)', 'Working Capital (KKB)', 'Multiguna', 'Credit Card', 'KTA (Unsecured)', 'Mortgage (KPR)', 'Vehicle Loan (KKB)', 'Credit Card'];
+    const kolOpts = ['1 - Current', '2 - Special Mention', '3 - Substandard', '4 - Doubtful', '5 - Loss'];
+
+    const numFacilities = 1 + (seed % 4);
+    const facilities = [];
+    for (let i = 0; i < numFacilities; i++) {
+      const fi = (seed + i * 3) % bankNames.length;
+      const fKol = i === 0 ? kolScore : Math.max(1, kolScore - Math.floor(Math.random() * 2));
+      facilities.push({
+        bank: bankNames[(fi + 1) % bankNames.length],
+        facility_type: facilityTypes[fi % facilityTypes.length],
+        limit: Math.round(loanAmount * (0.1 + ((seed + i * 7) % 8) * 0.15)),
+        outstanding: Math.round(loanAmount * (0.02 + ((seed + i * 11) % 6) * 0.08)),
+        collectability: fKol,
+        collectability_label: kolOpts[fKol - 1],
+        open_date: `20${18 + (i % 5)}-${String((seed % 12) + 1).padStart(2, '0')}-01`,
+        tenure_months: 12 + (i * 12),
+      });
+    }
+    const totalLimit = facilities.reduce((s: number, f: { limit: number }) => s + f.limit, 0);
+    const totalOutstanding = facilities.reduce((s: number, f: { outstanding: number }) => s + f.outstanding, 0);
+
+    const historyGrid = [];
+    const now = new Date(2025, 3, 15);
+    for (let i = 0; i < 24; i++) {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - (23 - i));
+      let hKol: number, hLabel: string;
+      const baseKol = kolScore;
+      if (i < 18) {
+        hKol = Math.max(1, baseKol - Math.floor(Math.random() * 2));
+      } else {
+        hKol = Math.min(5, baseKol + Math.floor(Math.random() * 2));
+      }
+      if (i < 6) { hKol = 1; }
+      if (i >= 18 && i < 22 && seed % 3 < 2) { hKol = Math.max(1, baseKol); }
+      hLabel = kolOpts[hKol - 1];
+      historyGrid.push({
+        period: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+        collectability: hKol,
+        collectability_label: hLabel,
+      });
+    }
+
+    const inquiries = [
+      { date: '2025-03-28', purpose: 'Credit Card Application', institution: 'Bank Central Asia', amount: '50,000,000' },
+      { date: '2024-12-12', purpose: 'KTA Application', institution: 'Bank Mandiri', amount: '30,000,000' },
+    ];
+    if (seed % 3 === 0) {
+      inquiries.push({ date: '2024-08-05', purpose: 'Mortgage Application', institution: 'Bank BNI', amount: '350,000,000' });
+    }
+
+    const slikScore = Math.min(900, Math.max(300, 750 - (kolScore - 1) * 100 - (seed % 3) * 30 + (seed % 2) * 20));
+
+    const enrichedSlik = slik ? {
+      ...(slik as Record<string, unknown>),
+      slik_score: slikScore,
+      slik_grade: slikScore >= 700 ? 'Low Risk' : slikScore >= 500 ? 'Medium Risk' : 'High Risk',
+      facilities,
+      total_facilities: numFacilities,
+      total_limit: totalLimit,
+      total_outstanding: totalOutstanding,
+      credit_utilization_ratio: +(totalOutstanding / totalLimit).toFixed(4),
+      payment_history_grid: historyGrid,
+      id_verified: seed % 8 !== 0,
+      id_verification_note: seed % 8 === 0 ? 'NIK mismatch — debtor name does not match SLIK database record' : 'NIK verified against SLIK database',
+      last_inquiry_date: '2025-03-28',
+      total_inquiries_last_12m: 2 + (seed % 2),
+      inquiries,
+      guaranteed_by: seed % 7 === 0 ? 'PT GRM (Affiliated Company)' : null,
+    } : null;
+
+    return Response.json({ loan: { application: enrichedApplication, debtor: enrichedDebtor, financials: financialsWithCasa, slik: enrichedSlik, amlFraud: enrichedAmlFraud, crde, collateral } });
   }
 
   // GET /api/loans/:id/audit — audit trail

@@ -188,6 +188,8 @@ const server = Bun.serve({
     close(ws) {
       wsManager.remove(ws);
     },
+    // Ping every 30s to detect dead connections
+    pingInterval: 30_000,
   },
 });
 

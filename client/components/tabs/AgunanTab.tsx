@@ -22,7 +22,6 @@ export function AgunanTab({ collateral }: { collateral: Collateral }) {
     return (
       <div data-testid="tab-content-agunan">
         <div className="bg-white border border-border rounded-lg p-8 text-center">
-          <div className="text-4xl mb-3">✅</div>
           <h3 className="font-display font-semibold text-text mb-2">Collateral Not Required</h3>
           <p className="text-muted text-sm">Unsecured loan product — no collateral required.</p>
           <div data-testid="value-agunan-required" className="hidden">No</div>
@@ -60,7 +59,7 @@ export function AgunanTab({ collateral }: { collateral: Collateral }) {
           <span className="font-mono">{collateral.certificate_number}</span>
         </Field>
         <Field label="Legal Status" testId="status-hukum">
-          {collateral.legal_status === 'Clear' ? '✅ Clear' : collateral.legal_status}
+          {collateral.legal_status === 'Clear' ? 'Clear' : collateral.legal_status}
         </Field>
         <Field label="Collateral Notes" testId="agunan-catatan">{collateral.notes}</Field>
       </div>

@@ -16,12 +16,14 @@ import { ToastProvider } from "./components/Toast";
 type SessionsCtx = {
   sessions: Map<string, AgentState>;
   screenshots: Map<string, string>;
+  tabIds: Map<string, string>;
   dispatch: (action: any) => void;
 };
 
 export const SessionsContext = createContext<SessionsCtx>({
   sessions: new Map(),
   screenshots: new Map(),
+  tabIds: new Map(),
   dispatch: () => {},
 });
 export function useSessions() {
@@ -34,6 +36,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export function App() {
   const [screenshots, setScreenshots] = useState(new Map<string, string>());
+  const [tabIds, setTabIds] = useState(new Map<string, string>());
   const { sessions, handleWsMessage, dispatch } = useAgentSessions();
 
   const handleAllWs = useCallback(
@@ -44,6 +47,13 @@ export function App() {
           next.set(msg.appId, msg.screenshot);
           return next;
         });
+        if (msg.tabId) {
+          setTabIds((prev) => {
+            const next = new Map(prev);
+            next.set(msg.appId, msg.tabId);
+            return next;
+          });
+        }
       } else {
         handleWsMessage(msg);
       }
@@ -55,7 +65,7 @@ export function App() {
 
   return (
     <ToastProvider>
-    <SessionsContext.Provider value={{ sessions, screenshots, dispatch }}>
+    <SessionsContext.Provider value={{ sessions, screenshots, tabIds, dispatch }}>
       <BrowserRouter>
         <Routes>
           <Route

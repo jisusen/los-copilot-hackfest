@@ -50,7 +50,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
         {/* Bottom: text block */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ fontSize: 24, fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-            Bank Maju Bersama
+            Bank Maju Bersama Gibran
           </div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
             Credit Origination System · Personal Loans Division

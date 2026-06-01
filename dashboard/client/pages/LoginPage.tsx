@@ -81,7 +81,7 @@ export function LoginPage() {
               color: "var(--ink, #1a1a1a)",
             }}
           >
-            Bank Maju Bersama
+            Bank Maju Bersama Gibran
           </h1>
           <p
             style={{

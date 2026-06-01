@@ -107,8 +107,8 @@ export function DataSummaryTab({ application, debtor, financials, slik, aml, crd
           <Row label="Requested Installment" testId="fin-installment" value={<span className="font-mono">{formatRp(financials.requested_installment)}</span>} />
           <Row label="Total Obligations" testId="fin-total" value={<span className="font-mono">{formatRp(financials.total_obligations)}</span>} />
           <Row label="Remaining Income" testId="fin-remaining" value={<span className="font-mono">{formatRp(financials.remaining_income)}</span>} />
-          <Row label="DSR Ratio" testId="fin-dti" value={<span className="font-mono">{formatPercent(financials.dti_ratio)}</span>} />
-          <Row label="DSR Threshold (RAC)" testId="fin-dti-threshold" value={`${Math.round(financials.dti_threshold * 100)}%`} />
+          <Row label="DBR Ratio" testId="fin-dti" value={<span className="font-mono">{formatPercent(financials.dti_ratio)}</span>} />
+          <Row label="DBR Threshold (RAC)" testId="fin-dti-threshold" value={`${Math.round(financials.dti_threshold * 100)}%`} />
           <Row label="Income Verified" testId="fin-verified" value={financials.income_verified ? 'Yes' : 'No'} />
         </Section>
       )}
@@ -147,9 +147,9 @@ export function DataSummaryTab({ application, debtor, financials, slik, aml, crd
           <Row label="Decision" testId="crde-decision" value={crde.decision} />
           <Row label="Risk Score" testId="crde-risk" value={crde.risk_score} />
           <Row label="Numeric Score" testId="crde-score" value={`${crde.numeric_score} / 1000`} />
-          <Row label="DSR Actual" testId="crde-dti" value={formatPercent(crde.dti_actual)} />
-          <Row label="DSR Threshold" testId="crde-dti-limit" value={formatPercent(crde.dti_threshold)} />
-          <Row label="DSR Passed" testId="crde-dti-passed" value={crde.dti_passed ? 'PASS' : 'FAIL'} />
+          <Row label="DBR Actual" testId="crde-dti" value={formatPercent(crde.dti_actual)} />
+          <Row label="DBR Threshold" testId="crde-dti-limit" value={formatPercent(crde.dti_threshold)} />
+          <Row label="DBR Passed" testId="crde-dti-passed" value={crde.dti_passed ? 'PASS' : 'FAIL'} />
           <Row label="Collectability" testId="crde-kol" value={crde.kol_value} />
           <Row label="KOL Passed" testId="crde-kol-passed" value={crde.kol_passed ? 'PASS' : 'FAIL'} />
           <Row label="AML Passed" testId="crde-aml" value={crde.aml_passed ? 'PASS' : 'FAIL'} />
@@ -161,7 +161,7 @@ export function DataSummaryTab({ application, debtor, financials, slik, aml, crd
               <ul data-testid="summary-crde-rules-list">
                 {rules.map((rule, i) => (
                   <li key={i} data-testid={`summary-crde-rule-${i}`} className="text-sm py-1" style={{ color: '#0f172a' }}>
-                    • {rule}
+                    {rule}
                   </li>
                 ))}
               </ul>

@@ -31,7 +31,7 @@ TABS = [
 SECONDS_PER_TAB = 8
 
 
-async def send_screenshot(page, backend_url: str, task_id: str, app_id: str):
+async def send_screenshot(page, backend_url: str, task_id: str, app_id: str, tab_id: str = ""):
     try:
         shot = await page.screenshot(type="png")
         b64 = base64.b64encode(shot).decode()
@@ -39,6 +39,7 @@ async def send_screenshot(page, backend_url: str, task_id: str, app_id: str):
             await http.post(f"{backend_url}/api/internal/screenshot", json={
                 "taskId": task_id,
                 "appId": app_id,
+                "tabId": tab_id,
                 "screenshot": b64,
             })
     except Exception:
@@ -79,10 +80,10 @@ async def run(task: dict):
                 except Exception:
                     pass
 
-                # Stream ~1 screenshot per second for SECONDS_PER_TAB seconds
-                for _ in range(SECONDS_PER_TAB):
-                    await send_screenshot(page, backend_url, task_id, app_id)
-                    await asyncio.sleep(1)
+                # Stream 1 screenshot every 2s for SECONDS_PER_TAB seconds
+                for _ in range(SECONDS_PER_TAB // 2):
+                    await send_screenshot(page, backend_url, task_id, app_id, tab_id)
+                    await asyncio.sleep(2)
 
         except Exception as e:
             print(f"[screenshot_stream:{app_id}] {e}", file=sys.stderr)

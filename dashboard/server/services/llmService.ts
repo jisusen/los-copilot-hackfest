@@ -184,7 +184,7 @@ async function* streamCustomOpenAI(
 }
 
 function buildSystemPrompt(context: string): string {
-  return `You are the Credit Analyst Copilot, an AI assistant for consumer credit analysts at Bank Maju Bersama, Indonesia.
+  return `You are the Credit Analyst Copilot, an AI assistant for consumer credit analysts at Bank Maju Bersama Gibran, Indonesia.
 
 You have access to the following application data, read directly from the Loan Origination System (LOS) by the AI agent:
 

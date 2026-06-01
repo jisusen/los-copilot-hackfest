@@ -1,11 +1,16 @@
 import React from 'react';
-import { formatDate, formatYears } from '../../lib/api';
+import { formatRp, formatDate, formatYears } from '../../lib/api';
 
 type Debtor = {
   full_name: string; nik: string; npwp: string; date_of_birth: string;
   marital_status: string; dependents: number; employment_type: string;
   employer_name: string; job_title: string; years_employed: number;
   domicile_city: string; domicile_address: string; phone: string; email: string;
+  tempat_lahir?: string; jenis_kelamin?: string; agama?: string;
+  pendidikan_terakhir?: string; nama_ibu_kandung?: string; kewarganegaraan?: string;
+  kode_pos?: string; kelurahan?: string; kecamatan?: string; rt_rw?: string;
+  masa_berlaku_ktp?: string; status_rumah?: string; lama_tinggal?: string;
+  tagihan_bulanan?: number;
 };
 
 function Field({ label, testId, children }: { label: string; testId: string; children: React.ReactNode }) {
@@ -45,12 +50,40 @@ export function ProfilDebiturTab({ debtor }: { debtor: Debtor }) {
       </div>
 
       <h3 className="font-display font-semibold text-text mb-4 text-sm uppercase tracking-wide text-muted">Address & Contact</h3>
-      <div className="bg-white border border-border rounded-lg px-5">
+      <div className="bg-white border border-border rounded-lg px-5 mb-6">
         <Field label="City" testId="domisili">{debtor.domicile_city}</Field>
         <Field label="Full Address" testId="alamat-lengkap">{debtor.domicile_address}</Field>
         <Field label="Phone" testId="no-telepon">{debtor.phone}</Field>
         <Field label="Email" testId="email">{debtor.email}</Field>
+        {debtor.kode_pos && <Field label="Postal Code" testId="kode-pos">{debtor.kode_pos}</Field>}
+        {debtor.kelurahan && <Field label="Kelurahan" testId="kelurahan">{debtor.kelurahan}</Field>}
+        {debtor.kecamatan && <Field label="Kecamatan" testId="kecamatan">{debtor.kecamatan}</Field>}
+        {debtor.rt_rw && <Field label="RT / RW" testId="rt-rw">{debtor.rt_rw}</Field>}
       </div>
+
+      {debtor.tempat_lahir && (
+        <>
+          <h3 className="font-display font-semibold text-text mb-4 text-sm uppercase tracking-wide text-muted">Additional Identity</h3>
+          <div className="bg-white border border-border rounded-lg px-5 mb-6">
+            <Field label="Place of Birth" testId="tempat-lahir">{debtor.tempat_lahir}</Field>
+            <Field label="Gender" testId="jenis-kelamin">{debtor.jenis_kelamin}</Field>
+            <Field label="Religion" testId="agama">{debtor.agama}</Field>
+            <Field label="Education" testId="pendidikan">{debtor.pendidikan_terakhir}</Field>
+            <Field label="Mother's Maiden Name" testId="nama-ibu">{debtor.nama_ibu_kandung}</Field>
+            <Field label="Nationality" testId="kewarganegaraan">{debtor.kewarganegaraan}</Field>
+            <Field label="ID Card Expiry" testId="masa-berlaku-ktp">{debtor.masa_berlaku_ktp}</Field>
+          </div>
+
+          <h3 className="font-display font-semibold text-text mb-4 text-sm uppercase tracking-wide text-muted">Residence & Financial Profile</h3>
+          <div className="bg-white border border-border rounded-lg px-5">
+            <Field label="Home Ownership" testId="status-rumah">{debtor.status_rumah}</Field>
+            <Field label="Length of Residence" testId="lama-tinggal">{debtor.lama_tinggal}</Field>
+            <Field label="Monthly Utilities" testId="tagihan-bulanan">
+              <span className="font-mono">{formatRp(debtor.tagihan_bulanan)}</span>
+            </Field>
+          </div>
+        </>
+      )}
     </div>
   );
 }

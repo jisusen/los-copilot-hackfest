@@ -138,6 +138,7 @@ CREATE TABLE IF NOT EXISTS loan_notes (
     author TEXT NOT NULL,
     author_type TEXT NOT NULL DEFAULT 'manual',
     content TEXT NOT NULL,
+    category TEXT NOT NULL DEFAULT 'General',
     memo_json TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

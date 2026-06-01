@@ -9,13 +9,13 @@ export type TabDef = {
 
 export const TABS: TabDef[] = [
   { key: 'data-summary',       label: 'Data Summary',       testId: 'tab-data-summary' },
+  { key: 'permohonan-kredit',  label: 'Loan Application',   testId: 'tab-permohonan-kredit' },
   { key: 'profil-debitur',     label: 'Debtor Profile',     testId: 'tab-profil-debitur' },
   { key: 'data-keuangan',      label: 'Financials',         testId: 'tab-data-keuangan' },
   { key: 'slik-ojk',           label: 'SLIK OJK',           testId: 'tab-slik-ojk' },
   { key: 'aml-fraud',          label: 'AML & Fraud',        testId: 'tab-aml-fraud' },
   { key: 'hasil-crde',         label: 'CRDE Result',        testId: 'tab-hasil-crde' },
   { key: 'agunan',             label: 'Collateral',         testId: 'tab-agunan' },
-  { key: 'permohonan-kredit',  label: 'Loan Application',   testId: 'tab-permohonan-kredit' },
   { key: 'audit-log',          label: 'Audit Log',          testId: 'tab-audit-log' },
   { key: 'notes',              label: 'Notes & Memo',       testId: 'tab-notes' },
 ];

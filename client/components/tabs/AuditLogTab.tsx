@@ -11,13 +11,13 @@ type AuditLog = {
 };
 
 const ACTION_ICONS: Record<string, string> = {
-  APPLICATION_SUBMITTED: '📄',
-  CRDE_EVALUATED: '🤖',
-  AML_SCREENED: '🔍',
-  DECISION_APPROVED: '✅',
-  DECISION_REJECTED: '❌',
-  DECISION_CANCELLED: '🚫',
-  ASSIGNED: '👤',
+  APPLICATION_SUBMITTED: '',
+  CRDE_EVALUATED: '',
+  AML_SCREENED: '',
+  DECISION_APPROVED: '',
+  DECISION_REJECTED: '',
+  DECISION_CANCELLED: '',
+  ASSIGNED: '',
 };
 
 const ACTION_COLORS: Record<string, string> = {

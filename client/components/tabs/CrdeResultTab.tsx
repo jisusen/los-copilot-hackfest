@@ -20,96 +20,120 @@ const DECISION_BG: Record<string, string> = {
   'REJECTED': '#fef2f2',
 };
 
-function Field({ label, testId, children }: { label: string; testId: string; children: React.ReactNode }) {
-  return (
-    <div data-testid={`field-${testId}`} className="flex border-b border-border py-2.5">
-      <span className="w-52 flex-shrink-0 text-xs text-muted font-medium">{label}</span>
-      <span data-testid={`value-${testId}`} className="text-sm text-text">{children || '—'}</span>
-    </div>
-  );
-}
-
 export function CrdeResultTab({ crde }: { crde: CrdeResult }) {
   const riskColor = RISK_COLORS[crde.risk_score] ?? '#6b7c93';
   const decColor = DECISION_COLORS[crde.decision] ?? '#6b7c93';
   const decBg = DECISION_BG[crde.decision] ?? '#f9fafb';
   const rules: string[] = Array.isArray(crde.rules_triggered) ? crde.rules_triggered : [];
+  const failedChecks = [!crde.dti_passed, !crde.kol_passed, !crde.aml_passed, !crde.fraud_passed].filter(Boolean).length;
 
   return (
     <div data-testid="tab-content-hasil-crde">
-      {/* CRDE Header Box */}
-      <div className="rounded-lg border-2 p-6 mb-6" style={{ background: decBg, borderColor: decColor }}>
-        <div className="text-xs text-muted font-semibold uppercase tracking-wide mb-3">Credit Risk Decision Engine (CRDE) — Result</div>
+      {/* Header: decision summary */}
+      <div className="rounded-lg border-2 p-5 mb-5" style={{ background: decBg, borderColor: decColor }}>
         <div className="flex items-center gap-6 flex-wrap">
-          <div>
-            <div className="text-xs text-muted mb-1">Risk Score</div>
+          <div style={{ flex: 1, minWidth: 120 }}>
+            <div className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">Risk Score</div>
             <div className="font-display text-2xl font-bold" style={{ color: riskColor }}>
-              {crde.risk_score === 'LOW' ? '🟢' : crde.risk_score === 'MEDIUM' ? '🟡' : '🔴'} {crde.risk_score}
+              {crde.risk_score}
             </div>
           </div>
-          <div className="w-px h-12 bg-border" />
-          <div>
-            <div className="text-xs text-muted mb-1">Recommendation</div>
+          <div className="w-px h-10" style={{ background: decColor }} />
+          <div style={{ flex: 1, minWidth: 140 }}>
+            <div className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">Recommendation</div>
             <div className="font-display text-xl font-bold" style={{ color: decColor }}>{crde.decision}</div>
           </div>
-          <div className="w-px h-12 bg-border" />
-          <div>
-            <div className="text-xs text-muted mb-1">Numeric Score</div>
-            <div className="font-display text-xl font-bold text-text">{crde.numeric_score} / 1000</div>
+          <div className="w-px h-10" style={{ background: decColor }} />
+          <div style={{ flex: 1, minWidth: 100 }}>
+            <div className="text-xs text-muted font-semibold uppercase tracking-wide mb-1">Score</div>
+            <div className="font-display text-xl font-bold text-text">{crde.numeric_score}/1000</div>
           </div>
         </div>
-        <div className="mt-3 text-xs text-muted">
-          Processed: {formatDateTime(crde.processed_at)} · Engine: {crde.engine_version}
+        <div className="mt-3 text-xs text-muted" style={{ borderTop: `1px solid ${decColor}`, paddingTop: 8 }}>
+          Processed: {formatDateTime(crde.processed_at)} &middot; Engine: {crde.engine_version}
         </div>
       </div>
 
-      {/* Detail checks */}
-      <div className="bg-white border border-border rounded-lg px-5 mb-6">
-        <Field label="Risk Score" testId="crde-risk-score">
-          <span className="font-bold" style={{ color: riskColor }}>{crde.risk_score}</span>
-        </Field>
-        <Field label="CRDE Recommendation" testId="crde-decision">
-          <span className="font-bold" style={{ color: decColor }}>{crde.decision}</span>
-        </Field>
-        <Field label="Numeric Score" testId="crde-numeric-score">{crde.numeric_score} / 1000</Field>
-        <Field label="DSR Actual" testId="crde-dti-actual">{formatPercent(crde.dti_actual)}</Field>
-        <Field label="DSR Threshold" testId="crde-dti-threshold">{formatPercent(crde.dti_threshold)}</Field>
-        <Field label="DSR Status" testId="crde-dti-status">
-          {crde.dti_passed ? '✅ PASS' : '❌ FAIL'}
-        </Field>
-        <Field label="Collectability" testId="crde-kol">{crde.kol_value}</Field>
-        <Field label="Collectability Status" testId="crde-kol-status">
-          {crde.kol_passed ? '✅ PASS' : '❌ FAIL'}
-        </Field>
-        <Field label="AML Status" testId="crde-aml-status">
-          {crde.aml_passed ? '✅ PASS' : '❌ FAIL'}
-        </Field>
-        <Field label="Fraud Status" testId="crde-fraud-status">
-          {crde.fraud_passed ? '✅ PASS' : '❌ FAIL'}
-        </Field>
-        <Field label="Rules Triggered" testId="crde-rules-triggered">
-          {rules.length === 0 ? 'No rules triggered' : `${rules.length} rule(s) triggered`}
-        </Field>
-      </div>
-
-      {/* Rules list */}
-      {rules.length > 0 && (
-        <div className="bg-white border border-border rounded-lg p-5 mb-6">
-          <h3 className="font-display text-sm font-semibold text-text mb-3">Triggered Rules</h3>
-          <ul data-testid="crde-rules-list" className="space-y-2">
-            {rules.map((rule, i) => (
-              <li key={i} data-testid={`crde-rule-${i}`} className="flex items-start gap-2 text-sm">
-                <span className="text-danger mt-0.5">⚠</span>
-                <span className="text-text">{rule}</span>
-              </li>
-            ))}
-          </ul>
+      {/* Rules section — prominent card */}
+      <div className="rounded-lg border mb-5" style={{
+        borderLeft: `4px solid ${rules.length > 0 ? '#c47d0e' : '#1a7f4b'}`,
+        background: rules.length > 0 ? '#fffbeb' : '#f0fdf4',
+        borderColor: rules.length > 0 ? '#fde68a' : '#bbf7d0',
+      }}>
+        <div style={{ padding: '14px 16px' }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-display text-sm font-bold uppercase tracking-wide" style={{ color: rules.length > 0 ? '#92400e' : '#166534' }}>
+              Underwriting Rules Check
+            </div>
+            {rules.length > 0 && (
+              <div className="font-mono text-xs px-2 py-0.5 rounded" style={{ background: '#fde68a', color: '#92400e' }}>
+                {rules.length} rule{rules.length > 1 ? 's' : ''} triggered
+              </div>
+            )}
+          </div>
+          {rules.length > 0 ? (
+            <ul data-testid="crde-rules-list" style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+              {rules.map((rule, i) => (
+                <li key={i} data-testid={`crde-rule-${i}`} className="text-sm" style={{
+                  padding: '6px 0',
+                  borderBottom: i < rules.length - 1 ? '1px solid #fde68a' : 'none',
+                  color: '#78350f',
+                  display: 'flex',
+                  gap: 8,
+                }}>
+                  <span className="font-mono text-xs font-bold" style={{ color: '#92400e', minWidth: 20 }}>{i + 1}.</span>
+                  <span>{rule}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="text-sm font-medium" style={{ color: '#166534' }}>
+              All RAC criteria satisfied — no rules triggered.
+            </div>
+          )}
         </div>
-      )}
-
-      <div className="bg-white border border-border rounded-lg px-5">
-        <Field label="CRDE Notes" testId="crde-catatan">{crde.notes}</Field>
       </div>
+
+      {/* Check results grid */}
+      <div className="rounded-lg border border-border bg-white p-5 mb-5">
+        <div className="font-display text-sm font-bold uppercase tracking-wide text-text mb-3">Check Results</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+          {[
+            { label: 'DBR', status: crde.dti_passed, val: formatPercent(crde.dti_actual), threshold: formatPercent(crde.dti_threshold) },
+            { label: 'Collectability', status: crde.kol_passed, val: `Kol. ${crde.kol_value}`, threshold: '' },
+            { label: 'AML', status: crde.aml_passed, val: crde.aml_passed ? 'Clear' : 'Flag', threshold: '' },
+            { label: 'Fraud', status: crde.fraud_passed, val: crde.fraud_passed ? 'No signals' : 'Signals detected', threshold: '' },
+          ].map((check, i) => (
+            <div key={check.label} style={{
+              padding: '10px 0',
+              borderBottom: i < 2 ? '1px solid #e5e3dc' : 'none',
+              borderRight: i % 2 === 0 ? '1px solid #e5e3dc' : 'none',
+              paddingRight: i % 2 === 0 ? 16 : 0,
+              paddingLeft: i % 2 === 1 ? 16 : 0,
+            }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted">{check.label}</span>
+                <span className="font-mono text-xs font-bold px-2 py-0.5 rounded" style={{
+                  background: check.status ? '#e3f0e9' : '#fbe5e7',
+                  color: check.status ? '#0d6e3f' : '#9b1c2c',
+                }}>
+                  {check.status ? 'PASS' : 'FAIL'}
+                </span>
+              </div>
+              <div className="text-sm text-text mt-1">{check.val}</div>
+              {check.threshold && <div className="text-xs text-muted">Threshold: {check.threshold}</div>}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Notes section */}
+      {crde.notes ? (
+        <div className="rounded-lg border bg-white p-5" style={{ borderLeft: '3px solid #1a3a5c' }}>
+          <div className="font-display text-sm font-bold uppercase tracking-wide text-text mb-2">CRDE Notes</div>
+          <div className="text-sm text-text leading-relaxed">{crde.notes}</div>
+        </div>
+      ) : null}
     </div>
   );
 }

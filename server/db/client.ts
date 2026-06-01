@@ -33,6 +33,13 @@ function runMigrations(db: Database) {
   } catch {
     // Column already exists — ignore
   }
+
+  // Add category column to loan_notes
+  try {
+    db.exec(`ALTER TABLE loan_notes ADD COLUMN category TEXT DEFAULT 'General'`);
+  } catch {
+    // Column already exists — ignore
+  }
 }
 
 export function getDb(): Database {
