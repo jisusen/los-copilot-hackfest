@@ -35,7 +35,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
         <div style={{
           width: 36,
           height: 36,
-          border: '1.5px solid #ffffff',
+          background: '#8B1A1A',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -44,16 +44,16 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
           fontSize: 11,
           color: '#ffffff',
         }}>
-          BMB
+          J
         </div>
 
         {/* Bottom: text block */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ fontSize: 24, fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-            Bank Maju Bersama Gibran
+            Bank Maju Bersama
           </div>
           <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-            Credit Origination System · Personal Loans Division
+            JOKI AI · Credit Origination System
           </div>
           <div style={{
             fontFamily: '"IBM Plex Mono", monospace',
@@ -61,7 +61,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
             color: 'rgba(255,255,255,0.6)',
             marginTop: 4,
           }}>
-            v3.1.0
+            v3.1.0 · Hackfest 2026
           </div>
           <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
             Authorized personnel only.
@@ -94,7 +94,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
             color: '#8a8a8a',
             marginBottom: 24,
           }}>
-            Use your BMS internal credentials
+            Use your JOKI AI internal credentials
           </div>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>

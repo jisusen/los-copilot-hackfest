@@ -72,11 +72,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         background: '#ffffff',
         zIndex: 10,
       }}>
-        {/* BMS box */}
+        {/* JOKI AI logo */}
         <div style={{
           width: 32,
           height: 32,
-          border: '1.5px solid #1a1a1a',
+          background: '#8B1A1A',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -84,17 +84,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
           fontFamily: '"IBM Plex Mono", monospace',
           fontWeight: 700,
           fontSize: 11,
-          color: '#1a1a1a',
+          color: '#ffffff',
         }}>
-          BMB
+          J
         </div>
-        {/* Bank name */}
+        {/* Brand + team name */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <span style={{ fontWeight: 600, fontSize: 13, color: '#1a1a1a', lineHeight: 1 }}>
-            Bank Maju Bersama Gibran
+            Bank Maju Bersama
           </span>
           <span style={{ fontSize: 10, color: '#8a8a8a', lineHeight: 1 }}>
-            Sistem Informasi Kredit Konsumer
+            JOKI AI · Sistem Informasi Kredit Konsumer
           </span>
         </div>
         {/* Spacer */}
@@ -119,7 +119,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           fontSize: 11,
           color: '#1a1a1a',
         }}>
-          {user?.username ?? '—'} · Cabang JKT
+          {user?.username ?? '—'} · JOKI AI
         </div>
       </header>
 
@@ -144,7 +144,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             fontWeight: 600,
             padding: '4px 10px 12px',
           }}>
-            MENU
+            JOKI AI
           </div>
 
           <PlaceholderLink label="Dashboard" />
@@ -164,7 +164,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             fontSize: 10,
             color: '#b8b8b8',
           }}>
-            Build 3.1.0 · Internal use only
+            JOKI AI · Build 3.1.0 · Hackfest 2026
           </span>
           <button
             onClick={handleLogout}
