@@ -58,7 +58,7 @@ export function LoginPage() {
             style={{
               width: 48,
               height: 48,
-              background: "var(--accent, #0066ff)",
+              background: "#8B1A1A",
               color: "#fff",
               borderRadius: "50%",
               display: "inline-flex",
@@ -70,7 +70,7 @@ export function LoginPage() {
               marginBottom: 16,
             }}
           >
-            B
+            J
           </div>
           <h1
             style={{
@@ -81,7 +81,7 @@ export function LoginPage() {
               color: "var(--ink, #1a1a1a)",
             }}
           >
-            Bank Maju Bersama Gibran
+            Bank Maju Bersama
           </h1>
           <p
             style={{
@@ -93,7 +93,7 @@ export function LoginPage() {
               letterSpacing: ".1em",
             }}
           >
-            Credit Analyst Copilot
+            JOKI AI · Credit Analyst Copilot
           </p>
         </div>
 

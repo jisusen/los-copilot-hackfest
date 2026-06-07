@@ -97,7 +97,7 @@ function NavRail({ active = "dash" }: { active?: string }) {
           letterSpacing: ".1em",
         }}
       >
-        BMB · v1
+        JOKI AI · v1
       </div>
     </div>
   );
@@ -108,8 +108,8 @@ function Topbar({ crumbs = [] }: { crumbs?: string[] }) {
   return (
     <div className="top">
       <div className="brand">
-        Bank Maju Bersama Gibran
-        <span className="sub">Credit Analyst Copilot</span>
+        Bank Maju Bersama
+        <span className="sub">JOKI AI · Credit Analyst Copilot</span>
       </div>
       <div className="crumb">
         {crumbs.map((c, i) => (

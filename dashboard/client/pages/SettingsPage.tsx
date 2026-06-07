@@ -70,7 +70,7 @@ function NavRail({ active = "set" }: { active?: string }) {
         </div>
       ))}
       <div style={{ flex: 1 }} />
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--ink-4)", writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: ".1em" }}>BMB · v1</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--ink-4)", writingMode: "vertical-rl", transform: "rotate(180deg)", letterSpacing: ".1em" }}>JOKI AI · v1</div>
     </div>
   );
 }
@@ -78,7 +78,7 @@ function NavRail({ active = "set" }: { active?: string }) {
 function Topbar({ crumbs = [] }: { crumbs?: string[] }) {
   return (
     <div className="top">
-      <div className="brand">Bank Maju Bersama Gibran<span className="sub">Credit Analyst Copilot</span></div>
+      <div className="brand">Bank Maju Bersama<span className="sub">JOKI AI · Credit Analyst Copilot</span></div>
       <div className="crumb">{crumbs.map((c, i) => (<span key={i}>{" / "}{i === crumbs.length - 1 ? <b>{c}</b> : c}</span>))}</div>
       <div className="spacer" />
       <UserMenu username="analyst01" />
@@ -295,7 +295,7 @@ export function SettingsPage() {
                 )}
               </CollapsibleSection>
 
-              <CollapsibleSection title="LOS Connection" desc="Bank Maju Bersama Gibran Loan Origination System" icon="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" status={settings.losUrl ? "ok" : "empty"}>
+              <CollapsibleSection title="LOS Connection" desc="Bank Maju Bersama — JOKI AI Loan Origination System" icon="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" status={settings.losUrl ? "ok" : "empty"}>
                 <Field label="LOS Base URL" value={settings.losUrl} onChange={(v) => update("losUrl", v)} placeholder="http://localhost:3333" />
                 <Field label="Username" value={settings.losUsername} onChange={(v) => update("losUsername", v)} />
                 <Field label="Password" value={settings.losPassword} onChange={(v) => update("losPassword", v)} password />

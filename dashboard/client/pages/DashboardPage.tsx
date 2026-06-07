@@ -62,7 +62,7 @@ function NavRail({ active = "dash" }: { active?: string }) {
   ];
   return (
     <div className="rail">
-      <div className="mark">B</div>
+      <div className="mark" style={{ background: '#8B1A1A' }}>J</div>
       {items.map((it) => (
         <div
           key={it.k}
@@ -85,7 +85,7 @@ function NavRail({ active = "dash" }: { active?: string }) {
           letterSpacing: ".1em",
         }}
       >
-        BMB · v1
+        JOKI AI · v1
       </div>
     </div>
   );
@@ -108,8 +108,8 @@ function Topbar({
   return (
     <div className="top">
       <div className="brand">
-        Bank Maju Bersama Gibran
-        <span className="sub">Credit Analyst Copilot</span>
+        Bank Maju Bersama
+        <span className="sub">JOKI AI · Credit Analyst Copilot</span>
       </div>
       <div className="crumb">
         {crumbs.map((c, i) => (
@@ -161,12 +161,10 @@ function CompactReadyCard({
   const r = state.result;
   const isReject = r.crdeDecision === "DITOLAK" || r.crdeDecision === "REJECTED";
   const cls = crdeCls(r.crdeDecision);
-  const recBg = isReject ? "var(--red-soft)" : "var(--amber-soft)";
-  const recBorder = isReject ? "var(--red-line)" : "var(--amber-line)";
   const recColor = isReject ? "var(--red)" : "var(--amber)";
 
   const flags: string[] = [];
-  if (r.dtiActual > 0.4) flags.push(`DBR ${(r.dtiActual * 100).toFixed(1)}% > 40%`);
+  if (r.dtiActual > 0.4) flags.push(`DBR ${(r.dtiActual * 100).toFixed(1)}%`);
   if (r.slikKol > 1) flags.push(`SLIK Kol.${r.slikKol}`);
   if (!r.amlClear) flags.push("AML flag");
   if (r.rulesTriggered.length > 0) flags.push(r.rulesTriggered[0]);
@@ -174,57 +172,54 @@ function CompactReadyCard({
   return (
     <div
       className={`card hot${isReject ? " red" : ""}`}
-      style={{ minWidth: 320, width: 320, cursor: "pointer", flexShrink: 0, padding: 14 }}
+      style={{ width: "100%", cursor: "pointer", flexShrink: 0, padding: 10 }}
       onClick={() => navigate(`/review/${appId}`)}
     >
-      {/* Header row */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-3)" }}>{appId}</span>
-        <span style={{ color: "var(--ink-4)", fontSize: 9 }}>·</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--ink-4)" }}>
+      {/* Header: appId + risk + time */}
+      <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 4 }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--ink-3)" }}>{appId}</span>
+        <span style={{ color: "var(--ink-4)", fontSize: 8 }}>·</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--ink-4)" }}>
           {formatElapsed(state.elapsedMs)}
         </span>
         <div style={{ flex: 1 }} />
-        <span className={`tag ${RISK_COLOR[r.riskScore] === "var(--red)" ? "red" : r.riskScore === "LOW" ? "green" : "amber"}`} style={{ fontSize: 9, padding: "1px 6px" }}>
+        <span className={`tag ${RISK_COLOR[r.riskScore] === "var(--red)" ? "red" : r.riskScore === "LOW" ? "green" : "amber"}`} style={{ fontSize: 8, padding: "1px 5px" }}>
           {r.riskScore}
         </span>
       </div>
-      {/* Name */}
-      <div style={{ fontWeight: 600, fontSize: 14, color: "var(--ink)", marginBottom: 1 }}>
+      {/* Name + product */}
+      <div style={{ fontWeight: 600, fontSize: 13, color: "var(--ink)", marginBottom: 1 }}>
         {loan?.debtor_name ?? appId}
       </div>
-      {/* Product + amount */}
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--ink-3)", marginBottom: 8 }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--ink-3)", marginBottom: 6 }}>
         {loan?.product_type ?? ""}{loan ? ` · ${formatRpShort(loan.amount_requested)}` : ""}
       </div>
-      {/* CRDE recommendation line */}
-      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-        <span className={`tag solid-${cls}`} style={{ fontSize: 9, padding: "1px 6px" }}>{r.crdeDecision}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: recColor, fontWeight: 500 }}>
+      {/* CRDE line */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+        <span className={`tag solid-${cls}`} style={{ fontSize: 8, padding: "1px 5px" }}>{r.crdeDecision}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: recColor, fontWeight: 500 }}>
           Score {r.numericScore}/1000
         </span>
       </div>
-      {/* Flags */}
+      {/* Flags inline */}
       {flags.length > 0 && (
-        <div style={{ marginBottom: 6 }}>
+        <div style={{ marginBottom: 4, display: "flex", flexWrap: "wrap", gap: 3 }}>
           {flags.slice(0, 2).map((f, i) => (
-            <div key={i} style={{ fontSize: 10, color: "var(--red)", lineHeight: 1.5 }}>
-              ⚑ {f}
-            </div>
+            <span key={i} style={{ fontSize: 9, color: "var(--red)", lineHeight: 1.4 }}>⚑ {f}</span>
           ))}
         </div>
       )}
       {/* Metrics strip */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", border: "1px solid var(--line)", borderRadius: "var(--r)" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", border: "1px solid var(--line)", borderRadius: "var(--r-sm)" }}>
         {[
           ["DBR", `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
           ["SLIK", `Kol.${r.slikKol}`, r.slikKol > 1 ? "amber" : ""],
           ["AML", r.amlClear ? "Clear" : "Flag", !r.amlClear ? "red" : ""],
           ["Rules", String(r.rulesTriggered.length), r.rulesTriggered.length > 0 ? "amber" : ""],
         ].map(([k, v, color], i) => (
-          <div key={k} style={{ padding: "5px 8px", borderRight: i < 3 ? "1px solid var(--line)" : 0 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--ink-4)", textTransform: "uppercase", letterSpacing: ".08em" }}>{k}</div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 500, color: color === "red" ? "var(--red)" : color === "amber" ? "var(--amber)" : "var(--ink)" }}>{v}</div>
+          <div key={k} style={{ padding: "4px 6px", borderRight: i < 3 ? "1px solid var(--line)" : 0 }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 7, color: "var(--ink-4)", textTransform: "uppercase", letterSpacing: ".08em" }}>{k}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 500, color: color === "red" ? "var(--red)" : color === "amber" ? "var(--amber)" : "var(--ink)" }}>{v}</div>
           </div>
         ))}
       </div>
@@ -560,13 +555,13 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Main content: Task List sidebar + activity feed */}
+      {/* Main content: Task List | Activity feed | Ready to review */}
       <div className="app-main" style={{ display: "flex", overflow: "hidden" }}>
         {/* Left: Permanent Task List panel */}
         <div
           className="card"
           style={{
-            width: 380,
+            width: 340,
             flexShrink: 0,
             padding: 0,
             overflow: "hidden",
@@ -646,7 +641,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Right: Activity feed */}
+        {/* Center: Activity feed */}
         <div style={{ flex: 1, overflow: "auto", minWidth: 0 }}>
           {/* Agent mode banner */}
           {agentMode === "sim" && (
@@ -703,30 +698,6 @@ export function DashboardPage() {
               </div>
             </div>
           </div>
-
-          {/* Ready for review — horizontal scroll */}
-          {readyEntries.length > 0 && (
-            <div style={{ padding: "4px 24px 0" }}>
-              <div className="section-head" style={{ padding: "8px 0" }}>
-                <div>
-                  <h2 style={{ fontSize: 13 }}>Ready for review</h2>
-                  <div className="sub" style={{ fontSize: 11 }}>
-                    {readyEntries.length} app{readyEntries.length !== 1 ? "s" : ""} ready
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 8 }}>
-                {[...readyEntries]
-                  .sort((a, b) => {
-                    const order: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
-                    return (order[a[1].result.riskScore] ?? 3) - (order[b[1].result.riskScore] ?? 3);
-                  })
-                  .map(([appId, state]) => (
-                    <CompactReadyCard key={appId} appId={appId} loan={loanMap.get(appId)} state={state} />
-                  ))}
-              </div>
-            </div>
-          )}
 
           {/* Activity sections */}
           <div style={{ padding: "12px 24px 24px" }}>
@@ -797,6 +768,50 @@ export function DashboardPage() {
           </div>
 
           <div style={{ height: 32 }} />
+        </div>
+
+        {/* Right: Ready to review — vertical panel */}
+        <div
+          className="card"
+          style={{
+            width: 320,
+            flexShrink: 0,
+            padding: 0,
+            overflow: "hidden",
+            display: "flex",
+            flexDirection: "column",
+            borderLeft: "1px solid var(--line)",
+            borderRadius: 0,
+          }}
+        >
+          <div className="section-head" style={{ padding: "18px 20px 12px" }}>
+            <div>
+              <h2 style={{ fontSize: 14 }}>Ready to review</h2>
+              <div className="sub">
+                {readyEntries.length} app{readyEntries.length !== 1 ? "s" : ""}
+              </div>
+            </div>
+            {readyEntries.some(([, s]) => s.result.riskScore === "HIGH") && (
+              <span className="tag red" style={{ fontSize: 9, padding: "1px 6px", marginLeft: 8 }}>high-risk</span>
+            )}
+          </div>
+
+          <div style={{ flex: 1, overflowY: "auto", padding: "12px 14px", display: "flex", flexDirection: "column", gap: 12 }}>
+            {readyEntries.length === 0 ? (
+              <div style={{ padding: 20, textAlign: "center", fontSize: 11, color: "var(--ink-4)", fontFamily: "var(--font-mono)" }}>
+                No results yet
+              </div>
+            ) : (
+              [...readyEntries]
+                .sort((a, b) => {
+                  const order: Record<string, number> = { HIGH: 0, MEDIUM: 1, LOW: 2 };
+                  return (order[a[1].result.riskScore] ?? 3) - (order[b[1].result.riskScore] ?? 3);
+                })
+                .map(([appId, state]) => (
+                  <CompactReadyCard key={appId} appId={appId} loan={loanMap.get(appId)} state={state} />
+                ))
+            )}
+          </div>
         </div>
       </div>
     </div>
