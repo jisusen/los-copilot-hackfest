@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CreditUnderwritingDashboard } from "../components/CreditUnderwritingDashboard";
 import { CopilotChat } from "../components/CopilotChat";
+import { DecisionFooter } from "../components/DecisionFooter";
+
+
 import { apiFetch } from "../lib/api";
 import type { MemoDraft, AgentResult, Decision } from "../lib/types";
 import {
@@ -270,6 +273,9 @@ export function ReviewPage() {
                     slikOjk={slik}
                     amlFraud={aml}
                   />
+
+            <DecisionFooter appId={appId} debtorName={debtorName} memo={memo} />
+
                   {/* Sticky Chat Toggle Button */}
                   <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
                     {chatOpen && (

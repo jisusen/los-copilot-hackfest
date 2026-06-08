@@ -1,144 +1,147 @@
-import React, { useState } from 'react';
-import { login } from '../lib/auth';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../lib/api";
+import { useAuth } from "../App";
+import { Eye, EyeOff, AlertCircle, Sparkles } from "lucide-react";
 
-export function LoginPage({ onLogin }: { onLogin: () => void }) {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+export function LoginPage() {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
-    setError('');
+    setError("");
+    if (!username.trim() || !password.trim()) return;
+
     setLoading(true);
-    const res = await login(username, password);
-    setLoading(false);
-    if (res.ok) {
-      onLogin();
-    } else {
-      setError(res.error ?? 'Invalid username or password');
+    try {
+      const data = await apiFetch<{ ok: boolean; username: string }>(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: JSON.stringify({ username, password }),
+        },
+      );
+      if (data.ok) {
+        login(data.username);
+        navigate("/", { replace: true });
+      } else {
+        setError("Login failed");
+      }
+    } catch (err: any) {
+      setError(
+        err.message === "API 401" ? "Invalid credentials" : "Network error",
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen overflow-hidden">
-      {/* Background panel — 75% desktop, top on mobile */}
-      <div className="relative h-[40vh] md:h-full md:w-[75%] flex flex-col justify-between p-8 md:p-12 overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #8B1A1A 0%, #590000 100%)' }}>
-        {/* Decorative circles */}
-        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5" />
-        <div className="absolute -bottom-32 -left-16 w-96 h-96 rounded-full bg-white/5" />
-        <div className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full bg-white/[0.03]" />
-
-        {/* Logo + Brand */}
-        <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <img src="/img/logo-header.png" alt="Joki" className="h-10 w-auto" />
-            <div>
-              <span className="text-white font-black text-2xl tracking-tight">Joki</span>
-              <span className="text-white/50 font-light text-sm ml-2">LOS</span>
+    <div className="min-h-screen flex items-center justify-center bg-zinc-900 p-4">
+      <div
+        className="flex flex-col lg:flex-row max-w-4xl w-full bg-white rounded-2xl overflow-hidden"
+        style={{ boxShadow: "-1px 6px 20px #000000" }}
+      >
+        {/* ===== LEFT — Form ===== */}
+        <div className="flex-1 p-6 sm:p-8">
+          <div className="mb-6">
+            {/* Line 1: Logo & Teks JOKI AI sejajar */}
+            <div className="flex items-center gap-2 mb-2">
+              <img src="/img/logo-login.png" alt="Logo" className="w-10 h-10" />
+              <span className="text-xl font-bold text-red-600 tracking-tight">
+                JOKI</span>  <span className="text-xl font-bold text-zinc-900 tracking-tight">AI
+              </span>
             </div>
-          </div>
-          <div className="mt-2 text-white/40 text-xs font-mono">v3.1.0</div>
-        </div>
 
-        {/* Quote / branding text */}
-        <div className="relative z-10 max-w-lg">
-          <div className="text-white/90 text-2xl md:text-3xl font-bold leading-tight">
-            Credit Origination System
-          </div>
-          <div className="text-white/50 text-sm mt-2 leading-relaxed">
-            Personal Loans Division · Bank Maju Bersama
-          </div>
-          <div className="flex items-center gap-4 mt-6 text-white/30 text-xs">
-            <span className="flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
-              Secure Access
-            </span>
-            <span className="flex items-center gap-1.5">
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-              Authorized Personnel Only
-            </span>
-          </div>
-        </div>
+            <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+              Hello Again!
+            </h1>
 
-        {/* Bottom badge */}
-        <div className="relative z-10 text-white/20 text-xs">
-          &copy; 2026 Bank Maju Bersama
-        </div>
-      </div>
+            <p className="text-zinc-500 text-sm mt-1">
+              Let's get started with me
+            </p>
+          </div>
 
-      {/* Form panel — 25% desktop, bottom on mobile */}
-      <div className="flex-1 md:w-[25%] flex items-center justify-center p-6 md:p-10 bg-white">
-        <div className="w-full max-w-sm">
-          <div className="text-2xl font-bold text-gray-900 tracking-tight">Sign in</div>
-          <div className="text-sm text-gray-400 mt-1 mb-8">Use your internal credentials</div>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
-                Username
-              </label>
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-500">User</label>
               <input
-                data-testid="input-username"
                 type="text"
                 value={username}
-                onChange={e => setUsername(e.target.value)}
-                autoComplete="username"
-                required
-                placeholder="Enter username"
-                className="w-full h-10 px-3 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-[#8B1A1A] focus:ring-1 focus:ring-[#8B1A1A]/20 transition-all placeholder-gray-400"
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="analyst01"
+                autoFocus
+                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-300 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-all focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-500">
                 Password
               </label>
-              <input
-                data-testid="input-password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                autoComplete="current-password"
-                required
-                placeholder="Enter password"
-                className="w-full h-10 px-3 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-[#8B1A1A] focus:ring-1 focus:ring-[#8B1A1A]/20 transition-all placeholder-gray-400"
-              />
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 pr-11 bg-zinc-50 border border-zinc-300 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-all focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                >
+                  {showPw ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             </div>
 
             {error && (
-              <div data-testid="error-message"
-                className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600">
-                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+              <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                 {error}
               </div>
             )}
 
-            <button data-testid="btn-login" type="submit" disabled={loading}
-              className="w-full h-10 text-sm font-semibold text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-60 cursor-pointer border-none"
-              style={{ background: 'linear-gradient(135deg, #8B1A1A, #590000)' }}>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 text-sm font-bold rounded-xl bg-red-600 text-white hover:bg-red-700 transition-all shadow-lg shadow-red-600/25 disabled:opacity-50"
+            >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  Signing in...
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in…
                 </span>
-              ) : 'Sign in'}
+              ) : (
+                "Sign In"
+              )}
             </button>
-
-            <div className="text-center text-xs text-gray-400 mt-2">
-              Demo: analyst01 / bms2025
-            </div>
           </form>
+        </div>
+
+        {/* ===== RIGHT — Image ===== */}
+        <div
+          className="hidden lg:flex flex-1 bg-zinc-50 items-center justify-center"
+          style={{ margin: "2px" }}
+        >
+          <img
+            src="/img/login3.webp"
+            alt="Bank Maju Bersama"
+            className="max-w-full max-h-full object-contain rounded-xl"
+            style={{ boxShadow: "rgb(0 0 0 / 47%) -1px 6px 20px" }}
+          />
         </div>
       </div>
     </div>

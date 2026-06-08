@@ -1,33 +1,21 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
-import type { Decision } from "../lib/types";
+import type { MemoDraft } from "../lib/types";
 
-const BTNS: { decision: Decision; label: string; tailwind: string }[] = [
-  { decision: "approve", label: "✓ Approve",             tailwind: "bg-emerald-600 hover:bg-emerald-700 text-white" },
-  { decision: "reject",  label: "⚠ Refer to Committee",  tailwind: "bg-amber-500 hover:bg-amber-600 text-white" },
-  { decision: "cancel",  label: "✗ Reject",               tailwind: "bg-red-600 hover:bg-red-700 text-white" },
-];
-
-const CONFIRM_LABEL: Record<Decision, string> = {
-  approve: "APPROVING",
-  reject:  "REFERRING TO COMMITTEE",
-  cancel:  "REJECTING",
-};
-
-export function DecisionFooter({ appId, debtorName }: { appId: string; debtorName: string }) {
+export function DecisionFooter({ appId, debtorName, memo }: { appId: string; debtorName: string; memo: MemoDraft | null }) {
   const navigate = useNavigate();
-  const [pending, setPending] = useState<Decision | null>(null);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  async function confirm() {
-    if (!pending || loading) return;
+  async function submitMemo() {
+    if (loading || !memo) return;
     setLoading(true);
     try {
       await apiFetch(`/api/decisions/${appId}`, {
         method: "POST",
-        body: JSON.stringify({ decision: pending, note, analystId: "analyst01" }),
+        body: JSON.stringify({ memo, note, analystId: "analyst01" }),
       });
       navigate("/");
     } catch {
@@ -35,75 +23,98 @@ export function DecisionFooter({ appId, debtorName }: { appId: string; debtorNam
     }
   }
 
+  const handleSubmit = useCallback(() => { setShowConfirm(true); }, []);
+
   return (
     <>
-      <div className="flex items-center gap-2.5">
-        <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-slate-400 shrink-0">Final decision</span>
-        {BTNS.map(b => {
-          const isActive = pending === b.decision;
-          const testid   = b.decision === "approve" ? "approve" : b.decision === "reject" ? "refer" : "reject";
-          return (
-            <button
-              key={b.decision}
-              data-testid={`btn-${testid}`}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
-                isActive ? b.tailwind : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
-              }`}
-              onClick={() => setPending(prev => prev === b.decision ? null : b.decision)}
-            >
-              {b.label}
-            </button>
-          );
-        })}
-        <div className="flex-1 min-w-0">
+      {/* Sticky memo submission bar */}
+      <div style={{
+        position: "sticky", bottom: 0, left: 0, right: 0,
+        padding: "14px 24px",
+        background: "rgba(255,255,255,0.96)",
+        backdropFilter: "blur(10px)",
+        borderTop: "1px solid var(--line)",
+        boxShadow: "0 -4px 16px rgba(15,18,22,0.04)",
+        zIndex: 10,
+        display: "flex", alignItems: "center", gap: 10,
+      }}>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+          <polyline points="10 9 9 9 8 9" />
+        </svg>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--ink-3)", fontWeight: 600 }}>
+          Submit memo to LOS
+        </span>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
           <input
-            data-testid="decision-note-input"
+            data-testid="memo-note-input"
             type="text"
             value={note}
             onChange={e => setNote(e.target.value)}
-            placeholder="Optional note…"
-            className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-xs text-slate-900 bg-white outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+            placeholder="Optional note for LOS…"
+            style={{
+              flex: 1, padding: "8px 12px",
+              border: "1px solid var(--line)", borderRadius: "var(--r)",
+              fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink)",
+              outline: "none",
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = "var(--accent)"; }}
+            onBlur={e => { e.currentTarget.style.borderColor = "var(--line)"; }}
           />
         </div>
         <button
-          data-testid="btn-confirm-decision"
-          className="px-4 py-1.5 text-xs font-semibold rounded-lg bg-slate-900 text-white hover:bg-slate-800 transition-colors disabled:opacity-40 whitespace-nowrap"
-          disabled={!pending || loading}
-          onClick={confirm}
+          data-testid="btn-submit-memo"
+          className="btn primary"
+          disabled={loading || !memo}
+          onClick={handleSubmit}
+          style={{ padding: "8px 18px", whiteSpace: "nowrap" }}
         >
-          {loading ? "Processing…" : "Submit →"}
+          {loading ? "Submitting…" : "Submit Memo →"}
         </button>
       </div>
 
-      {pending && (
+      {/* Confirmation modal */}
+      {showConfirm && (
         <div
-          className="fixed inset-0 bg-black/40 flex items-center justify-center z-50"
-          onClick={() => !loading && setPending(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(15,18,22,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}
+          className="fade-in"
+          onClick={() => !loading && setShowConfirm(false)}
         >
           <div
-            className="bg-white rounded-2xl p-7 max-w-md w-[90%] shadow-2xl"
+            style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--r-lg)", padding: "28px 28px 24px", maxWidth: 460, width: "90%", boxShadow: "0 20px 60px rgba(15,18,22,0.12)" }}
+            className="slide-up"
             onClick={e => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold text-slate-900 mb-1">Confirm Decision</h2>
-            <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-              You are about to <strong className="text-slate-900">{CONFIRM_LABEL[pending]}</strong> the following application:
-            </p>
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-5">
-              <div className="text-[11px] font-mono text-slate-500 mb-0.5">{appId}</div>
-              <div className="text-base font-bold text-slate-900">{debtorName}</div>
-              {note && <div className="text-[11px] font-mono text-slate-500 mt-2">Note: {note}</div>}
+            <div style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 600, color: "var(--ink)", marginBottom: 6, letterSpacing: "-0.01em" }}>
+              Confirm Submission
             </div>
-            <div className="flex gap-2.5">
+            <div style={{ fontSize: 14, color: "var(--ink-2)", marginBottom: 16, lineHeight: 1.5 }}>
+              Submit the credit analysis memo for:
+            </div>
+            <div style={{ padding: "12px 14px", background: "var(--paper-2)", borderRadius: "var(--r)", border: "1px solid var(--line)", marginBottom: 20 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", marginBottom: 2 }}>{appId}</div>
+              <div style={{ fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{debtorName}</div>
+              {note && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", marginTop: 8 }}>Note: {note}</div>}
+            </div>
+            <div style={{ fontSize: 12, color: "var(--ink-3)", marginBottom: 16, lineHeight: 1.5 }}>
+              The memo will be saved in LOS Notes & Memo. Final approval/rejection must be done in the LOS application.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
               <button
-                className="flex-1 py-2.5 text-sm font-semibold rounded-xl bg-red-600 hover:bg-red-700 text-white transition-colors disabled:opacity-40"
-                onClick={confirm}
+                className="btn primary"
+                onClick={() => { setShowConfirm(false); submitMemo(); }}
                 disabled={loading}
+                style={{ flex: 1, padding: "10px" }}
               >
-                {loading ? "Processing…" : "Confirm"}
+                {loading ? "Processing…" : "Submit to LOS"}
               </button>
               <button
-                className="flex-1 py-2.5 text-sm font-semibold rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition-colors"
-                onClick={() => setPending(null)}
+                className="btn outline"
+                onClick={() => setShowConfirm(false)}
+                style={{ flex: 1, padding: "10px" }}
               >
                 Cancel
               </button>
