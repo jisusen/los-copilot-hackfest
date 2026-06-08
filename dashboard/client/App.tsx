@@ -1,101 +1,39 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-} from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { DashboardPage } from "./pages/DashboardPage";
-import { ReviewPage } from "./pages/ReviewPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { useAgentSessions } from "./hooks/useAgentSessions";
-import { useWebSocket } from "./hooks/useWebSocket";
-import type { AgentState } from "./lib/types";
-import { ToastProvider } from "./components/Toast";
-
-type SessionsCtx = {
-  sessions: Map<string, AgentState>;
-  screenshots: Map<string, string>;
-  tabIds: Map<string, string>;
-  dispatch: (action: any) => void;
-};
-
-export const SessionsContext = createContext<SessionsCtx>({
-  sessions: new Map(),
-  screenshots: new Map(),
-  tabIds: new Map(),
-  dispatch: () => {},
-});
-export function useSessions() {
-  return useContext(SessionsContext);
-}
-
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
-}
+import React, { useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Dashboard } from './pages/Dashboard';
+import { LoginPage } from './pages/LoginPage';
+import { LoanQueuePage } from './pages/LoanQueuePage';
+import { LoanDetailPage } from './pages/LoanDetailPage';
+import { checkSession, getUser } from './lib/auth';
 
 export function App() {
-  const [screenshots, setScreenshots] = useState(new Map<string, string>());
-  const [tabIds, setTabIds] = useState(new Map<string, string>());
-  const { sessions, handleWsMessage, dispatch } = useAgentSessions();
+  const [ready, setReady] = useState(false);
+  const [authed, setAuthed] = useState(false);
 
-  const handleAllWs = useCallback(
-    (msg: any) => {
-      if (msg.type === "agent:screenshot") {
-        setScreenshots((prev) => {
-          const next = new Map(prev);
-          next.set(msg.appId, msg.screenshot);
-          return next;
-        });
-        if (msg.tabId) {
-          setTabIds((prev) => {
-            const next = new Map(prev);
-            next.set(msg.appId, msg.tabId);
-            return next;
-          });
-        }
-      } else {
-        handleWsMessage(msg);
-      }
-    },
-    [handleWsMessage],
-  );
+  useEffect(() => {
+    checkSession().then(user => {
+      setAuthed(!!user);
+      setReady(true);
+    });
+  }, []);
 
-  useWebSocket(handleAllWs);
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center min-h-screen" style={{ background: 'linear-gradient(135deg, #991b1b 0%, #7f1d1d 100%)' }}>
+        <div className="text-white text-lg font-display">Memuat sistem...</div>
+      </div>
+    );
+  }
 
   return (
-    <ToastProvider>
-    <SessionsContext.Provider value={{ sessions, screenshots, tabIds, dispatch }}>
-      <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/review/:appId"
-            element={
-              <ProtectedRoute>
-                <ReviewPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
-    </SessionsContext.Provider>
-    </ToastProvider>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/login" element={authed ? <Navigate to="/dashboard" replace /> : <LoginPage onLogin={() => setAuthed(true)} />} />
+        <Route path="/dashboard" element={authed ? <Dashboard /> : <Navigate to="/login" replace />} />
+        <Route path="/loans" element={authed ? <LoanQueuePage /> : <Navigate to="/login" replace />} />
+        <Route path="/loans/:id" element={authed ? <LoanDetailPage /> : <Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to={authed ? '/dashboard' : '/login'} replace />} />
+      </Routes>
+    </BrowserRouter>
   );
 }

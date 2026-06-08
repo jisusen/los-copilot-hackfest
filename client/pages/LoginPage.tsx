@@ -21,92 +21,66 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {/* Left panel — navy */}
-      <div style={{
-        flex: '0 0 50%',
-        background: '#1f3b5c',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        padding: 40,
-      }}>
-        {/* Top: BMS box */}
-        <div style={{
-          width: 36,
-          height: 36,
-          background: '#8B1A1A',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontFamily: '"IBM Plex Mono", monospace',
-          fontWeight: 700,
-          fontSize: 11,
-          color: '#ffffff',
-        }}>
-          J
+    <div className="flex flex-col md:flex-row h-screen overflow-hidden">
+      {/* Background panel — 75% desktop, top on mobile */}
+      <div className="relative h-[40vh] md:h-full md:w-[75%] flex flex-col justify-between p-8 md:p-12 overflow-hidden"
+        style={{ background: 'linear-gradient(135deg, #8B1A1A 0%, #590000 100%)' }}>
+        {/* Decorative circles */}
+        <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-white/5" />
+        <div className="absolute -bottom-32 -left-16 w-96 h-96 rounded-full bg-white/5" />
+        <div className="absolute top-1/3 right-1/4 w-48 h-48 rounded-full bg-white/[0.03]" />
+
+        {/* Logo + Brand */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3">
+            <img src="/img/logo-header.png" alt="Joki" className="h-10 w-auto" />
+            <div>
+              <span className="text-white font-black text-2xl tracking-tight">Joki</span>
+              <span className="text-white/50 font-light text-sm ml-2">LOS</span>
+            </div>
+          </div>
+          <div className="mt-2 text-white/40 text-xs font-mono">v3.1.0</div>
         </div>
 
-        {/* Bottom: text block */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          <div style={{ fontSize: 24, fontWeight: 600, color: '#ffffff', lineHeight: 1.2 }}>
-            Bank Maju Bersama
+        {/* Quote / branding text */}
+        <div className="relative z-10 max-w-lg">
+          <div className="text-white/90 text-2xl md:text-3xl font-bold leading-tight">
+            Credit Origination System
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.8)', lineHeight: 1.4 }}>
-            JOKI AI · Credit Origination System
+          <div className="text-white/50 text-sm mt-2 leading-relaxed">
+            Personal Loans Division · Bank Maju Bersama
           </div>
-          <div style={{
-            fontFamily: '"IBM Plex Mono", monospace',
-            fontSize: 11,
-            color: 'rgba(255,255,255,0.6)',
-            marginTop: 4,
-          }}>
-            v3.1.0 · Hackfest 2026
+          <div className="flex items-center gap-4 mt-6 text-white/30 text-xs">
+            <span className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              Secure Access
+            </span>
+            <span className="flex items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
+              Authorized Personnel Only
+            </span>
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
-            Authorized personnel only.
-          </div>
+        </div>
+
+        {/* Bottom badge */}
+        <div className="relative z-10 text-white/20 text-xs">
+          &copy; 2026 Bank Maju Bersama
         </div>
       </div>
 
-      {/* Right panel — white */}
-      <div style={{
-        flex: '0 0 50%',
-        background: '#ffffff',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        padding: 60,
-      }}>
-        <div style={{ maxWidth: 320, width: '100%' }}>
-          {/* Title */}
-          <div style={{
-            fontSize: 22,
-            fontWeight: 600,
-            letterSpacing: '-0.01em',
-            color: '#1a1a1a',
-            marginBottom: 6,
-          }}>
-            Sign in
-          </div>
-          <div style={{
-            fontSize: 12,
-            color: '#8a8a8a',
-            marginBottom: 24,
-          }}>
-            Use your JOKI AI internal credentials
-          </div>
+      {/* Form panel — 25% desktop, bottom on mobile */}
+      <div className="flex-1 md:w-[25%] flex items-center justify-center p-6 md:p-10 bg-white">
+        <div className="w-full max-w-sm">
+          <div className="text-2xl font-bold text-gray-900 tracking-tight">Sign in</div>
+          <div className="text-sm text-gray-400 mt-1 mb-8">Use your internal credentials</div>
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {/* Username */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <label style={{
-                fontSize: 11,
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                color: '#4a4a4a',
-                fontWeight: 500,
-              }}>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                 Username
               </label>
               <input
@@ -117,30 +91,12 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
                 autoComplete="username"
                 required
                 placeholder="Enter username"
-                style={{
-                  border: '1px solid #1a1a1a',
-                  height: 36,
-                  padding: '0 10px',
-                  fontSize: 13,
-                  color: '#1a1a1a',
-                  background: '#ffffff',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  width: '100%',
-                  fontFamily: 'Inter, system-ui, sans-serif',
-                }}
+                className="w-full h-10 px-3 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-[#8B1A1A] focus:ring-1 focus:ring-[#8B1A1A]/20 transition-all placeholder-gray-400"
               />
             </div>
 
-            {/* Password */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-              <label style={{
-                fontSize: 11,
-                textTransform: 'uppercase',
-                letterSpacing: '0.03em',
-                color: '#4a4a4a',
-                fontWeight: 500,
-              }}>
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1.5">
                 Password
               </label>
               <input
@@ -151,65 +107,35 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
                 autoComplete="current-password"
                 required
                 placeholder="Enter password"
-                style={{
-                  border: '1px solid #1a1a1a',
-                  height: 36,
-                  padding: '0 10px',
-                  fontSize: 13,
-                  color: '#1a1a1a',
-                  background: '#ffffff',
-                  outline: 'none',
-                  boxSizing: 'border-box',
-                  width: '100%',
-                  fontFamily: 'Inter, system-ui, sans-serif',
-                }}
+                className="w-full h-10 px-3 text-sm text-gray-900 bg-gray-50 border border-gray-300 rounded-lg outline-none focus:border-[#8B1A1A] focus:ring-1 focus:ring-[#8B1A1A]/20 transition-all placeholder-gray-400"
               />
             </div>
 
-            {/* Error */}
             {error && (
-              <div
-                data-testid="error-message"
-                style={{
-                  border: '1px solid #a83232',
-                  background: '#fbe6e6',
-                  padding: '8px 10px',
-                  fontSize: 12,
-                  color: '#a83232',
-                }}
-              >
+              <div data-testid="error-message"
+                className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600">
+                <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
                 {error}
               </div>
             )}
 
-            {/* Login button */}
-            <button
-              data-testid="btn-login"
-              type="submit"
-              disabled={loading}
-              style={{
-                background: '#1f3b5c',
-                color: '#ffffff',
-                height: 36,
-                width: '100%',
-                fontSize: 13,
-                fontWeight: 500,
-                border: 'none',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                opacity: loading ? 0.7 : 1,
-                fontFamily: 'Inter, system-ui, sans-serif',
-              }}
-            >
-              {loading ? 'Signing in...' : 'Sign in'}
+            <button data-testid="btn-login" type="submit" disabled={loading}
+              className="w-full h-10 text-sm font-semibold text-white rounded-lg transition-all hover:opacity-90 disabled:opacity-60 cursor-pointer border-none"
+              style={{ background: 'linear-gradient(135deg, #8B1A1A, #590000)' }}>
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                  </svg>
+                  Signing in...
+                </span>
+              ) : 'Sign in'}
             </button>
 
-            {/* Demo hint */}
-            <div style={{
-              fontSize: 11,
-              color: '#8a8a8a',
-              textAlign: 'center',
-              marginTop: 12,
-            }}>
+            <div className="text-center text-xs text-gray-400 mt-2">
               Demo: analyst01 / bms2025
             </div>
           </form>

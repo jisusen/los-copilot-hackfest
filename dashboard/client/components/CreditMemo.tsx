@@ -11,15 +11,14 @@ const SECTIONS: { key: keyof MemoDraft; label: string; n: number }[] = [
   { key: "section5_aml",         label: "AML & Fraud Screening",                    n: 5 },
   { key: "section6_agunan",      label: "Collateral",                               n: 6 },
   { key: "section7_crde",        label: "CRDE Decision",                            n: 7 },
-  { key: "section8_rekomendasi", label: "Notes & Analyst Recommendation",          n: 8 },
+  { key: "section8_rekomendasi", label: "Notes & Analyst Recommendations",          n: 8 },
 ];
 
 function renderInline(text: string): React.ReactNode {
-  // Split on ** first (bold), then handle _italic_ within plain segments
   const boldParts = text.split("**");
   return boldParts.map((seg, bi) => {
     if (bi % 2 === 1) {
-      return <strong key={bi} style={{ color: "var(--ink)", fontWeight: 600 }}>{seg}</strong>;
+      return <strong key={bi} className="text-slate-900 font-semibold">{seg}</strong>;
     }
     const italicParts = seg.split("_");
     if (italicParts.length === 1) return <React.Fragment key={bi}>{seg}</React.Fragment>;
@@ -27,7 +26,7 @@ function renderInline(text: string): React.ReactNode {
       <React.Fragment key={bi}>
         {italicParts.map((s, ii) =>
           ii % 2 === 1
-            ? <em key={ii} style={{ color: "var(--ink-2)", fontStyle: "italic" }}>{s}</em>
+            ? <em key={ii} className="text-slate-600 italic">{s}</em>
             : <React.Fragment key={ii}>{s}</React.Fragment>
         )}
       </React.Fragment>
@@ -36,19 +35,59 @@ function renderInline(text: string): React.ReactNode {
 }
 
 function renderText(text: string): React.ReactNode {
-  if (!text) return <span style={{ color: "var(--ink-4)" }}>—</span>;
-  return text.split("\n").map((line, i) => {
-    const trimmed = line.trim();
-    const isBullet = trimmed.startsWith("•") || trimmed.startsWith("- ") || trimmed.startsWith("* ");
-    const clean = isBullet ? trimmed.replace(/^[•\-\*]\s*/, "") : line;
-    if (!clean && !isBullet) return <br key={i} />;
-    return (
-      <div key={i} style={{ lineHeight: 1.7, fontSize: 13, color: "var(--ink-2)", display: "flex", gap: isBullet ? 8 : 0, marginBottom: 2 }}>
-        {isBullet && <span style={{ color: "var(--ink-4)", flexShrink: 0, marginTop: 1 }}>•</span>}
-        <span>{renderInline(clean)}</span>
-      </div>
-    );
-  });
+  if (!text) return <span className="text-slate-300">—</span>;
+  const lines = text.split("\n");
+  return (
+    <div className="space-y-0.5">
+      {lines.map((line, i) => {
+        const trimmed = line.trim();
+        if (!trimmed) return <div key={i} className="h-2" />;
+        const isBullet = trimmed.startsWith("•") || trimmed.startsWith("- ") || trimmed.startsWith("* ");
+        const clean = isBullet ? trimmed.replace(/^[•\-\*]\s*/, "") : trimmed;
+        const hasColon = clean.includes(":") && !clean.startsWith("http");
+        const colonIdx = hasColon ? clean.indexOf(":") : -1;
+        const label = colonIdx > 0 ? clean.slice(0, colonIdx).trim() : "";
+        const value = colonIdx > 0 ? clean.slice(colonIdx + 1).trim() : clean;
+
+        if (isBullet && hasColon) {
+          return (
+            <div key={i} className="flex gap-2 py-0.5">
+              <span className="text-slate-400 shrink-0 mt-0.5 text-xs">•</span>
+              <div className="flex-1 flex items-baseline gap-2 text-[13px]">
+                <span className="text-slate-500 font-medium shrink-0">{renderInline(label)}</span>
+                <span className="text-slate-800">:</span>
+                <span className="text-slate-900">{renderInline(value)}</span>
+              </div>
+            </div>
+          );
+        }
+        if (hasColon) {
+          return (
+            <div key={i} className={`flex gap-2 py-0.5 ${i % 2 === 1 ? "bg-slate-50 -mx-2 px-2 rounded" : ""}`}>
+              <div className="flex-1 flex items-baseline gap-2 text-[13px]">
+                <span className="text-slate-500 font-medium shrink-0 min-w-[120px]">{renderInline(label)}</span>
+                <span className="text-slate-400">:</span>
+                <span className="text-slate-900">{renderInline(value)}</span>
+              </div>
+            </div>
+          );
+        }
+        if (isBullet) {
+          return (
+            <div key={i} className="flex gap-2 py-0.5">
+              <span className="text-slate-400 shrink-0 mt-0.5 text-xs">•</span>
+              <span className="text-[13px] leading-relaxed text-slate-700">{renderInline(clean)}</span>
+            </div>
+          );
+        }
+        return (
+          <div key={i} className={`flex gap-2 py-0.5 text-[13px] leading-relaxed text-slate-700 ${i % 2 === 1 ? "bg-slate-50 -mx-2 px-2 rounded" : ""}`}>
+            <span>{renderInline(clean)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function MemoSection({ s, content, editable, onChange }: {
@@ -63,19 +102,18 @@ function MemoSection({ s, content, editable, onChange }: {
   }
 
   return (
-    <section data-testid={`memo-section-${s.n}`} style={{ padding: "22px 0", borderTop: "1px solid var(--line)" }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 12 }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-4)", minWidth: 24 }}>
+    <section data-testid={`memo-section-${s.n}`} className="py-5 border-t border-slate-200">
+      <div className="flex items-baseline gap-2.5 mb-3">
+        <span className="font-mono text-[11px] text-slate-400 min-w-[24px]">
           {String(s.n).padStart(2, "0")}
         </span>
-        <h3 style={{ margin: 0, fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 600, letterSpacing: "-0.005em", color: "var(--ink)" }}>
+        <h3 className="m-0 text-[16px] font-semibold tracking-tight text-slate-900">
           {s.label}
         </h3>
-        <div style={{ flex: 1 }} />
+        <div className="flex-1" />
         <button
           data-testid={`memo-section-copy-${s.n}`}
-          className="btn-ghost"
-          style={{ padding: "3px 8px", fontSize: 10 }}
+          className="text-[10px] px-2 py-0.5 rounded-md text-slate-500 hover:bg-slate-100 transition-colors"
           onClick={copy}
         >
           Copy
@@ -88,14 +126,7 @@ function MemoSection({ s, content, editable, onChange }: {
           value={content}
           onChange={e => onChange?.(e.target.value)}
           placeholder="Add your override notes, mitigating factors, or final reasoning…"
-          style={{
-            width: "100%", minHeight: 140, padding: 14,
-            border: "1px solid var(--line)",
-            background: "#fff",
-            borderRadius: "var(--r)",
-            fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--ink)",
-            resize: "vertical", outline: "none", lineHeight: 1.6,
-          }}
+          className="w-full min-h-[220px] p-3.5 border border-dashed border-amber-300 bg-amber-50/50 rounded-xl font-mono text-xs text-slate-900 resize-vertical outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
         />
       ) : (
         <div>{renderText(content)}</div>
@@ -107,7 +138,7 @@ function MemoSection({ s, content, editable, onChange }: {
 function KeyMetrics({ result }: { result: AgentResult }) {
   const r = result;
   const items: [string, string, string][] = [
-    ["DBR",   `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
+    ["DTI",   `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
     ["SLIK",  `Kol.${r.slikKol}`,                   r.slikKol > 1 ? "amber" : ""],
     ["AML",   r.amlClear ? "Clear" : "Flag",        !r.amlClear ? "red" : ""],
     ["Score", `${r.numericScore}`,                  r.numericScore < 500 ? "red" : r.numericScore < 750 ? "amber" : ""],
@@ -115,25 +146,42 @@ function KeyMetrics({ result }: { result: AgentResult }) {
   ];
   const cls = crdeCls(r.crdeDecision);
 
+  const colorMap: Record<string, string> = {
+    red: "text-red-600",
+    amber: "text-amber-600",
+    "": "text-slate-900",
+  };
+
   return (
-    <aside style={{ padding: 18, background: "var(--paper-2)", border: "1px solid var(--line)", borderRadius: "var(--r-lg)", position: "sticky", top: 24 }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--ink-3)", fontWeight: 600, marginBottom: 12 }}>
+    <aside className="p-4 bg-slate-50 border border-slate-200 rounded-2xl sticky top-6">
+      <div className="font-mono text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-3">
         Key Metrics
       </div>
-      <dl style={{ margin: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+      <dl className="m-0 flex flex-col gap-2.5">
         {items.map(([k, v, color]) => (
-          <div key={k} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: "1px dashed var(--line)", paddingBottom: 8 }}>
-            <dt style={{ fontSize: 12, color: "var(--ink-3)" }}>{k}</dt>
-            <dd style={{
-              margin: 0, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 500,
-              color: color === "red" ? "var(--red)" : color === "amber" ? "var(--amber)" : "var(--ink)",
-            }}>{v}</dd>
+          <div key={k} className="flex justify-between items-baseline border-b border-dashed border-slate-200 pb-2">
+            <dt className="text-xs text-slate-500">{k}</dt>
+            <dd className={`m-0 font-mono text-[13px] font-medium ${colorMap[color] ?? "text-slate-900"}`}>{v}</dd>
           </div>
         ))}
       </dl>
-      <div style={{ marginTop: 18, padding: "10px 12px", borderRadius: "var(--r)", background: CRDE_SOFT[r.crdeDecision] ?? "var(--paper-2)", border: `1px solid ${CRDE_BORDER[r.crdeDecision] ?? "var(--line)"}` }}>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, textTransform: "uppercase", letterSpacing: ".1em", color: CRDE_COLOR[r.crdeDecision] ?? "var(--ink-3)", fontWeight: 600, marginBottom: 4 }}>CRDE Decision</div>
-        <div style={{ fontFamily: "var(--font-serif)", fontSize: 18, fontWeight: 600, color: CRDE_COLOR[r.crdeDecision] ?? "var(--ink)" }}>
+      <div
+        className="mt-4 p-2.5 rounded-xl"
+        style={{
+          background: CRDE_SOFT[r.crdeDecision] ?? "bg-slate-50",
+          border: `1px solid ${CRDE_BORDER[r.crdeDecision] ?? "#e2e8f0"}`,
+        }}
+      >
+        <div
+          className="font-mono text-[9px] uppercase tracking-widest font-semibold mb-1"
+          style={{ color: CRDE_COLOR[r.crdeDecision] ?? "#94a3b8" }}
+        >
+          AI Decision
+        </div>
+        <div
+          className="text-[18px] font-semibold"
+          style={{ color: CRDE_COLOR[r.crdeDecision] ?? "#1f2d3d" }}
+        >
           {r.crdeDecision}
         </div>
       </div>
@@ -155,25 +203,25 @@ export function CreditMemo({
   const today = new Date().toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
   const crde = result;
   const crdeCl = crde ? crdeCls(crde.crdeDecision) : "";
-  const crdeBg     = crde ? (CRDE_SOFT[crde.crdeDecision]   ?? "var(--paper-2)") : "var(--paper-2)";
-  const crdeBorder = crde ? (CRDE_BORDER[crde.crdeDecision] ?? "var(--line)")     : "var(--line)";
-  const crdeColor  = crde ? (CRDE_COLOR[crde.crdeDecision]  ?? "var(--ink)")      : "var(--ink)";
+  const crdeBg     = crde ? (CRDE_SOFT[crde.crdeDecision]   ?? "#f8fafc") : "#f8fafc";
+  const crdeBorder = crde ? (CRDE_BORDER[crde.crdeDecision] ?? "#e2e8f0") : "#e2e8f0";
+  const crdeColor  = crde ? (CRDE_COLOR[crde.crdeDecision]  ?? "#1f2d3d") : "#1f2d3d";
 
   return (
-    <div style={{ padding: "0 24px 24px" }}>
-      <div style={{ maxWidth: 980, margin: "0 auto" }}>
+    <div className="px-6 pb-6">
+      <div className="mx-auto max-w-[980px]">
         {/* Memo header */}
-        <div data-testid="memo-header" style={{ padding: "28px 0 8px" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 6 }}>
+        <div data-testid="memo-header" className="pt-7 pb-2">
+          <div className="font-mono text-[11px] text-slate-400 uppercase tracking-widest mb-1.5">
             Consumer Credit Analysis Memo
           </div>
-          <h1 style={{ margin: 0, fontFamily: "var(--font-serif)", fontSize: 32, fontWeight: 600, letterSpacing: "-0.02em", color: "var(--ink)" }}>
+          <h1 className="m-0 text-[32px] font-semibold tracking-tight text-slate-900">
             {result ? (renderInline(memo.section1_profil.split("\n")[0]?.trim() || appId)) : appId}
           </h1>
-          <div style={{ display: "flex", gap: 24, marginTop: 10, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)" }}>
-            <span><b style={{ color: "var(--ink)" }}>Application</b> {appId}</span>
-            <span><b style={{ color: "var(--ink)" }}>Date</b> {today}</span>
-            <span><b style={{ color: "var(--ink)" }}>Status</b> Draft AI — Awaiting Analyst Decision</span>
+          <div className="flex gap-6 mt-2.5 font-mono text-[11px] text-slate-400">
+            <span><b className="text-slate-800">Application</b> {appId}</span>
+            <span><b className="text-slate-800">Date</b> {today}</span>
+            <span><b className="text-slate-800">Status</b> Draft AI — Awaiting Analyst Decision</span>
           </div>
         </div>
 
@@ -181,27 +229,25 @@ export function CreditMemo({
         {crde && (
           <div
             data-testid="crde-banner"
+            className="my-6 p-[18px_22px] rounded-2xl"
             style={{
-              margin: "24px 0",
-              padding: "18px 22px",
               background: crdeBg,
               border: `1px solid ${crdeBorder}`,
               borderLeft: `4px solid ${crdeColor}`,
-              borderRadius: "var(--r-lg)",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: crdeColor, fontWeight: 600 }}>
+            <div className="flex items-center gap-3 mb-2">
+              <span className="font-mono text-[10px] uppercase tracking-widest font-semibold" style={{ color: crdeColor }}>
                 CRDE Recommendation
               </span>
               <span className={`tag solid-${crdeCl}`}>{crde.crdeDecision}</span>
-              <div style={{ flex: 1 }} />
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: crdeColor }}>
+              <div className="flex-1" />
+              <span className="font-mono text-[11px]" style={{ color: crdeColor }}>
                 Risk {crde.riskScore} · Score {crde.numericScore}/1000 · {crde.rulesTriggered.length} rules triggered
               </span>
             </div>
             {crde.rulesTriggered.length > 0 && (
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6, color: "var(--ink-2)" }}>
+              <p className="m-0 text-[13px] leading-relaxed text-slate-700">
                 {crde.rulesTriggered.join("; ")}.
               </p>
             )}
@@ -209,7 +255,7 @@ export function CreditMemo({
         )}
 
         {/* 2-col: sections | metrics rail */}
-        <div style={{ display: "grid", gridTemplateColumns: crde ? "1fr 240px" : "1fr", gap: 32, paddingBottom: 24 }}>
+        <div className="grid gap-8 pb-6" style={{ gridTemplateColumns: crde ? "1fr 240px" : "1fr" }}>
           <div>
             {SECTIONS.map(s => (
               <MemoSection

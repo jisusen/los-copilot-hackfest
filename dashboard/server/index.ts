@@ -8,6 +8,9 @@ import { handleDecisions, handleSessions } from "./routes/decisions";
 import { handleInternal } from "./routes/internal";
 import { handleSettings } from "./routes/settings";
 import { handleAuth } from "./routes/auth";
+import autoprefixer from 'autoprefixer';
+import cssLoader from 'bun-css-loader';
+import tailwindcss from 'tailwindcss';
 
 const PORT = parseInt(process.env.PORT ?? "3003");
 const ROOT = join(import.meta.dir, "..");
@@ -36,6 +39,11 @@ async function buildClient() {
         process.env.NODE_ENV ?? "development",
       ),
     },
+    plugins: [
+      cssLoader({
+        postCssPlugins: [tailwindcss, autoprefixer],
+      }),
+    ],
   });
   if (!result.success) {
     console.error("Build failed:", result.logs);
@@ -150,6 +158,11 @@ async function handleRequest(req: Request): Promise<Response> {
       Response.json({ error: "Not found" }, { status: 404 }),
       req,
     );
+  }
+
+  if (pathname.startsWith("/img/")) {
+    const file = serveFile(join(ROOT, pathname));
+    if (file) return file;
   }
 
   // Static files

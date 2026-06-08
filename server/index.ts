@@ -105,6 +105,15 @@ const server = Bun.serve({
       return withCors(Response.json({ error: 'Not found' }, { status: 404 }), req);
     }
 
+    if (pathname.startsWith('/img/')) {
+      let filePath = join(ROOT, 'dashboard', pathname);
+      let res = serveFile(filePath);
+      if (res) return res;
+      filePath = join(ROOT, 'client', pathname);
+      res = serveFile(filePath);
+      if (res) return res;
+    }
+
     // Static files from dist/
     if (pathname !== '/' && pathname.includes('.')) {
       const filePath = join(DIST, pathname);
