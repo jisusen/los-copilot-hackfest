@@ -1,0 +1,15 @@
+node_modules
+*/node_modules
+dist
+*/dist
+.git
+.vscode
+.idea
+.env
+*/.env
+.venv
+*/.venv
+__pycache__
+*/__pycache__
+data/*.db
+.settings.json

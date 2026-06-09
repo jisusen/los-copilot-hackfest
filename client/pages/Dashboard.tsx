@@ -40,7 +40,16 @@ export function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [noticeVisible, setNoticeVisible] = useState(true);
   const [noticePage, setNoticePage] = useState(1);
+  const [noticeDirection, setNoticeDirection] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState("");
+
+  useEffect(() => {
+    if (!noticeVisible) return;
+    const timer = setInterval(() => {
+      setNoticePage(prev => prev === 3 ? 1 : prev + 1);
+    }, 4000);
+    return () => clearInterval(timer);
+  }, [noticeVisible]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -158,30 +167,34 @@ export function Dashboard() {
         <h1 className="text-xl font-bold text-gray-900">Dashboard</h1>
       </div>
 
-      {/* Notice & Alert — image banner with text beside octopus */}
+      {/* Notice & Alert — long card with Octo illustration */}
       {noticeVisible && (
-        <div className="relative rounded-2xl overflow-hidden mb-5">
-          <img src="/img/dashboard1.png" alt="Notice" className="w-full h-auto block" />
-          <div className="absolute inset-0 flex items-center p-3 sm:p-5 md:p-6 lg:p-8">
-            <div className="ml-[30%] sm:ml-[25%] md:ml-[22%] lg:ml-[18%] xl:ml-[15%]">
-              <p className="text-black font-bold text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl leading-tight">Notices & Alert</p>
-              <p className="text-black/80 text-[10px] sm:text-xs md:text-sm mt-0.5 leading-snug max-w-md">
-                Bank Maju Bersama is available 7 days a week
+        <div className="relative flex items-center rounded-2xl overflow-hidden mb-5 bg-white border border-gray-100 min-h-[100px] shadow-md">
+          <div className="shrink-0 self-stretch flex items-center px-4">
+            <img src="/img/octo.png" alt="Octo" className="h-20 w-auto" />
+          </div>
+          <div className="flex-1 flex items-center py-4 pr-4">
+            <div>
+              <p className="text-black font-bold text-sm sm:text-base lg:text-lg leading-tight">Notices & Alert</p>
+              <p className="text-black/80 text-xs sm:text-sm mt-0.5 leading-snug max-w-md">
+                {noticePage === 1 ? 'CIMB Niaga is available 7 days a week' :
+                 noticePage === 2 ? 'Digital loan application now fully online' :
+                 'New CRDE scoring model v3.1 implemented'}
               </p>
-              <div className="flex items-center gap-1.5 mt-1 sm:mt-2">
+              <div className="flex items-center gap-1.5 mt-2">
                 {[1, 2, 3].map((d) => (
                   <button key={d} onClick={() => setNoticePage(d)}
                     className={`rounded-full transition-all ${noticePage === d ? "w-3 sm:w-4 h-1.5 sm:h-2 bg-gray-700" : "w-1.5 sm:w-2 h-1.5 sm:h-2 bg-gray-400"}`} />
                 ))}
               </div>
             </div>
-            <button onClick={() => setNoticeVisible(false)}
-              className="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center shrink-0 ml-auto self-start">
-              <svg className="w-2.5 sm:w-3.5 h-2.5 sm:h-3.5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
+          <button onClick={() => setNoticeVisible(false)}
+            className="absolute top-2 right-2 w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-black/10 hover:bg-black/20 flex items-center justify-center shrink-0">
+            <svg className="w-2.5 sm:w-3 h-2.5 sm:h-3 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
       )}
 

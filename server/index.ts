@@ -130,6 +130,6 @@ const server = Bun.serve({
   },
 });
 
-console.log(`\n🏦 Bank Maju Bersama — JOKI AI LOS`);
+console.log(`\n🏦 Bank CIMB Niaga — LOS`);
 console.log(`🚀 Server running at http://localhost:${PORT}`);
 console.log(`\nCredentials: analyst01 / analyst02 / supervisor — password: bms2025\n`);

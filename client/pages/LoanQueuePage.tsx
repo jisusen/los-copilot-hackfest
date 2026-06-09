@@ -311,7 +311,6 @@ export function LoanQueuePage() {
                   { label: 'Tenor', cls: 'hide-mobile' },
                   { label: 'Submitted', cls: 'hide-mobile' },
                   { label: 'Status', cls: '' },
-                  { label: 'AI Agent', cls: 'hide-mobile' },
                 ].map(h => (
                   <th key={h.label} className={h.cls} style={{
                     padding: '0.75rem 1rem', fontSize: '0.75rem', fontWeight: 600,
@@ -377,9 +376,6 @@ export function LoanQueuePage() {
                   </td>
                   <td className="loan-cell" data-label="Status" style={{ padding: '0.875rem 1rem' }}>
                     <StatusBadge status={loan.status} />
-                  </td>
-                  <td className="loan-cell hide-mobile" data-label="AI Agent" style={{ padding: '0.875rem 1rem' }}>
-                    <AiAgentBadge decision={loan.ai_agent_decision} />
                   </td>
                 </tr>
               ))}
