@@ -33,11 +33,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
         {/* Logo + Brand */}
         <div className="relative z-10">
           <div className="flex items-center gap-3">
-            <img src="/img/logo-header.png" alt="Joki" className="h-10 w-auto" />
-            <div>
-              <span className="text-white font-black text-2xl tracking-tight">Joki</span>
-              <span className="text-white/50 font-light text-sm ml-2">LOS</span>
-            </div>
+            <img src="/img/logo.svg" alt="CIMB Niaga" className="h-8 w-auto" />
           </div>
           <div className="mt-2 text-white/40 text-xs font-mono">v3.1.0</div>
         </div>
@@ -45,11 +41,9 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
         {/* Quote / branding text */}
         <div className="relative z-10 max-w-lg">
           <div className="text-white/90 text-2xl md:text-3xl font-bold leading-tight">
-            Credit Origination System
+            Loan Origination System
           </div>
-          <div className="text-white/50 text-sm mt-2 leading-relaxed">
-            Personal Loans Division · Bank Maju Bersama
-          </div>
+
           <div className="flex items-center gap-4 mt-6 text-white/30 text-xs">
             <span className="flex items-center gap-1.5">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -68,7 +62,7 @@ export function LoginPage({ onLogin }: { onLogin: () => void }) {
 
         {/* Bottom badge */}
         <div className="relative z-10 text-white/20 text-xs">
-          &copy; 2026 Bank Maju Bersama
+          &copy; 2026 Bank CIMB Niaga
         </div>
       </div>
 

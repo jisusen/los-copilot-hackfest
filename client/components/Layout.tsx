@@ -9,7 +9,7 @@ const navItems = [
     d: 'M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z',
   },
   {
-    label: 'List Task',
+    label: 'Task List',
     path: '/loans',
     d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4',
   },
@@ -99,18 +99,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Sidebar */}
       <aside
-        className={`fixed lg:relative z-50 top-0 left-0 h-full bg-[#272123] flex flex-col transition-all duration-300
-        ${collapsed ? 'w-28' : 'w-64'}
-        ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+        className={`fixed lg:relative z-50 top-0 left-0 h-full flex flex-col transition-all duration-300 ${collapsed ? 'w-28' : 'w-64'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
+        style={{ background: 'linear-gradient(180deg, #8B1A1A 0%, #590000 100%)' }}
       >
         {/* Brand */}
         <div className={`flex ${collapsed ? 'justify-left' : 'gap-3'} px-4 py-5`}>
-          <img src="/img/logo.png" alt="logo" className="w-6 h-6" />
-          {!collapsed && (
-            <div className="overflow-hidden text-lg font-bold text-white leading-tight">
-              JOKI AI
-            </div>
-          )}
+          <img src="/img/logo.svg" alt="CIMB Niaga" className="h-7 w-auto" />
         </div>
 
         {/* Nav */}
@@ -123,19 +117,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 onClick={() => { navigate(item.path); setMobileOpen(false); }}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm transition-all relative ${
                   active
-                    ? 'border-r-4 border-solid border-red-600 text-red-600 font-semibold'
-                    : 'text-white hover:text-red-600'
+                    ? 'border-l-4 border-white text-white font-bold'
+                    : 'text-white/80 hover:text-white'
                 }`}
               >
-                {active && (
-                  <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-red-600 rounded-full" />
-                )}
                 <svg
                   className="w-4 h-4 shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
-                  strokeWidth={active ? 2.2 : 1.8}
+                  strokeWidth={active ? 2.5 : 1.8}
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d={item.d} />
                 </svg>
@@ -164,7 +155,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </>
             )}
           </button>
-          <img src="/img/sidebar-2.png" alt="logo" className="w-full" />
+          {!collapsed && <img src="/img/sidebar-rmv.png" alt="logo" className="w-full" />}
         </div>
         <div className="hidden lg:block absolute right-0 top-0 h-full w-10 rounded-l-[30px] bg-[#f8f3f3]"></div>
       </aside>
@@ -184,7 +175,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </button>
 
           <div className="flex-1 text-sm font-semibold">
-            <span className="hidden lg:inline">Bank Maju Bersama — LOS</span>
+
           </div>
 
           {/* User dropdown */}

@@ -88,7 +88,7 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
         <div id="print-memo-content" style={{ padding: 40 }}>
           {/* Bank Header */}
           <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: '2px solid #8B1A1A', paddingBottom: 16 }}>
-            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#8B1A1A' }}>Bank Maju Bersama</div>
+            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#8B1A1A' }}>Bank CIMB Niaga</div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Consumer Credit Information System</div>
             <div style={{ fontSize: 14, fontWeight: 'bold', color: '#8B1A1A', marginTop: 12 }}>CREDIT ANALYSIS MEMO</div>
           </div>
@@ -216,7 +216,7 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
 
           {/* Footer */}
           <div style={{ marginTop: 40, borderTop: '1px solid #d1d9e0', paddingTop: 16, fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>
-            Bank Maju Bersama — Consumer Credit Information System v2.5.1<br />
+            Bank CIMB Niaga — Consumer Credit Information System v2.5.1<br />
             This document is generated electronically and is valid without signature.
           </div>
         </div>

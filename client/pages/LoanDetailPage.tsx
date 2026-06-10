@@ -504,7 +504,7 @@ export function LoanDetailPage() {
           zIndex: 100,
         }} onClick={() => setConfirmAction(null)}>
           <div className="bg-white rounded-2xl p-7 max-w-md w-[90%] shadow-2xl" onClick={e => e.stopPropagation()}>
-            <img src="/img/modal.png" alt="Confirmation" className="flex items-center justify-center mx-auto mb-4" style={{width:"60%"}} />
+            <img src={confirmAction.label === 'Approve' ? '/img/approve.png' : '/img/reject.png'} alt="Confirmation" className="flex items-center justify-center mx-auto mb-4" style={{width:"60%"}} />
             <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', textAlign: 'center', marginBottom: 8 }}>
               {confirmAction.label === 'Approve' ? 'Approve Application?' : 'Reject Application?'}
             </h2>
