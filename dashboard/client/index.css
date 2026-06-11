@@ -35,9 +35,226 @@ body,
 
 body {
   background: #f8f9fb;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 @media print {
   body { background: #fff; }
   @page { margin: 1.5cm; }
 }
+
+@keyframes bubble-pop {
+  0% {
+    transform: translate(-50%, 15px) scale(0.6);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -6px) scale(1.15);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes bubble-float {
+  0%, 100% {
+    transform: translate(-50%, 0);
+  }
+  50% {
+    transform: translate(-50%, -8px);
+  }
+}
+
+.comic-bubble {
+  position: absolute;
+  left: 50%;
+  top: -24px; /* Float nicely above the 200px Lottie container */
+  transform: translate(-50%, 0);
+  background-color: #ffffff;
+  border: 3px solid #1f2937; /* Gray-800 thick ink border */
+  border-radius: 16px;
+  padding: 8px 16px;
+  box-shadow: 4px 4px 0px 0px #1f2937; /* Clean flat retro 3D comic shadow */
+  color: #ef4444; /* Vivid Red-500 matching CIMB theme */
+  font-weight: 800;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  z-index: 30;
+  animation: bubble-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, bubble-float 3s ease-in-out infinite 0.5s;
+}
+
+.comic-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 10px solid transparent;
+  border-right: 10px solid transparent;
+  border-top: 10px solid #ffffff;
+  z-index: 2;
+}
+
+.comic-bubble::before {
+  content: '';
+  position: absolute;
+  bottom: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 13px solid transparent;
+  border-right: 13px solid transparent;
+  border-top: 13px solid #1f2937;
+  z-index: 1;
+}
+
+@keyframes float-zzz {
+  0% {
+    transform: translate(0, 0) scale(0.6) rotate(0deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translate(15px, -35px) scale(1.1) rotate(15deg);
+    opacity: 0;
+  }
+}
+
+.zzz-container {
+  position: absolute;
+  top: 40px;
+  right: 50px;
+  pointer-events: none;
+  z-index: 15;
+}
+
+.zzz-letter {
+  position: absolute;
+  font-weight: 800;
+  color: #94a3b8; /* slate-400 */
+  opacity: 0;
+  font-family: 'Inter', sans-serif;
+  user-select: none;
+}
+
+.zzz-1 {
+  font-size: 15px;
+  animation: float-zzz 2.5s ease-in-out infinite;
+  animation-delay: 0s;
+}
+
+.zzz-2 {
+  font-size: 11px;
+  animation: float-zzz 2.5s ease-in-out infinite;
+  animation-delay: 0.8s;
+  margin-top: -8px;
+  margin-left: 12px;
+}
+
+.zzz-3 {
+  font-size: 8px;
+  animation: float-zzz 2.5s ease-in-out infinite;
+  animation-delay: 1.6s;
+  margin-top: -16px;
+  margin-left: 22px;
+}
+
+@keyframes ghost-float {
+  0%, 100% {
+    transform: translateY(0);
+    filter: drop-shadow(0 6px 12px rgba(236, 36, 40, 0.25)) opacity(0.9);
+  }
+  50% {
+    transform: translateY(-10px);
+    filter: drop-shadow(0 15px 30px rgba(236, 36, 40, 0.55)) opacity(0.98);
+  }
+}
+
+.ghost-agent {
+  animation: ghost-float 5s ease-in-out infinite;
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes watch-pupil {
+  0%, 100%, 12% {
+    transform: translate(0, 0);
+  }
+  20%, 32% {
+    transform: translate(-3px, -1px);
+  }
+  40%, 52% {
+    transform: translate(3px, 1px);
+  }
+  60%, 72% {
+    transform: translate(-2px, 2px);
+  }
+  80%, 92% {
+    transform: translate(2.5px, -1.5px);
+  }
+}
+
+.animate-watch-pupil {
+  animation: watch-pupil 6s ease-in-out infinite;
+}
+
+/* Natural Anime Blinking Loop (triggers a double quick blink every 4s) */
+@keyframes anime-blink {
+  0%, 90%, 100% {
+    transform: scaleY(1);
+  }
+  93%, 97% {
+    transform: scaleY(0.08);
+  }
+  95% {
+    transform: scaleY(1);
+  }
+}
+
+.animate-anime-blink {
+  animation: anime-blink 4.5s ease-in-out infinite;
+  transform-origin: center;
+}
+
+/* Glassy Highlight Shimmer/Glow */
+@keyframes glint-sparkle {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.18) translate(0.2px, -0.2px);
+    opacity: 1;
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.95));
+  }
+}
+
+.animate-glint-sparkle {
+  animation: glint-sparkle 3s ease-in-out infinite;
+}
+
+/* Breathing Eyelid Sleep Pulse */
+@keyframes lash-sleep-pulse {
+  0%, 100% {
+    transform: translateY(0) scaleY(1);
+  }
+  50% {
+    transform: translateY(0.6px) scaleY(0.92);
+  }
+}
+
+.animate-sleep-pulse {
+  animation: lash-sleep-pulse 3.5s ease-in-out infinite;
+}
+

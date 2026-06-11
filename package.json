@@ -6,7 +6,7 @@
     "start": "bun run server/index.ts",
     "db:seed": "bun run server/db/seed.ts",
     "db:reset": "bun run server/db/seed.ts --reset",
-    "build": "bun build client/main.tsx --outdir dist --target browser --sourcemap external",
+    "build": "bun build client/main.tsx --outdir dist --target browser --sourcemap=external",
     "demo": "concurrently --kill-others --names LOS,DASH --prefix-colors cyan,green --prefix \"[{name}]\" \"bun run server/index.ts\" \"cd dashboard && bun run server/index.ts\"",
     "demo:seed": "bun run server/db/seed.ts --reset && bun run demo"
   },

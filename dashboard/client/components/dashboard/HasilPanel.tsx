@@ -30,14 +30,14 @@ export default function HasilPanel({
     
 
       {/* TAB */}
-      <div className="p-3 border-b border-gray-100">
+      <div className="px-4 pb-3 pt-1 border-b border-gray-100">
         <div className="flex bg-gray-100 rounded-xl p-1">
           {[t("hasil.ready", locale), t("hasil.decided", locale)].map((tab, i) => (
             <button
               key={tab}
               onClick={() => setHasilTab(i)}
               className={`
-                flex-1 py-2 text-xs font-semibold rounded-lg transition-all duration-200
+                flex-1 py-1.5 text-[11px] font-semibold rounded-lg transition-all duration-200
                 ${
                   hasilTab === i
                     ? "bg-white text-red-600 shadow-sm"
@@ -55,20 +55,17 @@ export default function HasilPanel({
       </div>
 
       {/* LIST */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3">
+      <div className="flex-1 overflow-y-auto">
 
         {data.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-10">
-            {/* <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-              <span className="text-gray-400 text-lg">✓</span>
-            </div> */}
-            <img src="/img/nodata.svg" alt="Empty" className="w-24 h-24 mb-3" />
+          <div className="flex flex-col items-center justify-center py-10 px-4">
+            <img src="/img/nodata.svg" alt="Empty" className="w-16 h-16 mb-2" />
 
-            <p className="text-sm font-medium text-gray-600">
+            <p className="text-xs font-medium text-gray-600 text-center">
               {t("hasil.empty_title", locale)}
             </p>
 
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-[10px] text-gray-400 mt-1 text-center">
               {t("hasil.empty_desc", locale)}
             </p>
           </div>
@@ -76,11 +73,8 @@ export default function HasilPanel({
 
         {data.map(([appId, state]) => {
           const loan = loanMap.get(appId);
-
           const isDecided = state.status === "decided";
-
           const dec = isDecided ? state.decision : "ready";
-
           const decidedAt = isDecided ? state.decidedAt : undefined;
 
           const statusCls =
@@ -110,131 +104,63 @@ export default function HasilPanel({
               onClick={() => navigate(`/review/${appId}`)}
               className="
                 group
-                bg-white
-                border
-                border-gray-200
-                rounded-2xl
-                p-4
-                shadow-sm
-                hover:shadow-md
-                hover:border-red-100
+                flex
+                items-center
+                gap-2
+                px-4
+                py-2.5
+                hover:bg-gray-50
+                cursor-pointer
+                border-b
+                border-gray-100
                 transition-all
                 duration-200
-                cursor-pointer
               "
             >
-              {/* TOP */}
-              <div className="flex items-start justify-between gap-3">
-
-                <div className="min-w-0 flex-1">
-                  {loan ? (
-                    <>
-                      <h4 className="text-sm font-semibold text-gray-900 truncate">
-                        {loan.debtor_name}
-                      </h4>
-
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        APP ID • {appId}
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <h4 className="text-sm font-semibold text-gray-900 truncate">
-                        Unknown Applicant
-                      </h4>
-
-                      <p className="text-[11px] text-gray-400 mt-1">
-                        APP ID • {appId}
-                      </p>
-                    </>
-                  )}
+              <div className="flex-1 min-w-0">
+                {/* ID AND STATUS */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-gray-400 font-medium">APP ID • {appId}</span>
+                  <span
+                    className={`
+                      px-2 py-0.5
+                      rounded
+                      text-[10px]
+                      font-semibold
+                      whitespace-nowrap
+                      ${statusCls}
+                    `}
+                  >
+                    {label}
+                  </span>
                 </div>
 
-                <span
-                  className={`
-                    px-2.5 py-1
-                    rounded-full
-                    text-[10px]
-                    font-semibold
-                    whitespace-nowrap
-                    ${statusCls}
-                  `}
-                >
-                  {label}
-                </span>
-              </div>
+                {/* DEBTOR NAME */}
+                <div className="text-xs font-semibold text-gray-800 truncate mt-0.5">
+                  {loan ? loan.debtor_name : "Unknown Applicant"}
+                </div>
 
-              {/* LOAN INFO */}
-              {loan && (
-                <>
-                  <div className="grid grid-cols-2 gap-4 mt-4">
-
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-400">
-                        {t("hasil.product", locale)}
-                      </p>
-
-                      <p className="text-xs font-medium text-gray-700 mt-1">
-                        {loan.product_type}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wide text-gray-400">
-                        {t("hasil.amount", locale)}
-                      </p>
-
-                      <p className="text-xs font-medium text-gray-700 mt-1">
-                        {formatRpShort(loan.amount_requested)}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between">
-
-                    <span
-                      className={`
-                        px-2 py-1
-                        rounded-lg
-                        text-[10px]
-                        font-semibold
-                        ${riskCls}
-                      `}
-                    >
-                      {t("hasil.risk", locale)} {loan.risk_score ?? "-"}
-                    </span>
-
-                    <span className="text-[11px] text-gray-400">
-                      Analyst 01
-                    </span>
-                  </div>
-                </>
-              )}
-
-              {/* FOOTER */}
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-
-                <span className="text-[11px] text-gray-400">
-                  {decidedAt
-                    ? new Date(decidedAt).toLocaleTimeString("id-ID", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : t("hasil.waiting", locale)}
-                </span>
-
-                <span
-                  className="
-                    text-xs
-                    font-semibold
-                    text-red-500
-                    transition-transform
-                    duration-200
-                    group-hover:translate-x-1
-                  "
-                >
-                  {t("hasil.review", locale)} →
-                </span>
+                {/* PRODUCT TYPE, AMOUNT AND RISK */}
+                <div className="flex items-center justify-between mt-0.5 text-[10px] text-gray-400">
+                  <span className="truncate">
+                    {loan ? `${loan.product_type} · ${formatRpShort(loan.amount_requested)}` : ""}
+                    {loan?.risk_score && ` · Risk ${loan.risk_score}`}
+                  </span>
+                  <span
+                    className="
+                      text-[10px]
+                      font-semibold
+                      text-red-500
+                      transition-transform
+                      duration-200
+                      group-hover:translate-x-0.5
+                      shrink-0
+                      ml-2
+                    "
+                  >
+                    {t("hasil.review", locale)} →
+                  </span>
+                </div>
               </div>
             </div>
           );
