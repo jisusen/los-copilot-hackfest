@@ -1,10 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiFetch } from "../lib/api";
+import { useAuth } from "../App";
+import { Eye, EyeOff, AlertCircle, Sparkles } from "lucide-react";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -15,218 +20,128 @@ export function LoginPage() {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (res.ok) {
+      const data = await apiFetch<{ ok: boolean; username: string }>(
+        "/api/auth/login",
+        {
+          method: "POST",
+          body: JSON.stringify({ username, password }),
+        },
+      );
+      if (data.ok) {
+        login(data.username);
         navigate("/", { replace: true });
       } else {
-        setError(data.error || "Login failed");
+        setError("Login failed");
       }
-    } catch {
-      setError("Network error");
+    } catch (err: any) {
+      setError(
+        err.message === "API 401" ? "Invalid credentials" : "Network error",
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "var(--paper-2, #f5f5f5)",
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-zinc-900 p-4">
       <div
-        style={{
-          width: 360,
-          padding: "36px 32px",
-          background: "#fff",
-          borderRadius: "var(--r, 8px)",
-          border: "1px solid var(--line, #e0e0e0)",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-        }}
+        className="flex flex-col lg:flex-row max-w-4xl w-full bg-white rounded-2xl overflow-hidden"
+        style={{ boxShadow: "-1px 6px 20px #000000" }}
       >
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              background: "#8B1A1A",
-              color: "#fff",
-              borderRadius: "50%",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontFamily: "var(--font-serif, Georgia)",
-              fontWeight: 700,
-              fontSize: 20,
-              marginBottom: 16,
-            }}
-          >
-            J
+        {/* ===== LEFT — Form ===== */}
+        <div className="flex-1 p-6 sm:p-8">
+          <div className="mb-6">
+            {/* Line 1: Logo & Teks JOKI AI sejajar */}
+            <div className="flex items-center gap-2 mb-2">
+              <img src="/img/logo-login.png" alt="Logo" className="w-10 h-10" />
+              <span className="text-xl font-bold text-red-600 tracking-tight">
+                JOKI</span>  <span className="text-xl font-bold text-zinc-900 tracking-tight">AI
+              </span>
+            </div>
+
+            <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+              Hello Again!
+            </h1>
+
+            <p className="text-zinc-500 text-sm mt-1">
+              Let's get started with me
+            </p>
           </div>
-          <h1
-            style={{
-              margin: "0 0 4px",
-              fontFamily: "var(--font-serif, Georgia)",
-              fontSize: 22,
-              fontWeight: 600,
-              color: "var(--ink, #1a1a1a)",
-            }}
-          >
-            Bank Maju Bersama
-          </h1>
-          <p
-            style={{
-              margin: 0,
-              fontFamily: "var(--font-mono, monospace)",
-              fontSize: 11,
-              color: "var(--ink-3, #888)",
-              textTransform: "uppercase",
-              letterSpacing: ".1em",
-            }}
-          >
-            JOKI AI · Credit Analyst Copilot
-          </p>
+
+          <form onSubmit={submit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-500">User</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="analyst01"
+                autoFocus
+                className="w-full px-4 py-2.5 bg-zinc-50 border border-zinc-300 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-all focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-zinc-500">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  type={showPw ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-2.5 pr-11 bg-zinc-50 border border-zinc-300 rounded-xl text-sm text-zinc-900 placeholder-zinc-400 outline-none transition-all focus:border-red-600 focus:ring-1 focus:ring-red-600/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+                >
+                  {showPw ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-600">
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-2.5 text-sm font-bold rounded-xl bg-red-600 text-white hover:bg-red-700 transition-all shadow-lg shadow-red-600/25 disabled:opacity-50"
+            >
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  Signing in…
+                </span>
+              ) : (
+                "Sign In"
+              )}
+            </button>
+          </form>
         </div>
 
-        <form onSubmit={submit}>
-          <div style={{ marginBottom: 16 }}>
-            <label
-              style={{
-                display: "block",
-                fontFamily: "var(--font-mono, monospace)",
-                fontSize: 10,
-                color: "var(--ink-3, #888)",
-                textTransform: "uppercase",
-                letterSpacing: ".08em",
-                marginBottom: 6,
-              }}
-            >
-              Username
-            </label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              autoComplete="username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="analyst01"
-              autoFocus
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1px solid var(--line, #e0e0e0)",
-                borderRadius: "var(--r, 8px)",
-                fontFamily: "var(--font-sans, system-ui)",
-                fontSize: 14,
-                color: "var(--ink, #1a1a1a)",
-                background: "#fff",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent, #0066ff)";
-                e.currentTarget.style.boxShadow =
-                  "0 0 0 3px var(--accent-soft, rgba(0,102,255,0.1))";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--line, #e0e0e0)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: 20 }}>
-            <label
-              style={{
-                display: "block",
-                fontFamily: "var(--font-mono, monospace)",
-                fontSize: 10,
-                color: "var(--ink-3, #888)",
-                textTransform: "uppercase",
-                letterSpacing: ".08em",
-                marginBottom: 6,
-              }}
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "1px solid var(--line, #e0e0e0)",
-                borderRadius: "var(--r, 8px)",
-                fontFamily: "var(--font-sans, system-ui)",
-                fontSize: 14,
-                color: "var(--ink, #1a1a1a)",
-                background: "#fff",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent, #0066ff)";
-                e.currentTarget.style.boxShadow =
-                  "0 0 0 3px var(--accent-soft, rgba(0,102,255,0.1))";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "var(--line, #e0e0e0)";
-                e.currentTarget.style.boxShadow = "none";
-              }}
-            />
-          </div>
-
-          {error && (
-            <div
-              style={{
-                padding: "10px 12px",
-                background: "var(--red-soft, #ffeaea)",
-                border: "1px solid var(--red-line, #ffcfcf)",
-                borderRadius: "var(--r, 8px)",
-                fontSize: 12,
-                color: "var(--red, #d32f2f)",
-                marginBottom: 16,
-              }}
-            >
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="btn primary"
-            style={{ width: "100%", padding: "11px 0", fontSize: 14 }}
-          >
-            {loading ? "Signing in…" : "Sign in"}
-          </button>
-        </form>
-
+        {/* ===== RIGHT — Image ===== */}
         <div
-          style={{
-            marginTop: 20,
-            textAlign: "center",
-            fontFamily: "var(--font-mono, monospace)",
-            fontSize: 10,
-            color: "var(--ink-4, #bbb)",
-          }}
+          className="hidden lg:flex flex-1 bg-zinc-50 items-center justify-center"
+          style={{ margin: "2px" }}
         >
-          Same credentials as LOS
+          <img
+            src="/img/login3.webp"
+            alt="Bank Maju Bersama"
+            className="max-w-full max-h-full object-contain rounded-xl"
+            style={{ boxShadow: "rgb(0 0 0 / 47%) -1px 6px 20px" }}
+          />
         </div>
       </div>
     </div>

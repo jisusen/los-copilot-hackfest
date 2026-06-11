@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
 import type { LoanSummary, AgentState } from "../lib/types";
 import { formatRpShort, crdeCls } from "../lib/format";
 
@@ -24,7 +23,6 @@ export function ApplicationList({
   onToggle: (id: string) => void;
 }) {
   const [query, setQuery] = useState("");
-  const navigate = useNavigate();
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
@@ -83,7 +81,7 @@ export function ApplicationList({
             }
             if (isReady && agentResult) {
               const cls = crdeCls(agentResult.crdeDecision);
-              return <span className={`tag ${cls}`} style={{ cursor: "pointer" }}>Review →</span>;
+              return <span className={`tag ${cls}`}>{agentResult.crdeDecision}</span>;
             }
             if (isDecided && decisionStr) {
               const cls = decisionStr === "approve" ? "green" : decisionStr === "reject" ? "red" : "";
@@ -98,7 +96,7 @@ export function ApplicationList({
             <div
               key={loan.id}
               data-testid={`loan-row-${loan.id}`}
-              onClick={() => { if (isReady) { navigate(`/review/${loan.id}`); } else if (!isActive) { onToggle(loan.id); } }}
+              onClick={() => !isActive && onToggle(loan.id)}
               style={{
                 display: "grid",
                 gridTemplateColumns: "auto 68px 1fr auto",

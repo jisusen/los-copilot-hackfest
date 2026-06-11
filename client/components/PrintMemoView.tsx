@@ -37,16 +37,48 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
           <div style={{ display: 'flex', gap: 8 }}>
             <button
               onClick={() => window.print()}
-              className="text-sm px-4 py-1.5 font-medium text-white"
-              style={{ background: '#1a3a5c', borderRadius: 4 }}
+              className="btn-print-memo"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#8B1A1A',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: 6,
+                height: 32,
+                padding: '0 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'Open Sans, system-ui, sans-serif',
+                transition: 'all 0.15s ease',
+              }}
             >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
               Print
             </button>
             <button
               onClick={onClose}
-              className="text-sm px-4 py-1.5 font-medium"
-              style={{ background: '#e5e7eb', color: '#374151', borderRadius: 4 }}
+              className="btn-close-memo"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#ffffff',
+                color: '#475569',
+                border: '1.5px solid #CBD5E1',
+                borderRadius: 6,
+                height: 32,
+                padding: '0 14px',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'Open Sans, system-ui, sans-serif',
+                transition: 'all 0.15s ease',
+              }}
             >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               Close
             </button>
           </div>
@@ -55,10 +87,10 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
         {/* Print content */}
         <div id="print-memo-content" style={{ padding: 40 }}>
           {/* Bank Header */}
-          <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: '2px solid #1a3a5c', paddingBottom: 16 }}>
-            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#1a3a5c' }}>Bank Maju Bersama — JOKI AI</div>
+          <div style={{ textAlign: 'center', marginBottom: 24, borderBottom: '2px solid #8B1A1A', paddingBottom: 16 }}>
+            <div style={{ fontSize: 20, fontWeight: 'bold', color: '#8B1A1A' }}>Bank CIMB Niaga</div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>Consumer Credit Information System</div>
-            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#1a3a5c', marginTop: 12 }}>CREDIT ANALYSIS MEMO</div>
+            <div style={{ fontSize: 14, fontWeight: 'bold', color: '#8B1A1A', marginTop: 12 }}>CREDIT ANALYSIS MEMO</div>
           </div>
 
           {/* Meta */}
@@ -126,8 +158,8 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
             <Field label="Existing Obligations" value={financials?.existing_obligations ? formatRp(financials.existing_obligations) : '—'} />
             <Field label="Requested Installment" value={financials?.requested_installment ? formatRp(financials.requested_installment) : '—'} />
             <Field label="Total Obligations" value={financials?.total_obligations ? formatRp(financials.total_obligations) : '—'} />
-            <Field label="DBR Ratio" value={financials?.dti_ratio ? formatPercent(financials.dti_ratio) : '—'} />
-            <Field label="DBR Threshold" value={financials?.dti_threshold ? `${Math.round(financials.dti_threshold * 100)}%` : '—'} />
+            <Field label="DSR Ratio" value={financials?.dti_ratio ? formatPercent(financials.dti_ratio) : '—'} />
+            <Field label="DSR Threshold" value={financials?.dti_threshold ? `${Math.round(financials.dti_threshold * 100)}%` : '—'} />
             <Field label="Remaining Income" value={financials?.remaining_income ? formatRp(financials.remaining_income) : '—'} />
           </Section>
 
@@ -173,8 +205,8 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
             <Field label="Risk Score" value={crde?.risk_score} />
             <Field label="Decision" value={crde?.decision} />
             <Field label="Numeric Score" value={`${crde?.numeric_score}/1000`} />
-            <Field label="DBR Actual" value={crde?.dti_actual ? formatPercent(crde.dti_actual) : '—'} />
-            <Field label="DBR Passed" value={crde?.dti_passed ? '✅ Yes' : '❌ No'} />
+            <Field label="DSR Actual" value={crde?.dti_actual ? formatPercent(crde.dti_actual) : '—'} />
+            <Field label="DSR Passed" value={crde?.dti_passed ? '✅ Yes' : '❌ No'} />
             <Field label="Kol Passed" value={crde?.kol_passed ? '✅ Yes' : '❌ No'} />
             <Field label="AML Passed" value={crde?.aml_passed ? '✅ Yes' : '❌ No'} />
             <Field label="Fraud Passed" value={crde?.fraud_passed ? '✅ Yes' : '❌ No'} />
@@ -184,7 +216,7 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
 
           {/* Footer */}
           <div style={{ marginTop: 40, borderTop: '1px solid #d1d9e0', paddingTop: 16, fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>
-            Bank Maju Bersama — JOKI AI Consumer Credit Information System v2.5.1<br />
+            Bank CIMB Niaga — Consumer Credit Information System v2.5.1<br />
             This document is generated electronically and is valid without signature.
           </div>
         </div>
@@ -192,6 +224,14 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
 
       {/* Print styles */}
       <style>{`
+        .btn-print-memo:hover {
+          background: #6B1212 !important;
+          box-shadow: 0 2px 8px rgba(139,26,26,0.3) !important;
+        }
+        .btn-close-memo:hover {
+          background: #F8FAFC !important;
+          border-color: #94A3B8 !important;
+        }
         @media print {
           body * { visibility: hidden; }
           #print-memo-content, #print-memo-content * { visibility: visible; }
@@ -205,7 +245,7 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div style={{ marginBottom: 24 }}>
-      <div style={{ fontSize: 13, fontWeight: 'bold', color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: 4, marginBottom: 8, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: 13, fontWeight: 'bold', color: '#8B1A1A', borderBottom: '2px solid #8B1A1A', paddingBottom: 4, marginBottom: 8, textTransform: 'uppercase' }}>
         {title}
       </div>
       {children}

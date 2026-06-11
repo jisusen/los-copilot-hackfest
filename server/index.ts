@@ -105,6 +105,15 @@ const server = Bun.serve({
       return withCors(Response.json({ error: 'Not found' }, { status: 404 }), req);
     }
 
+    if (pathname.startsWith('/img/')) {
+      let filePath = join(ROOT, 'dashboard', pathname);
+      let res = serveFile(filePath);
+      if (res) return res;
+      filePath = join(ROOT, 'client', pathname);
+      res = serveFile(filePath);
+      if (res) return res;
+    }
+
     // Static files from dist/
     if (pathname !== '/' && pathname.includes('.')) {
       const filePath = join(DIST, pathname);
@@ -121,6 +130,6 @@ const server = Bun.serve({
   },
 });
 
-console.log(`\n🏦 Bank Maju Bersama — JOKI AI LOS`);
+console.log(`\n🏦 Bank CIMB Niaga — LOS`);
 console.log(`🚀 Server running at http://localhost:${PORT}`);
 console.log(`\nCredentials: analyst01 / analyst02 / supervisor — password: bms2025\n`);
