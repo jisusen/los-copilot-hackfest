@@ -5,8 +5,6 @@ import { useLayout } from "../contexts/LayoutContext";
 import LoanQueuePanel from "../components/dashboard/LoanQueuePanel";
 import RunningCard from "../components/dashboard/RunningCard";
 import HasilPanel from "../components/dashboard/HasilPanel";
-import { Player } from '@lottiefiles/react-lottie-player';
-import animationData from '../../img/agent.json';
 
 import { useSessions } from "../App";
 import { apiFetch } from "../lib/api";
@@ -27,10 +25,130 @@ type Tab = "queue" | "agents" | "hasil";
 
 // Bottom tab nav for mobile
 const tabs: { key: Tab; label: string }[] = [
-  { key: "queue", label: "Loan Queue" },
+  { key: "queue", label: "Task List" },
   { key: "agents", label: "Agents" },
   { key: "hasil", label: "Hasil" },
 ];
+
+interface JokiFoxProps {
+  isWatching: boolean;
+  locale: string;
+}
+
+function JokiFox({ isWatching, locale }: JokiFoxProps) {
+  return (
+    <div className="ghost-agent relative w-[200px] h-[200px] flex items-center justify-center select-none">
+      {/* Comic Speech Bubble */}
+      <div className="comic-bubble">
+        {isWatching ? (
+          locale === "id" ? "👀 Aku mengawasimu!" : "👀 I'm watching you!"
+        ) : (
+          locale === "id" ? "💤 ZZZ... Aku tidur..." : "💤 ZZZ... I'm sleeping..."
+        )}
+      </div>
+
+      {/* Floating ZZZs */}
+      {!isWatching && (
+        <div className="zzz-container">
+          <span className="zzz-letter zzz-1">Z</span>
+          <span className="zzz-letter zzz-2">z</span>
+          <span className="zzz-letter zzz-3">z</span>
+        </div>
+      )}
+
+      {/* Fox Head Logo Background */}
+      <img
+        src="/img/logo-login.png"
+        alt="Joki AI Fox"
+        className="w-[180px] h-[180px] object-contain"
+      />
+
+      {/* Left Eye Assembly */}
+      <div 
+        className={`absolute w-[18px] h-[18px] bg-white rounded-full overflow-hidden border border-zinc-950/5 shadow-inner ${
+          isWatching ? "animate-anime-blink" : ""
+        }`}
+        style={{
+          left: "calc(50% - 36.5px)",
+          top: "calc(50% + 3.5px)",
+        }}
+      >
+        {/* Animated Cute Large Dot Pupil */}
+        <div 
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out ${
+            isWatching ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div 
+            className="w-[13px] h-[13px] bg-zinc-950 rounded-full relative animate-watch-pupil"
+          >
+            {/* Cute Sparkle Glint */}
+            <div 
+              className="absolute w-[4px] h-[4px] bg-white rounded-full"
+              style={{
+                top: "1.5px",
+                left: "2px",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Sleeping Eyelid Cover */}
+        <div 
+          className={`absolute inset-0 bg-[#EC2428] flex items-center justify-center transition-opacity duration-500 ease-in-out ${
+            !isWatching ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div 
+            className="w-[12px] h-[8px] border-t-[2.5px] border-zinc-950 rounded-t-full mt-[5px] animate-sleep-pulse"
+          />
+        </div>
+      </div>
+
+      {/* Right Eye Assembly */}
+      <div 
+        className={`absolute w-[18px] h-[18px] bg-white rounded-full overflow-hidden border border-zinc-950/5 shadow-inner ${
+          isWatching ? "animate-anime-blink" : ""
+        }`}
+        style={{
+          left: "calc(50% + 18.5px)",
+          top: "calc(50% + 3.5px)",
+        }}
+      >
+        {/* Animated Cute Large Dot Pupil */}
+        <div 
+          className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ease-in-out ${
+            isWatching ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div 
+            className="w-[13px] h-[13px] bg-zinc-950 rounded-full relative animate-watch-pupil"
+          >
+            {/* Cute Sparkle Glint */}
+            <div 
+              className="absolute w-[4px] h-[4px] bg-white rounded-full"
+              style={{
+                top: "1.5px",
+                left: "2px",
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Sleeping Eyelid Cover */}
+        <div 
+          className={`absolute inset-0 bg-[#EC2428] flex items-center justify-center transition-opacity duration-500 ease-in-out ${
+            !isWatching ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        >
+          <div 
+            className="w-[12px] h-[8px] border-t-[2.5px] border-zinc-950 rounded-t-full mt-[5px] animate-sleep-pulse"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export  function Dashboard() {
 
@@ -43,6 +161,25 @@ export  function Dashboard() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [runLoading, setRunLoading] = useState(false);
+  const [isWatching, setIsWatching] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const runCycle = async () => {
+      while (active) {
+        setIsWatching(false);
+        await new Promise((r) => setTimeout(r, 7000));
+        if (!active) break;
+        setIsWatching(true);
+        await new Promise((r) => setTimeout(r, 4000));
+      }
+    };
+    runCycle();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const { agentMode } = useLayout();
   const fetchLoans = useCallback(async () => {
   try {
@@ -281,12 +418,7 @@ export  function Dashboard() {
 
                 {runningEntries.length === 0 && entries.length === 0  && (
                   <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 gap-3">
-                         <Player
-        src={animationData}
-        loop
-        autoplay
-        style={{ height: '200px', width: '200px' }}
-      />
+                    <JokiFox isWatching={isWatching} locale={locale} />
                     <div className="text-sm font-medium text-gray-500">
                       {t("dash.select_prompt", locale)}
                     </div>
@@ -296,13 +428,8 @@ export  function Dashboard() {
                   </div>
                 )}
                 {runningEntries.length === 0 && entries.length > 0 && (
-                 <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 gap-3">
-                  <Player
-        src={animationData}
-        loop
-        autoplay
-        style={{ height: '200px', width: '200px' }}
-      />
+                  <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 gap-3">
+                    <JokiFox isWatching={isWatching} locale={locale} />
                     <div className="text-sm font-medium text-gray-500">
                       {t("dash.select_prompt", locale)}
                     </div>
@@ -336,13 +463,12 @@ export  function Dashboard() {
 
     {/* Panel */}
   <div
-   style={{ boxShadow:"-3px 11px 10px 0px #d2d5d7"}}
-    className={`bg-white border-l transition-all duration-300 rounded-l-xl overflow-hidden flex flex-col  shrink-0
-      ${showHasil ? "w-72" : "w-0"}`}
+    className={`bg-white border border-gray-200 transition-all duration-300 rounded-md overflow-hidden flex flex-col  shrink-0 shadow-md mb-4
+      ${showHasil ? "w-64" : "w-0"}`}
   >
     {/* HEADER */}
-    <div className="flex items-center justify-between px-3 bg-red-600 py-2 border-b shrink-0">
-      <div className="text-sm font-bold text-white">{t("dash.results", locale)}</div>
+    <div className="flex items-center justify-between px-4 pt-4 pb-1 shrink-0">
+      <div className="text-base font-bold text-gray-900">{t("dash.results", locale)}</div>
     </div>
 
     {/* CONTENT */}
@@ -451,17 +577,12 @@ export  function Dashboard() {
                 </div>
             ) : (
                 // Ketika runningEntries === 0 (baik entries kosong ataupun tidak, tetap memuat animasi)
-                <div className="flex flex-col items-center justify-center h-[300px] text-slate-400 gap-3">
-                  <Player
-                    src={animationData}
-                    loop
-                    autoplay
-                    style={{ height: '200px', width: '200px' }}
-                  />
-                  <div className="text-sm font-medium text-slate-500">
+                <div className="flex flex-col items-center justify-center h-[300px] text-gray-400 gap-3">
+                  <JokiFox isWatching={isWatching} locale={locale} />
+                  <div className="text-sm font-medium text-gray-500">
                     {entries.length === 0 ? t("dash.select_prompt", locale) : t("dash.select_prompt", locale)}
                   </div>
-                  <div className="text-xs font-mono text-slate-400">
+                  <div className="text-xs font-mono text-gray-400">
                     {entries.length === 0 ? t("dash.select_hint", locale) : t("dash.select_hint", locale)}
                   </div>
                 </div>

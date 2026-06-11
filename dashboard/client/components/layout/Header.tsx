@@ -30,17 +30,17 @@ export default function Header({
   {/* Controls */}
   <div className="hidden md:flex items-center gap-3">
     {/* Agent Mode */}
-    <div className="flex items-center bg-red-600 rounded-xl p-1">
-      <span className="text-xs font-small text-white px-2">
+    <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl p-1 shadow-sm">
+      <span className="text-xs font-semibold text-slate-500 px-2">
         Agent :
       </span>
 
       <button
         onClick={() => onAgentMode("real")}
-        className={`px-2 py-1 text-xs font-small rounded-lg transition-all ${
+        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
           agentMode === "real"
-            ? "bg-white shadow text-blue-600"
-            : "text-white"
+            ? "bg-white border border-slate-200/60 text-red-600 shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
         }`}
       >
         Browser
@@ -48,10 +48,10 @@ export default function Header({
 
       <button
         onClick={() => onAgentMode("sim")}
-        className={`px-2 py-1 text-xs font-small rounded-lg transition-all ${
+        className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
           agentMode === "sim"
-            ? "bg-white shadow text-amber-600"
-            : "text-white"
+            ? "bg-white border border-slate-200/60 text-red-600 shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
         }`}
       >
         Api

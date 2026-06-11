@@ -47,8 +47,7 @@ export default function LoanQueuePanel({
   return (
     <>
       <div className="px-4 pt-4 pb-2">
-        <h2 className="text-base font-bold text-gray-900">Loan queue</h2>
-        <p className="text-xs text-red-500  font-semibold">{loans.length} pending</p>
+        <h2 className="text-base font-bold text-gray-900">Task list</h2>
       </div>
       <div className="px-3 pb-2 flex gap-2">
         <div className="relative flex-1">
