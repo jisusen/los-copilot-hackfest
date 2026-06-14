@@ -56,9 +56,9 @@ const agents = [
                 </svg>
               </div>
               <div>
-                <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wide leading-tight">{s.label}</div>
+                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide leading-tight">{s.label}</div>
                 <div className="text-base font-bold text-gray-900 leading-tight">{s.value}</div>
-                {s.sub && <div className="text-[9px] text-gray-400">{s.sub}</div>}
+                {s.sub && <div className="text-[10px] text-gray-400">{s.sub}</div>}
               </div>
             </div>
           ))}
@@ -71,15 +71,11 @@ const agents = [
             <h3 className="font-bold text-gray-900 text-sm sm:text-base">Agents working</h3>
             <p className="text-xs text-gray-500">3 of 5 max parallel</p>
           </div>
-          <div className="flex items-center gap-1.5">
-            <button className="hidden sm:flex items-center gap-1 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs text-gray-600 hover:bg-gray-50">
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4" /></svg>
-              Cinemas mode
-            </button>
-            <button className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
-            </button>
-          </div>
+            <div className="flex items-center gap-1.5">
+             <button className="p-1.5 border border-gray-200 rounded-lg hover:bg-gray-50">
+               <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /></svg>
+             </button>
+           </div>
         </div>
         {agents.map((agent) => <AgentCard key={agent.id} agent={agent} />)}
         <div className="border border-dashed border-gray-300 rounded-xl p-4 flex items-center gap-3 text-gray-400 hover:border-red-300 hover:text-red-400 cursor-pointer transition-colors">

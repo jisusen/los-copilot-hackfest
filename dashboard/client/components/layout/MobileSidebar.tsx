@@ -23,7 +23,7 @@ export default function MobileSidebar({
             </div>
             <div>
               <div className="text-xs font-bold text-gray-900 leading-tight">Bank Maju Bersama</div>
-              <div className="text-[9px] text-gray-400 uppercase tracking-wider">Credit Analyst Copilot</div>
+              <div className="text-[10px] text-gray-400 uppercase tracking-wider">Credit Analyst Copilot</div>
             </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 transition">

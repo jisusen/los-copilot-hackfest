@@ -4,6 +4,7 @@ import { wsManager } from "./wsManager";
 import { sessionStore } from "./sessionStore";
 import { getLosDb } from "../db/losClient";
 import { getSettings } from "../routes/settings";
+import { getActiveSkillContent, type MemoLocale } from "../routes/skills";
 import type { MemoDraft, LosData } from "./sessionStore";
 
 export type AgentTask = {
@@ -12,6 +13,7 @@ export type AgentTask = {
   losUrl: string;
   backendUrl: string;
   credentials: { username: string; password: string };
+  locale: MemoLocale;
 };
 
 const activeTasks = new Map<string, { appId: string; startedAt: number }>();
@@ -32,7 +34,9 @@ export function getElapsedMs(taskId: string): number {
 const AGENT_SCRIPT = join(import.meta.dir, "../../agent/agent.py");
 const VENV_PYTHON = join(
   import.meta.dir,
-  "../../agent/.venv/Scripts/python.exe",
+  process.platform === "win32"
+    ? "../../agent/.venv/Scripts/python.exe"
+    : "../../agent/.venv/bin/python",
 );
 function getLosConfig() {
   const s = getSettings();
@@ -51,6 +55,8 @@ export async function spawnAgent(task: AgentTask): Promise<void> {
   console.log(`[Agent] Spawning for ${task.appId} (task: ${task.taskId})`);
 
   const s = getSettings();
+  const locale = task.locale ?? "en";
+  const skillContent = getActiveSkillContent(locale);
   const proc = Bun.spawn({
     cmd: [VENV_PYTHON, AGENT_SCRIPT, "--task", taskJson],
     stdout: "pipe",
@@ -59,19 +65,20 @@ export async function spawnAgent(task: AgentTask): Promise<void> {
       ...process.env,
       PYTHONIOENCODING: "utf-8",
       BROWSER_USE_DISABLE_EXTENSIONS: "1",
-      ANTHROPIC_API_KEY: s.anthropicApiKey ?? "",
-      GEMINI_API_KEY: s.geminiApiKey ?? "",
+      ANTHROPIC_API_KEY: s.apiKey ?? "",
+      GEMINI_API_KEY: s.apiKey ?? "",
       LLM_PROVIDER: s.llmProvider ?? "anthropic",
       ANTHROPIC_MODEL: s.anthropicModel ?? "claude-sonnet-4-6",
       GEMINI_MODEL: s.geminiModel ?? "gemini-2.0-flash",
       CUSTOM_LLM_ENDPOINT: s.customEndpoint ?? "",
       CUSTOM_LLM_MODEL: s.customModel ?? "",
-      CUSTOM_LLM_API_KEY: s.customApiKey ?? "",
+      CUSTOM_LLM_API_KEY: s.apiKey ?? "",
       BROWSE_PROVIDER: s.browseProvider ?? "",
       BROWSE_MODEL: s.browseModel ?? "",
       BROWSE_ENDPOINT: s.browseEndpoint ?? "",
       BROWSE_API_KEY: s.browseApiKey ?? "",
-      MEMO_SKILL: s.memoSkill ?? "",
+      MEMO_SKILL: skillContent,
+      MEMO_LOCALE: locale,
       EXTRACTION_MODE: s.extractionMode ?? "browser",
       LOS_URL: cfg.losUrl,
       LOS_LOGIN_PATH: cfg.losLoginPath,
@@ -114,6 +121,141 @@ export async function spawnAgent(task: AgentTask): Promise<void> {
     }
     activeTasks.delete(task.taskId);
   });
+}
+
+function buildMockMemoDraft(
+  locale: MemoLocale,
+  params: {
+    debtorName: string;
+    product: string;
+    amtM: string;
+    netM: string;
+    dtiPct: string;
+    dtiActual: number;
+    totalOblig: number;
+    crdeDecision: string;
+    numericScore: number;
+    riskScore: string;
+    slikKol: number;
+    kolektibilitasLabel: string;
+    paymentHistory: string;
+    amlClear: boolean;
+    pepStatus: boolean;
+    fraudSignals: string;
+    employmentType: string;
+    employerName: string;
+    nik: string;
+    tenorMonths: number;
+    loanPurpose: string;
+    requestedInstallment: number;
+    collateral: { collateral_type?: string; market_value?: number } | null;
+    redFlags: string[];
+    isHighRisk: boolean;
+    isMediumRisk: boolean;
+    rulesTriggered: string[];
+  },
+): MemoDraft {
+  const {
+    debtorName,
+    product,
+    amtM,
+    netM,
+    dtiPct,
+    dtiActual,
+    totalOblig,
+    crdeDecision,
+    numericScore,
+    riskScore,
+    slikKol,
+    kolektibilitasLabel,
+    paymentHistory,
+    amlClear,
+    pepStatus,
+    fraudSignals,
+    employmentType,
+    employerName,
+    nik,
+    tenorMonths,
+    loanPurpose,
+    requestedInstallment,
+    collateral,
+    redFlags,
+    isHighRisk,
+    isMediumRisk,
+    rulesTriggered,
+  } = params;
+
+  if (locale === "id") {
+    const execSummary = isHighRisk
+      ? `${debtorName} mengajukan **Rp ${amtM} juta ${product}** dengan **profil risiko tinggi**. Kekhawatiran utama: ${redFlags.slice(0, 2).join("; ")}. CRDE merekomendasikan **PENOLAKAN** dengan skor **${numericScore}/1000**. Analis perlu menilai faktor mitigasi sebelum override.`
+      : isMediumRisk
+        ? `${debtorName} mengajukan **Rp ${amtM} juta ${product}** dengan **profil risiko sedang**. DBR ${dtiPct}% dan kolektibilitas ${slikKol} memerlukan peninjauan lebih lanjut. CRDE merekomendasikan **RUJUK KOMITE KREDIT** dengan skor **${numericScore}/1000**.`
+        : `${debtorName} mengajukan **Rp ${amtM} juta ${product}** dengan **profil risiko rendah**. DBR ${dtiPct}% dalam batas dan SLIK bersih. CRDE merekomendasikan **PERSETUJUAN** dengan skor **${numericScore}/1000**.`;
+
+    const section3 = isHighRisk
+      ? `Penghasilan bersih **Rp ${netM} juta/bulan** tidak mencukupi beban kewajiban. **DBR ${dtiPct}% jauh melebihi** batas RAC 40%. Total kewajiban **Rp ${totalOblig.toLocaleString("id-ID")}** memberatkan kapasitas bayar.`
+      : isMediumRisk
+        ? `Penghasilan bersih **Rp ${netM} juta/bulan** memberikan coverage memadai namun ketat. **DBR ${dtiPct}%** ${dtiActual <= 0.4 ? "masih dalam" : "sedikit di atas"} batas RAC 40%.`
+        : `Penghasilan bersih **Rp ${netM} juta/bulan** memberikan coverage nyaman. **DBR ${dtiPct}%** jauh di bawah batas RAC 40%.`;
+
+    const section8 = isHighRisk
+      ? `**Rekomendasi: TOLAK**\n\nAplikasi tidak memenuhi standar kredit minimum. ${redFlags.length > 0 ? "Faktor penentu: " + redFlags.join("; ") + "." : ""}`
+      : isMediumRisk
+        ? `**Rekomendasi: RUJUK KOMITE KREDIT**\n\nMemerlukan review komite karena: ${redFlags.join("; ")}.`
+        : `**Rekomendasi: SETUJU**\n\nMemenuhi seluruh kriteria RAC. DBR dalam batas, SLIK baik, AML bersih. **Disarankan persetujuan dengan syarat standar.**`;
+
+    return {
+      executive_summary: execSummary,
+      section1_profil: `${debtorName} adalah **${employmentType}** di **${employerName}**. Identitas terverifikasi via NIK **${nik}**. Data pekerjaan dan domisili konsisten.`,
+      section2_permohonan: `Permohonan **${product}** sebesar **Rp ${amtM} juta** tenor **${tenorMonths} bulan**. Tujuan: **${loanPurpose}**. Estimasi cicilan: **Rp ${requestedInstallment.toLocaleString("id-ID")}**.`,
+      section3_keuangan: section3,
+      section4_slik: `Kolektibilitas SLIK OJK: **${slikKol} — ${kolektibilitasLabel}**. ${paymentHistory}.`,
+      section5_aml: amlClear
+        ? `Screening AML bersih. Tidak ada kecocokan DTTOT, UN Sanctions, atau PEP.`
+        : `Terdapat flag AML. ${pepStatus ? "**Identifikasi PEP** — perlu EDD." : ""} ${fraudSignals ? "Sinyal fraud: " + fraudSignals : ""}`,
+      section6_agunan:
+        product === "KTA"
+          ? `Produk tanpa agunan — tidak diperlukan jaminan.`
+          : `Agunan: **${collateral?.collateral_type ?? "aset"}** nilai pasar **Rp ${(collateral?.market_value ?? 0).toLocaleString("id-ID")}**.`,
+      section7_crde: `Rekomendasi CRDE: **${crdeDecision}** — Skor **${numericScore}/1000** (Risiko: **${riskScore}**).\n${rulesTriggered.length === 0 ? "Seluruh kriteria RAC terpenuhi." : rulesTriggered.map((r) => `• ${r}`).join("\n")}`,
+      section8_rekomendasi: section8,
+    };
+  }
+
+  const execSummary = isHighRisk
+    ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **high-risk profile**. Key concerns: ${redFlags.slice(0, 2).join("; ")}. CRDE recommends **REJECTION** with a score of **${numericScore}/1000**. The analyst should verify if any mitigating factors exist before overriding.`
+    : isMediumRisk
+      ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **moderate-risk profile**. DBR ${dtiPct}% and collectability ${slikKol} require closer review. CRDE recommends **COMMITTEE REVIEW** with a score of **${numericScore}/1000**. The analyst should assess compensating factors.`
+      : `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **low-risk profile**. DBR ${dtiPct}% is within limits and SLIK is clean. CRDE recommends **APPROVAL** with a score of **${numericScore}/1000**. Standard terms apply.`;
+
+  const section3 = isHighRisk
+    ? `Net monthly income **Rp ${netM}M** is insufficient for the requested obligation burden. **DBR ${dtiPct}% far exceeds** the RAC limit of 40%, leaving minimal disposable income. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** strain repayment capacity significantly.`
+    : isMediumRisk
+      ? `Net monthly income **Rp ${netM}M** provides adequate but tight coverage. **DBR ${dtiPct}%** is ${dtiActual <= 0.4 ? "within" : "marginally above"} the 40% RAC threshold. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave limited buffer for unexpected expenses.`
+      : `Net monthly income **Rp ${netM}M** provides comfortable coverage. **DBR ${dtiPct}%** is well within the 40% RAC limit. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave healthy disposable income.`;
+
+  const section8 = isHighRisk
+    ? `**Recommended: REJECT**\n\nApplication does not meet minimum credit standards. ${redFlags.length > 0 ? "Key deal-breakers: " + redFlags.join("; ") + "." : ""} Risk profile is unacceptable for the requested product. Suggest regret letter with explanation of RAC non-compliance.`
+    : isMediumRisk
+      ? `**Recommended: REFER TO CREDIT COMMITTEE**\n\nApplication requires committee review due to: ${redFlags.join("; ")}. While some criteria are met, the combination of risk factors exceeds delegated authority. Enhanced due diligence and compensating documentation recommended.`
+      : `**Recommended: APPROVE**\n\nApplication meets all RAC criteria. DBR is within limit, SLIK collectability is good, and AML screening is clear. No triggered rules or red flags. **Suggest approval with standard terms.**`;
+
+  return {
+    executive_summary: execSummary,
+    section1_profil: `${debtorName} is a **${employmentType}** employed at **${employerName}**. Identity verified via NIK **${nik}**. Employment and domicile data are consistent across submitted documents.`,
+    section2_permohonan: `**${product}** application for **Rp ${amtM}M** over **${tenorMonths} months**. Purpose: **${loanPurpose}**. Estimated monthly installment: **Rp ${requestedInstallment.toLocaleString("id-ID")}**.`,
+    section3_keuangan: section3,
+    section4_slik: `SLIK OJK collectability: **${slikKol} — ${kolektibilitasLabel}**. ${paymentHistory}.`,
+    section5_aml: amlClear
+      ? `AML screening clear. No matches in DTTOT, UN Sanctions, or PEP lists. No fraud signals detected.`
+      : `AML flag present. ${pepStatus ? "**PEP identification** requires enhanced due diligence." : ""} ${fraudSignals ? "Fraud signals: " + fraudSignals : ""}`,
+    section6_agunan:
+      product === "KTA"
+        ? `Unsecured product — no collateral required.`
+        : `Collateral reviewed: **${collateral?.collateral_type ?? "asset"}** with market value **Rp ${(collateral?.market_value ?? 0).toLocaleString("id-ID")}**. LTV within RAC limits.`,
+    section7_crde: `CRDE recommendation: **${crdeDecision}** — Score **${numericScore}/1000** (Risk: **${riskScore}**).\n${rulesTriggered.length === 0 ? "All RAC criteria satisfied. No rules triggered." : rulesTriggered.map((r) => `• ${r}`).join("\n")}`,
+    section8_rekomendasi: section8,
+  };
 }
 
 // Mock agent — simulates agent without Python for testing, using REAL LOS data
@@ -310,40 +452,35 @@ export function spawnMockAgent(task: AgentTask): void {
     );
   if (rulesTriggered.length > 0) redFlags.push(...rulesTriggered);
 
-  const execSummary = isHighRisk
-    ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **high-risk profile**. Key concerns: ${redFlags.slice(0, 2).join("; ")}. CRDE recommends **REJECTION** with a score of **${numericScore}/1000**. The analyst should verify if any mitigating factors exist before overriding.`
-    : isMediumRisk
-      ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **moderate-risk profile**. DBR ${dtiPct}% and collectability ${slikKol} require closer review. CRDE recommends **COMMITTEE REVIEW** with a score of **${numericScore}/1000**. The analyst should assess compensating factors.`
-      : `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **low-risk profile**. DBR ${dtiPct}% is within limits and SLIK is clean. CRDE recommends **APPROVAL** with a score of **${numericScore}/1000**. Standard terms apply.`;
-
-  const section3 = isHighRisk
-    ? `Net monthly income **Rp ${netM}M** is insufficient for the requested obligation burden. **DBR ${dtiPct}% far exceeds** the RAC limit of 40%, leaving minimal disposable income. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** strain repayment capacity significantly.`
-    : isMediumRisk
-      ? `Net monthly income **Rp ${netM}M** provides adequate but tight coverage. **DBR ${dtiPct}%** is ${dtiActual <= 0.4 ? "within" : "marginally above"} the 40% RAC threshold. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave limited buffer for unexpected expenses.`
-      : `Net monthly income **Rp ${netM}M** provides comfortable coverage. **DBR ${dtiPct}%** is well within the 40% RAC limit. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave healthy disposable income.`;
-
-  const section8 = isHighRisk
-    ? `**Recommended: REJECT**\n\nApplication does not meet minimum credit standards. ${redFlags.length > 0 ? "Key deal-breakers: " + redFlags.join("; ") + "." : ""} Risk profile is unacceptable for the requested product. Suggest regret letter with explanation of RAC non-compliance.`
-    : isMediumRisk
-      ? `**Recommended: REFER TO CREDIT COMMITTEE**\n\nApplication requires committee review due to: ${redFlags.join("; ")}. While some criteria are met, the combination of risk factors exceeds delegated authority. Enhanced due diligence and compensating documentation recommended.`
-      : `**Recommended: APPROVE**\n\nApplication meets all RAC criteria. DBR is within limit, SLIK collectability is good, and AML screening is clear. No triggered rules or red flags. **Suggest approval with standard terms.**`;
-
-  const mockMemo: MemoDraft = {
-    executive_summary: execSummary,
-    section1_profil: `${debtorName} is a **${d?.employment_type ?? "private employee"}** employed at **${d?.employer_name ?? "a reputable company"}**. Identity verified via NIK **${d?.nik ?? "—"}**. Employment and domicile data are consistent across submitted documents.`,
-    section2_permohonan: `**${product}** application for **Rp ${amtM}M** over **${d?.tenor_months ?? 24} months**. Purpose: **${d?.loan_purpose ?? "personal use"}**. Estimated monthly installment: **Rp ${d?.requested_installment?.toLocaleString("id-ID") ?? "—"}**.`,
-    section3_keuangan: section3,
-    section4_slik: `SLIK OJK collectability: **${slikKol} — ${d?.kolektibilitas_label ?? "Current"}**. ${d?.payment_history_24m ?? "Good payment history"}.`,
-    section5_aml: amlClear
-      ? `AML screening clear. No matches in DTTOT, UN Sanctions, or PEP lists. No fraud signals detected.`
-      : `AML flag present. ${d?.pep_status ? "**PEP identification** requires enhanced due diligence." : ""} ${d?.fraud_signals ? "Fraud signals: " + d.fraud_signals : ""}`,
-    section6_agunan:
-      product === "KTA"
-        ? `Unsecured product — no collateral required.`
-        : `Collateral reviewed: **${collateral?.collateral_type ?? "asset"}** with market value **Rp ${(collateral?.market_value ?? 0).toLocaleString("id-ID")}**. LTV within RAC limits.`,
-    section7_crde: `CRDE recommendation: **${crdeDecision}** — Score **${numericScore}/1000** (Risk: **${riskScore}**).\n${rulesTriggered.length === 0 ? "All RAC criteria satisfied. No rules triggered." : rulesTriggered.map((r) => `• ${r}`).join("\n")}`,
-    section8_rekomendasi: section8,
-  };
+  const mockMemo = buildMockMemoDraft(task.locale ?? "en", {
+    debtorName,
+    product,
+    amtM,
+    netM,
+    dtiPct,
+    dtiActual,
+    totalOblig,
+    crdeDecision,
+    numericScore,
+    riskScore,
+    slikKol,
+    kolektibilitasLabel: d?.kolektibilitas_label ?? "Current",
+    paymentHistory: d?.payment_history_24m ?? "Good payment history",
+    amlClear,
+    pepStatus: !!d?.pep_status,
+    fraudSignals: d?.fraud_signals ?? "",
+    employmentType: d?.employment_type ?? "private employee",
+    employerName: d?.employer_name ?? "a reputable company",
+    nik: d?.nik ?? "—",
+    tenorMonths: d?.tenor_months ?? 24,
+    loanPurpose: d?.loan_purpose ?? "personal use",
+    requestedInstallment: d?.requested_installment ?? 0,
+    collateral,
+    redFlags,
+    isHighRisk,
+    isMediumRisk,
+    rulesTriggered,
+  });
 
   // ── Spawn screenshot sidecar if Python venv is available ─────────────────
   const cfg = getLosConfig();
@@ -428,7 +565,10 @@ export function spawnMockAgent(task: AgentTask): void {
   runSteps().catch(console.error);
 }
 
-export function createTask(appId: string): AgentTask {
+export function createTask(
+  appId: string,
+  locale: MemoLocale = "en",
+): AgentTask {
   const cfg = getLosConfig();
   const taskId = `task-${appId}-${Date.now()}`;
   registerTask(taskId, appId);
@@ -438,5 +578,6 @@ export function createTask(appId: string): AgentTask {
     losUrl: cfg.losUrl,
     backendUrl: cfg.backendUrl,
     credentials: { username: cfg.losUsername, password: cfg.losPassword },
+    locale,
   };
 }

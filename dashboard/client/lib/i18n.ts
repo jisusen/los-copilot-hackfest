@@ -29,12 +29,18 @@ const id = {
   "dash.starting": "Memulai…",
   "dash.agents_working": "Copilot Bekerja",
   "dash.agents_sub": "dari 5 maks paralel",
-  "dash.cinemas": "Mode Bioskop",
-  "dash.select_prompt": "Pilih aplikasi untuk memulai",
-  "dash.select_hint": "Cek pinjaman di antrian, lalu klik Jalankan Review",
+  "dash.select_prompt": "Pilih pinjaman di daftar tugas",
+  "dash.select_hint": "Centang pinjaman di Task List, lalu klik Run Review",
   "dash.slot_available": "Slot tersedia",
   "dash.auto_take": "Agen akan otomatis mengambil aplikasi dari antrian",
   "dash.results": "Hasil Analisis",
+  "dash.tip_1": "Centang pinjaman di Task List",
+  "dash.tip_2": "Lalu klik Run Review",
+  "dash.tip_3": "Hasil muncul di panel kanan",
+  "dash.joki_greeting": "Siap bantu!",
+  "dash.joki_subtitle": "Pilih hingga 5 aplikasi, lalu jalankan review",
+  "dash.joki_memo_lang": "Memo akan ditulis dalam Bahasa Indonesia",
+  "dash.agents_idle": "Copilot siap — menunggu tugas",
 
   // Confirmation modal
   // HasilPanel
@@ -55,7 +61,8 @@ const id = {
 
   // Confirmation modal
   "confirm.title": "Konfirmasi Sebelum Review",
-  "confirm.desc": "Hasil review dihasilkan oleh AI dan mungkin tidak sepenuhnya akurat. Harap periksa kembali sebelum mengambil keputusan.",
+  "confirm.desc":
+    "Hasil review dihasilkan oleh AI dan mungkin tidak sepenuhnya akurat. Harap periksa kembali sebelum mengambil keputusan.",
   "confirm.proceed": "Ya, Lanjutkan",
   "confirm.cancel": "Batal",
 
@@ -76,14 +83,17 @@ const id = {
   "settings.save": "Simpan perubahan",
   "settings.saved": "Tersimpan",
   "settings.analysis_llm": "LLM Analisis",
-  "settings.analysis_llm_desc": "Digunakan untuk ekstraksi data dan pembuatan memo",
+  "settings.analysis_llm_desc":
+    "Digunakan untuk ekstraksi data dan pembuatan memo",
   "settings.browsing_llm": "LLM Penjelajahan",
-  "settings.browsing_llm_desc": "Model cepat/murah untuk navigasi UI vendor. Kosongkan untuk menggunakan LLM Analisis.",
+  "settings.browsing_llm_desc":
+    "Model cepat/murah untuk navigasi UI vendor. Kosongkan untuk menggunakan LLM Analisis.",
   "settings.los_connection": "Koneksi LOS",
   "settings.agent": "Copilot",
   "settings.agent_desc": "Perilaku browser dan strategi ekstraksi",
   "settings.skills": "Keahlian",
-  "settings.skills_desc": "SOP, Juknis, atau pedoman kustom yang dimasukkan ke agen",
+  "settings.skills_desc":
+    "SOP, Juknis, atau pedoman kustom yang dimasukkan ke agen",
   "settings.provider": "Penyedia",
   "settings.api_key": "Kunci API",
   "settings.model": "Model",
@@ -91,8 +101,10 @@ const id = {
   "settings.same_as_analysis": "Sama dengan LLM Analisis",
   "settings.mock": "Mode agen tiruan (tanpa Python, menggunakan data seed)",
   "settings.memo_sop": "SOP / Juknis Memo (Markdown)",
-  "settings.memo_placeholder": "Kosongkan untuk menggunakan SOP bawaan. Tempel Juknis atau panduan memo kredit bank Anda dalam format Markdown.",
-  "settings.memo_hint": "Menimpa SOP bawaan jika tidak kosong. Gunakan untuk aturan khusus bank, pemetaan keputusan CRDE, atau pedoman format.",
+  "settings.memo_placeholder":
+    "Kosongkan untuk menggunakan SOP bawaan. Tempel Juknis atau panduan memo kredit bank Anda dalam format Markdown.",
+  "settings.memo_hint":
+    "Menimpa SOP bawaan jika tidak kosong. Gunakan untuk aturan khusus bank, pemetaan keputusan CRDE, atau pedoman format.",
   "settings.extraction_mode": "Mode ekstraksi",
   "settings.extraction_browser": "Browser (LLM navigasi UI LOS)",
   "settings.extraction_api": "API (panggilan REST langsung — cepat)",
@@ -134,12 +146,18 @@ const en: typeof id = {
   "dash.starting": "Starting…",
   "dash.agents_working": "Copilot Working",
   "dash.agents_sub": "of 5 max parallel",
-  "dash.cinemas": "Cinemas Mode",
   "dash.select_prompt": "Select applications to begin",
-  "dash.select_hint": "Check loans in the queue, then click Run review",
+  "dash.select_hint": "Check loans in Task List, then click Run Review",
   "dash.slot_available": "Slot available",
   "dash.auto_take": "Agent will automatically pick from queue",
   "dash.results": "Analysis Results",
+  "dash.tip_1": "Check loans in Task List",
+  "dash.tip_2": "Then click Run Review",
+  "dash.tip_3": "Results appear on the right panel",
+  "dash.joki_greeting": "Here to help!",
+  "dash.joki_subtitle": "Select up to 5 applications, then run review",
+  "dash.joki_memo_lang": "Memos will be written in English",
+  "dash.agents_idle": "Copilot ready — waiting for tasks",
 
   // HasilPanel
   "hasil.ready": "Ready",
@@ -159,7 +177,8 @@ const en: typeof id = {
 
   // Confirmation modal
   "confirm.title": "Confirm Before Review",
-  "confirm.desc": "Review results are AI-generated and may not be fully accurate. Please double-check before making any decisions.",
+  "confirm.desc":
+    "Review results are AI-generated and may not be fully accurate. Please double-check before making any decisions.",
   "confirm.proceed": "Yes, Proceed",
   "confirm.cancel": "Cancel",
 
@@ -182,12 +201,14 @@ const en: typeof id = {
   "settings.analysis_llm": "Analysis LLM",
   "settings.analysis_llm_desc": "Used for data extraction and memo generation",
   "settings.browsing_llm": "Browsing LLM",
-  "settings.browsing_llm_desc": "Fast/cheap model for vendor UI navigation. Leave empty to reuse Analysis LLM.",
+  "settings.browsing_llm_desc":
+    "Fast/cheap model for vendor UI navigation. Leave empty to reuse Analysis LLM.",
   "settings.los_connection": "LOS Connection",
   "settings.agent": "Agent",
   "settings.agent_desc": "Browser behavior and extraction strategy",
   "settings.skills": "Skills",
-  "settings.skills_desc": "Custom SOP, Juknis, or guidelines injected into the agent",
+  "settings.skills_desc":
+    "Custom SOP, Juknis, or guidelines injected into the agent",
   "settings.provider": "Provider",
   "settings.api_key": "API Key",
   "settings.model": "Model",
@@ -195,8 +216,10 @@ const en: typeof id = {
   "settings.same_as_analysis": "Same as Analysis LLM",
   "settings.mock": "Mock agent mode (no Python, uses seeded fixtures)",
   "settings.memo_sop": "Memo SOP / Juknis (Markdown)",
-  "settings.memo_placeholder": "Leave empty to use the built-in default SOP. Paste your bank's Juknis or credit memo guidelines here as Markdown.",
-  "settings.memo_hint": "Overrides the built-in SOP when non-empty. Use it for bank-specific rules, CRDE decision mappings, or formatting guidelines.",
+  "settings.memo_placeholder":
+    "Leave empty to use the built-in default SOP. Paste your bank's Juknis or credit memo guidelines here as Markdown.",
+  "settings.memo_hint":
+    "Overrides the built-in SOP when non-empty. Use it for bank-specific rules, CRDE decision mappings, or formatting guidelines.",
   "settings.extraction_mode": "Extraction mode",
   "settings.extraction_browser": "Browser (LLM navigates LOS UI)",
   "settings.extraction_api": "API (direct REST calls — fast)",

@@ -7,6 +7,7 @@ import { handleChat } from "./routes/chat";
 import { handleDecisions, handleSessions } from "./routes/decisions";
 import { handleInternal } from "./routes/internal";
 import { handleSettings } from "./routes/settings";
+import { handleSkills } from "./routes/skills";
 import { handleAuth } from "./routes/auth";
 import autoprefixer from 'autoprefixer';
 import cssLoader from 'bun-css-loader';
@@ -150,6 +151,11 @@ async function handleRequest(req: Request): Promise<Response> {
 
   if (pathname === "/api/settings") {
     const res = await handleSettings(req);
+    if (res) return withCors(res, req);
+  }
+
+  if (pathname.startsWith("/api/skills")) {
+    const res = await handleSkills(req);
     if (res) return withCors(res, req);
   }
 

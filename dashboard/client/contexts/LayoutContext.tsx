@@ -5,8 +5,6 @@ type LayoutContextType = {
   setSidebarOpen: (v: boolean) => void;
   agentMode: string;
   setAgentMode: (v: string) => void;
-  liveOn: boolean;
-  setLiveOn: (v: boolean) => void;
 };
 
 const LayoutContext = createContext<LayoutContextType | null>(null);
@@ -14,10 +12,9 @@ const LayoutContext = createContext<LayoutContextType | null>(null);
 export function LayoutProvider({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [agentMode, setAgentMode] = useState("sim");
-  const [liveOn, setLiveOn] = useState(true);
 
   return (
-    <LayoutContext.Provider value={{ sidebarOpen, setSidebarOpen, agentMode, setAgentMode, liveOn, setLiveOn }}>
+    <LayoutContext.Provider value={{ sidebarOpen, setSidebarOpen, agentMode, setAgentMode }}>
       {children}
     </LayoutContext.Provider>
   );

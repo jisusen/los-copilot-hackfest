@@ -18,13 +18,6 @@ export function useWebSocket(onMessage: (msg: WsMessage) => void) {
       } catch {}
     };
 
-    ws.onclose = () => {
-      console.log('[WS] Disconnected, reconnecting in 2s...');
-      setTimeout(connect, 2000);
-    };
-
-    ws.onerror = () => ws.close();
-
     // Heartbeat
     const ping = setInterval(() => {
       if (ws.readyState === WebSocket.OPEN) {
@@ -37,6 +30,8 @@ export function useWebSocket(onMessage: (msg: WsMessage) => void) {
       console.log('[WS] Reconnecting in 2s...');
       setTimeout(connect, 2000);
     };
+
+    ws.onerror = () => ws.close();
   }, []);
 
   useEffect(() => {

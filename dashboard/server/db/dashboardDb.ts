@@ -158,3 +158,8 @@ export function getAllAgentSessions(): Array<{ appId: string; losData: unknown; 
     completedAt: r.completed_at,
   }));
 }
+
+export function deleteAgentSession(appId: string): void {
+  const db = getDashboardDb();
+  db.query('DELETE FROM agent_sessions WHERE app_id = ?').run(appId);
+}

@@ -3,258 +3,460 @@
 @tailwind utilities;
 
 :root {
-  --ink: #1f2d3d;
-  --ink-2: #475569;
-  --ink-3: #94a3b8;
-  --ink-4: #cbd5e1;
-  --ink-5: #e2e8f0;
-  --line: #e2e8f0;
-  --accent: #e8a020;
-  --accent-line: #f6d5a0;
-  --accent-soft: #fef7ed;
-  --red: #dc2626;
-  --red-soft: #fef2f2;
-  --amber: #d97706;
-  --green: #16a34a;
-  --paper-2: #f8fafc;
-  --paper-3: #f1f5f9;
-  --font-serif: 'DM Sans', serif;
-  --font-mono: 'IBM Plex Mono', monospace;
-  --font-sans: 'IBM Plex Sans', sans-serif;
-  --r: 8px;
-  --r-lg: 16px;
+    --ink: #1f2d3d;
+    --ink-2: #475569;
+    --ink-3: #94a3b8;
+    --ink-4: #cbd5e1;
+    --ink-5: #e2e8f0;
+    --line: #e2e8f0;
+    --accent: #e8a020;
+    --accent-line: #f6d5a0;
+    --accent-soft: #fef7ed;
+    --red: #dc2626;
+    --red-soft: #fef2f2;
+    --amber: #d97706;
+    --green: #16a34a;
+    --paper-2: #f8fafc;
+    --paper-3: #f1f5f9;
+    --font-serif: "Source Serif 4", Georgia, serif;
+    --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+    --font-sans:
+        "IBM Plex Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        system-ui, sans-serif;
+    --r: 8px;
+    --r-lg: 16px;
 }
 
 html,
 body,
 #root {
-  width: 100%;
-  height: 100%;
-  margin: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
 }
 
 body {
-  background: #f8f9fb;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #f8f9fb;
+    font-family: var(--font-sans);
 }
 
 @media print {
-  body { background: #fff; }
-  @page { margin: 1.5cm; }
+    body {
+        background: #fff;
+    }
+    @page {
+        margin: 1.5cm;
+    }
 }
 
 @keyframes bubble-pop {
-  0% {
-    transform: translate(-50%, 15px) scale(0.6);
-    opacity: 0;
-  }
-  50% {
-    transform: translate(-50%, -6px) scale(1.15);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(-50%, 0) scale(1);
-    opacity: 1;
-  }
+    0% {
+        transform: translate(-50%, 12px) scale(0.5);
+        opacity: 0;
+    }
+    60% {
+        transform: translate(-50%, -4px) scale(1.08);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, 0) scale(1);
+        opacity: 1;
+    }
 }
 
 @keyframes bubble-float {
-  0%, 100% {
-    transform: translate(-50%, 0);
-  }
-  50% {
-    transform: translate(-50%, -8px);
-  }
+    0%,
+    100% {
+        transform: translate(-50%, 0);
+    }
+    50% {
+        transform: translate(-50%, -6px);
+    }
 }
 
 .comic-bubble {
-  position: absolute;
-  left: 50%;
-  top: -24px; /* Float nicely above the 200px Lottie container */
-  transform: translate(-50%, 0);
-  background-color: #ffffff;
-  border: 3px solid #1f2937; /* Gray-800 thick ink border */
-  border-radius: 16px;
-  padding: 8px 16px;
-  box-shadow: 4px 4px 0px 0px #1f2937; /* Clean flat retro 3D comic shadow */
-  color: #ef4444; /* Vivid Red-500 matching CIMB theme */
-  font-weight: 800;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  white-space: nowrap;
-  z-index: 30;
-  animation: bubble-pop 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards, bubble-float 3s ease-in-out infinite 0.5s;
+    position: absolute;
+    left: 55%;
+    top: -30px;
+    transform: translate(-50%, 0);
+    background-color: #ffffff;
+    border: 2.5px solid #1f2937;
+    border-radius: 14px;
+    padding: 7px 14px;
+    box-shadow: 3px 3px 0 0 #1f2937;
+    color: #ec2428;
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    z-index: 30;
+    animation:
+        bubble-pop 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards,
+        bubble-float 3.5s ease-in-out infinite 0.45s;
+}
+
+.joki-fox {
+    gap: 10px;
+}
+
+.joki-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 9999px;
+    background: #ffffff;
+    border: 1px solid #f3d0d0;
+    box-shadow: 0 2px 12px rgba(236, 36, 40, 0.1);
+    color: #ec2428;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.joki-fox-img {
+    animation: joki-breathe 4s ease-in-out infinite;
+}
+
+@keyframes joki-breathe {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.03);
+    }
 }
 
 .comic-bubble::after {
-  content: '';
-  position: absolute;
-  bottom: -10px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 10px solid transparent;
-  border-right: 10px solid transparent;
-  border-top: 10px solid #ffffff;
-  z-index: 2;
+    content: "";
+    position: absolute;
+    bottom: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 9px solid #ffffff;
+    z-index: 2;
 }
 
 .comic-bubble::before {
-  content: '';
-  position: absolute;
-  bottom: -14px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 0;
-  height: 0;
-  border-left: 13px solid transparent;
-  border-right: 13px solid transparent;
-  border-top: 13px solid #1f2937;
-  z-index: 1;
+    content: "";
+    position: absolute;
+    bottom: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-top: 12px solid #1f2937;
+    z-index: 1;
 }
 
-@keyframes float-zzz {
-  0% {
-    transform: translate(0, 0) scale(0.6) rotate(0deg);
-    opacity: 0;
-  }
-  20% {
+/* Anime cat-style eyes over logo-login sockets */
+.fox-anime-eye {
+    width: 34px;
+    height: 42px;
+}
+
+.fox-anime-eye-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.fox-anime-sclera {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 48% 48% 42% 42% / 52% 52% 38% 38%;
+    background: linear-gradient(180deg, #ffffff 0%, #fff8f5 100%);
+    border: 1.5px solid rgba(31, 41, 55, 0.22);
+    box-shadow:
+        inset 0 -3px 6px rgba(236, 36, 40, 0.08),
+        0 1px 3px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+}
+
+.fox-anime-look {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 22px;
+    height: 26px;
+    margin-left: -11px;
+    margin-top: -13px;
+    z-index: 2;
+}
+
+.fox-anime-iris {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle at 40% 35%,
+        #f0b429 0%,
+        #d97706 45%,
+        #92400e 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.fox-anime-pupil {
+    width: 7px;
+    height: 24px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, #111827 0%, #030712 100%);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.35);
+}
+
+.fox-anime-sparkle {
+    position: absolute;
+    border-radius: 9999px;
+    background: #ffffff;
+    pointer-events: none;
+}
+
+.fox-anime-sparkle--main {
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    opacity: 0.95;
+}
+
+.fox-anime-sparkle--sub {
+    top: 11px;
+    right: 9px;
+    width: 3.5px;
+    height: 3.5px;
     opacity: 0.8;
-  }
-  80% {
-    opacity: 0.8;
-  }
-  100% {
-    transform: translate(15px, -35px) scale(1.1) rotate(15deg);
-    opacity: 0;
-  }
 }
 
-.zzz-container {
-  position: absolute;
-  top: 40px;
-  right: 50px;
-  pointer-events: none;
-  z-index: 15;
+.fox-anime-lid {
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    right: -1px;
+    height: 55%;
+    background: #ec2428;
+    border-radius: 48% 48% 40% 40% / 55% 55% 0 0;
+    transform: translateY(-102%);
+    z-index: 4;
+    pointer-events: none;
 }
 
-.zzz-letter {
-  position: absolute;
-  font-weight: 800;
-  color: #94a3b8; /* slate-400 */
-  opacity: 0;
-  font-family: 'Inter', sans-serif;
-  user-select: none;
-}
-
-.zzz-1 {
-  font-size: 15px;
-  animation: float-zzz 2.5s ease-in-out infinite;
-  animation-delay: 0s;
-}
-
-.zzz-2 {
-  font-size: 11px;
-  animation: float-zzz 2.5s ease-in-out infinite;
-  animation-delay: 0.8s;
-  margin-top: -8px;
-  margin-left: 12px;
-}
-
-.zzz-3 {
-  font-size: 8px;
-  animation: float-zzz 2.5s ease-in-out infinite;
-  animation-delay: 1.6s;
-  margin-top: -16px;
-  margin-left: 22px;
+.fox-anime-lash {
+    position: absolute;
+    top: 1px;
+    left: 4px;
+    right: 4px;
+    height: 8px;
+    border-top: 2px solid rgba(31, 41, 55, 0.55);
+    border-radius: 50% 50% 0 0;
+    z-index: 5;
+    pointer-events: none;
 }
 
 @keyframes ghost-float {
-  0%, 100% {
-    transform: translateY(0);
-    filter: drop-shadow(0 6px 12px rgba(236, 36, 40, 0.25)) opacity(0.9);
-  }
-  50% {
-    transform: translateY(-10px);
-    filter: drop-shadow(0 15px 30px rgba(236, 36, 40, 0.55)) opacity(0.98);
-  }
+    0%,
+    100% {
+        transform: translateY(0);
+        filter: drop-shadow(0 6px 12px rgba(236, 36, 40, 0.2)) opacity(0.92);
+    }
+    50% {
+        transform: translateY(-8px);
+        filter: drop-shadow(0 14px 28px rgba(236, 36, 40, 0.45)) opacity(1);
+    }
 }
 
 .ghost-agent {
-  animation: ghost-float 5s ease-in-out infinite;
-  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: ghost-float 5s ease-in-out infinite;
+    transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.ghost-agent--awake {
+    filter: drop-shadow(0 0 20px rgba(236, 36, 40, 0.12));
+}
+
+.joki-orb {
+    position: absolute;
+    inset: 12%;
+    border-radius: 9999px;
+    background: radial-gradient(
+        circle at 50% 45%,
+        rgba(236, 36, 40, 0.14) 0%,
+        rgba(236, 36, 40, 0.04) 45%,
+        transparent 72%
+    );
+    animation: joki-orb-pulse 4s ease-in-out infinite;
+}
+
+.joki-pedestal {
+    position: absolute;
+    bottom: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 14px;
+    border-radius: 9999px;
+    background: radial-gradient(
+        ellipse at center,
+        rgba(31, 41, 55, 0.18) 0%,
+        transparent 72%
+    );
+}
+
+.agents-empty {
+    background:
+        radial-gradient(
+            ellipse 80% 60% at 50% 35%,
+            rgba(236, 36, 40, 0.05) 0%,
+            transparent 70%
+        ),
+        linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+    border: 1px dashed #e5e7eb;
+    border-radius: 16px;
+}
+
+@keyframes joki-orb-pulse {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.85;
+    }
+    50% {
+        transform: scale(1.06);
+        opacity: 1;
+    }
 }
 
 @keyframes watch-pupil {
-  0%, 100%, 12% {
-    transform: translate(0, 0);
-  }
-  20%, 32% {
-    transform: translate(-3px, -1px);
-  }
-  40%, 52% {
-    transform: translate(3px, 1px);
-  }
-  60%, 72% {
-    transform: translate(-2px, 2px);
-  }
-  80%, 92% {
-    transform: translate(2.5px, -1.5px);
-  }
+    0%,
+    8% {
+        transform: translate(0, 0);
+    }
+    18%,
+    28% {
+        transform: translate(-4px, 0);
+    }
+    42%,
+    52% {
+        transform: translate(4px, 0);
+    }
+    62%,
+    72% {
+        transform: translate(-3px, 0);
+    }
+    82%,
+    92% {
+        transform: translate(3px, 0);
+    }
 }
 
 .animate-watch-pupil {
-  animation: watch-pupil 6s ease-in-out infinite;
+    animation: watch-pupil 4s ease-in-out infinite;
 }
 
-/* Natural Anime Blinking Loop (triggers a double quick blink every 4s) */
-@keyframes anime-blink {
-  0%, 90%, 100% {
-    transform: scaleY(1);
-  }
-  93%, 97% {
-    transform: scaleY(0.08);
-  }
-  95% {
-    transform: scaleY(1);
-  }
+@keyframes fox-eye-blink {
+    0%,
+    90%,
+    100% {
+        transform: translateY(-102%);
+    }
+    93%,
+    96% {
+        transform: translateY(8%);
+    }
 }
 
-.animate-anime-blink {
-  animation: anime-blink 4.5s ease-in-out infinite;
-  transform-origin: center;
+.animate-fox-eye-blink {
+    animation: fox-eye-blink 5.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
-/* Glassy Highlight Shimmer/Glow */
+@keyframes fox-eye-look {
+    0%,
+    12% {
+        transform: translate(0, 0);
+    }
+    22%,
+    32% {
+        transform: translate(-4px, 0);
+    }
+    42%,
+    52% {
+        transform: translate(4px, -1px);
+    }
+    62%,
+    72% {
+        transform: translate(2px, 2px);
+    }
+    82%,
+    92% {
+        transform: translate(-2px, 1px);
+    }
+    100% {
+        transform: translate(0, 0);
+    }
+}
+
+.animate-fox-eye-look {
+    animation: fox-eye-look 6s ease-in-out infinite;
+}
+
 @keyframes glint-sparkle {
-  0%, 100% {
-    transform: scale(1) translate(0, 0);
-    opacity: 0.85;
-  }
-  50% {
-    transform: scale(1.18) translate(0.2px, -0.2px);
-    opacity: 1;
-    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.95));
-  }
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.9;
+    }
+    50% {
+        transform: scale(1.25);
+        opacity: 1;
+        filter: drop-shadow(0 0 2px rgba(255, 255, 255, 0.9));
+    }
 }
 
 .animate-glint-sparkle {
-  animation: glint-sparkle 3s ease-in-out infinite;
+    animation: glint-sparkle 3.5s ease-in-out infinite;
 }
 
-/* Breathing Eyelid Sleep Pulse */
-@keyframes lash-sleep-pulse {
-  0%, 100% {
-    transform: translateY(0) scaleY(1);
-  }
-  50% {
-    transform: translateY(0.6px) scaleY(0.92);
-  }
+@keyframes bounce-subtle {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-2px);
+    }
 }
 
-.animate-sleep-pulse {
-  animation: lash-sleep-pulse 3.5s ease-in-out infinite;
+.animate-bounce-subtle {
+    animation: bounce-subtle 2s ease-in-out infinite;
 }
 
+@keyframes fadeSlide {
+    0% {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    15% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    85% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+}

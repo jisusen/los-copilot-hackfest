@@ -14,6 +14,7 @@ import base64
 import json
 import os
 import re
+import re as _re
 import sys
 
 import httpx
@@ -21,14 +22,15 @@ import httpx
 # Patch Pydantic to strip markdown fences from all JSON validation
 # Some LLMs (glm-5.1) wrap JSON in ```json ... ``` blocks
 import pydantic as _pd
-import re as _re
 
-_orig_mvj = _pd.BaseModel.__dict__['model_validate_json']
+_orig_mvj = _pd.BaseModel.__dict__["model_validate_json"]
+
 
 def _strip_fences(cls, json_data, *a, **kw):
-    if isinstance(json_data, str) and '```' in json_data:
-        json_data = _re.sub(r'^```(?:json)?\s*|\s*```$', '', json_data.strip())
+    if isinstance(json_data, str) and "```" in json_data:
+        json_data = _re.sub(r"^```(?:json)?\s*|\s*```$", "", json_data.strip())
     return _orig_mvj.__func__(cls, json_data, *a, **kw)
+
 
 _pd.BaseModel.model_validate_json = classmethod(_strip_fences)
 
@@ -45,6 +47,7 @@ CUSTOM_ENDPOINT = os.environ.get("CUSTOM_LLM_ENDPOINT", "")
 CUSTOM_MODEL = os.environ.get("CUSTOM_LLM_MODEL", "")
 CUSTOM_API_KEY = os.environ.get("CUSTOM_LLM_API_KEY", "")
 EXTRACTION_MODE = os.environ.get("EXTRACTION_MODE", "browser")  # "browser" | "api"
+MEMO_SKILL = os.environ.get("MEMO_SKILL", "").strip()
 
 BROWSE_PROVIDER = os.environ.get("BROWSE_PROVIDER", "")
 BROWSE_MODEL = os.environ.get("BROWSE_MODEL", "")
@@ -113,7 +116,7 @@ def parse_agent_result(result) -> dict:
             brace_depth -= 1
             if brace_depth == 0 and start != -1:
                 try:
-                    return json.loads(cleaned[start:i+1])
+                    return json.loads(cleaned[start : i + 1])
                 except json.JSONDecodeError:
                     pass
                 start = -1
@@ -132,7 +135,9 @@ def parse_agent_result(result) -> dict:
 # ── Progress / reporting helpers ──────────────────────────────────────────────
 
 
-async def _http_post_with_retry(url: str, json_data: dict, timeout: int = 10, max_retries: int = 3):
+async def _http_post_with_retry(
+    url: str, json_data: dict, timeout: int = 10, max_retries: int = 3
+):
     for attempt in range(max_retries):
         try:
             async with httpx.AsyncClient(timeout=timeout) as http:
@@ -383,9 +388,11 @@ def los_loan_to_extracted(loan: dict) -> dict:
 # ── Memo generation ───────────────────────────────────────────────────────────
 
 MEMO_SYSTEM = """You are a senior credit analyst at Bank Maju Bersama Gibran, Indonesia.
-Write a formal Consumer Credit Analysis Memo in English based on LOS-extracted data.
+Write a formal Consumer Credit Analysis Memo based on LOS-extracted data.
 
-CRITICAL: Output ONLY the final memo in English. Do NOT include thinking process, reasoning steps, or internal monologue. Do NOT respond in German or any other language. Return ONLY valid JSON.
+LANGUAGE: Default is formal English. If CUSTOM SOP / SKILLS below specifies Bahasa Indonesia, write all section content in formal Indonesian instead.
+
+CRITICAL: Output ONLY the final memo. Do NOT include thinking process, reasoning steps, or internal monologue. Return ONLY valid JSON.
 
 == CRDE DECISION KEY ==
 The LOS stores decisions in Indonesian. Map them as follows:
@@ -483,15 +490,27 @@ section8_rekomendasi:
 - Return ONLY the JSON object — no markdown fences, no preamble"""
 
 
+def build_memo_system() -> str:
+    if not MEMO_SKILL:
+        return MEMO_SYSTEM
+    return (
+        f"{MEMO_SYSTEM}\n\n"
+        "== CUSTOM SOP / SKILLS ==\n"
+        "Follow these additional procedures and rules when writing the memo. "
+        "They override conflicting defaults above.\n\n"
+        f"{MEMO_SKILL}"
+    )
+
 async def generate_memo(extracted_data: dict, app_id: str) -> dict:
     prompt = f"LOS data for application {app_id}:\n\n{json.dumps(extracted_data, ensure_ascii=False, indent=2)}"
+    system = build_memo_system()
 
     if PROVIDER == "gemini":
         client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
         response = await client.aio.models.generate_content(
             model=GEMINI_MODEL,
             contents=prompt,
-            config={"system_instruction": MEMO_SYSTEM},
+            config={"system_instruction": system},
         )
         raw = response.text.strip()
     elif PROVIDER == "custom" and CUSTOM_ENDPOINT:
@@ -502,7 +521,7 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
             model=CUSTOM_MODEL,
             max_tokens=4096,
             messages=[
-                {"role": "system", "content": MEMO_SYSTEM},
+                {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
             ],
         )
@@ -512,7 +531,7 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
         response = await client.messages.create(
             model=ANTHROPIC_MODEL,
             max_tokens=4096,
-            system=MEMO_SYSTEM,
+            system=system,
             messages=[{"role": "user", "content": prompt}],
         )
         raw = response.content[0].text.strip()
@@ -717,7 +736,9 @@ async def run_review(task: dict):
         return BUChatAnthropic(model=m, api_key=k)
 
     if BROWSE_PROVIDER:
-        agent_llm = _make_llm(BROWSE_PROVIDER, BROWSE_MODEL, BROWSE_ENDPOINT, BROWSE_API_KEY)
+        agent_llm = _make_llm(
+            BROWSE_PROVIDER, BROWSE_MODEL, BROWSE_ENDPOINT, BROWSE_API_KEY
+        )
     else:
         agent_llm = _make_llm("", "", "", "")
     # Note: generate_memo() reads PROVIDER/ANTHROPIC_MODEL globals directly
@@ -756,6 +777,7 @@ async def run_review(task: dict):
             "Clicking tab hasil-crde for visual review...",
             "Reviewing CRDE decision — risk assessment panel",
         ]
+
         async def heartbeat(stop_event: asyncio.Event):
             step_idx = 9
             beat_pct = 74
@@ -848,7 +870,10 @@ Navigate loan {app_id} at Bank Maju Bersama Gibran LOS — visual review only, n
                 try:
                     agent_result_raw = await extraction_agent.run(max_steps=8)
                 except Exception as agent_err:
-                    print(f"[{app_id}] ⚠ Agent run error (attempt {attempt}): {agent_err}", file=sys.stderr)
+                    print(
+                        f"[{app_id}] ⚠ Agent run error (attempt {attempt}): {agent_err}",
+                        file=sys.stderr,
+                    )
                     agent_result_raw = str(agent_err)
 
                 extracted_data = (
@@ -863,17 +888,27 @@ Navigate loan {app_id} at Bank Maju Bersama Gibran LOS — visual review only, n
                     )
                     extracted_data = {}
                 else:
-                    print(f"[{app_id}] ✓ Browser extraction keys (attempt {attempt}): {list(extracted_data.keys())}")
+                    print(
+                        f"[{app_id}] ✓ Browser extraction keys (attempt {attempt}): {list(extracted_data.keys())}"
+                    )
 
             # Fallback: if browser extraction failed, try API mode
             if not extracted_data.get("profil_debitur"):
-                print(f"[{app_id}] ⚠ Browser extraction failed, falling back to API mode", file=sys.stderr)
+                print(
+                    f"[{app_id}] ⚠ Browser extraction failed, falling back to API mode",
+                    file=sys.stderr,
+                )
                 try:
                     loan_raw = await fetch_loan_from_api(los_url, app_id, credentials)
                     extracted_data = los_loan_to_extracted(loan_raw)
-                    print(f"[{app_id}] ✓ API fallback — {extracted_data['profil_debitur'].get('nama', '?')}")
+                    print(
+                        f"[{app_id}] ✓ API fallback — {extracted_data['profil_debitur'].get('nama', '?')}"
+                    )
                 except Exception as api_err:
-                    print(f"[{app_id}] ✗ API fallback also failed: {api_err}", file=sys.stderr)
+                    print(
+                        f"[{app_id}] ✗ API fallback also failed: {api_err}",
+                        file=sys.stderr,
+                    )
 
         # ── Finish extraction ────────────────────────────────────────────────
         stop_walk.set()
@@ -915,16 +950,19 @@ Navigate loan {app_id} at Bank Maju Bersama Gibran LOS — visual review only, n
             "Finalizing memo and formatting recommendation...",
         ]
         stop_memo = asyncio.Event()
+
         async def memo_heartbeat(stop: asyncio.Event):
             step_idx = 38
             while not stop.is_set():
                 for msg in MEMO_STEPS:
-                    if stop.is_set(): return
+                    if stop.is_set():
+                        return
                     step_idx += 1
                     pct = min(92 + step_idx - 38, 99)
                     await progress(msg, step_idx, pct)
                     await asyncio.sleep(2)
                 step_idx = 38
+
         memo_task = asyncio.create_task(memo_heartbeat(stop_memo))
 
         memo_draft = await generate_memo(extracted_data, app_id)

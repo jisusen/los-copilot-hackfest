@@ -173,7 +173,7 @@ function KeyMetrics({ result }: { result: AgentResult }) {
         }}
       >
         <div
-          className="font-mono text-[9px] uppercase tracking-widest font-semibold mb-1"
+          className="font-mono text-[10px] uppercase tracking-widest font-semibold mb-1"
           style={{ color: CRDE_COLOR[r.crdeDecision] ?? "#94a3b8" }}
         >
           AI Decision

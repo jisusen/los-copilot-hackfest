@@ -58,11 +58,23 @@ export async function handleDecisions(req: Request, pathname: string): Promise<R
 
 export async function handleSessions(req: Request, pathname: string): Promise<Response | null> {
   const match = pathname.match(/^\/api\/sessions\/(APP-\d{3})$/);
-  if (!match || req.method !== 'GET') return null;
+  if (match) {
+    const appId = match[1];
 
-  const appId = match[1];
-  const session = sessionStore.get(appId);
-  if (!session) return Response.json({ error: 'Session not found' }, { status: 404 });
+    // DELETE /api/sessions/APP-XXX — reset a ready/reviewed session so it can be run again
+    if (req.method === 'DELETE') {
+      sessionStore.delete(appId);
+      wsManager.broadcast({ type: 'agent:reset', appId });
+      return Response.json({ ok: true });
+    }
 
-  return Response.json({ session });
+    // GET /api/sessions/APP-XXX
+    if (req.method === 'GET') {
+      const session = sessionStore.get(appId);
+      if (!session) return Response.json({ error: 'Session not found' }, { status: 404 });
+      return Response.json({ session });
+    }
+  }
+
+  return null;
 }

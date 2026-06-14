@@ -154,6 +154,16 @@ ${JSON.stringify(losData.permohonanKredit, null, 2)}`;
   list(): string[] {
     return Array.from(this.store.keys());
   }
+
+  delete(appId: string) {
+    this.store.delete(appId);
+    try {
+      const { deleteAgentSession } = require('../db/dashboardDb');
+      deleteAgentSession(appId);
+    } catch (e) {
+      console.error('[sessionStore] Failed to delete agent session:', e);
+    }
+  }
 }
 
 export const sessionStore = new SessionStore();

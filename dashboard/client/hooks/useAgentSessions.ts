@@ -7,7 +7,8 @@ type Action =
   | { type: 'PROGRESS'; appId: string; step: string; pct: number; elapsedMs: number }
   | { type: 'COMPLETE'; appId: string; result: AgentState & { status: 'ready' }; elapsedMs: number }
   | { type: 'ERROR'; appId: string; error: string; retryable: boolean }
-  | { type: 'DECIDED'; appId: string; decision: string; analystId: string; decidedAt: string };
+  | { type: 'DECIDED'; appId: string; decision: string; analystId: string; decidedAt: string }
+  | { type: 'RESET'; appId: string };
 
 function reducer(state: SessionsMap, action: Action): SessionsMap {
   const next = new Map(state);
@@ -49,6 +50,10 @@ function reducer(state: SessionsMap, action: Action): SessionsMap {
       });
       break;
     }
+    case 'RESET': {
+      next.delete(action.appId);
+      break;
+    }
   }
 
   return next;
@@ -66,6 +71,8 @@ export function useAgentSessions() {
       dispatch({ type: 'ERROR', appId: msg.appId, error: msg.error, retryable: msg.retryable });
     } else if (msg.type === 'agent:decided') {
       dispatch({ type: 'DECIDED', appId: msg.appId, decision: msg.decision, analystId: msg.analystId, decidedAt: msg.decidedAt });
+    } else if (msg.type === 'agent:reset') {
+      dispatch({ type: 'RESET', appId: msg.appId });
     }
   }, []);
 

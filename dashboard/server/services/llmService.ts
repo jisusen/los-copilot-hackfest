@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { GoogleGenAI } from "@google/genai";
 import { sessionStore } from "./sessionStore";
 import { getSettings } from "../routes/settings";
+import { getActiveSkillContent } from "../routes/skills";
 
 export type Message = { role: "user" | "assistant"; content: string };
 
@@ -9,13 +10,11 @@ function getProvider() {
   const s = getSettings();
   return {
     provider: s.llmProvider ?? "anthropic",
+    apiKey: s.apiKey ?? "",
     anthropicModel: s.anthropicModel ?? "claude-sonnet-4-6",
     geminiModel: s.geminiModel ?? "gemini-2.0-flash",
     customEndpoint: s.customEndpoint ?? "",
     customModel: s.customModel ?? "",
-    customApiKey: s.customApiKey ?? "",
-    anthropicApiKey: s.anthropicApiKey ?? "",
-    geminiApiKey: s.geminiApiKey ?? "",
   };
 }
 
@@ -34,8 +33,8 @@ export async function* streamChat(
   const systemPrompt = buildSystemPrompt(context);
   const cfg = getProvider();
 
-  if (cfg.provider === "gemini" && cfg.geminiApiKey) {
-    const gemini = new GoogleGenAI({ apiKey: cfg.geminiApiKey });
+  if (cfg.provider === "gemini" && cfg.apiKey) {
+    const gemini = new GoogleGenAI({ apiKey: cfg.apiKey });
     yield* streamGemini(
       gemini,
       cfg.geminiModel,
@@ -47,13 +46,13 @@ export async function* streamChat(
     yield* streamCustomOpenAI(
       cfg.customEndpoint,
       cfg.customModel,
-      cfg.customApiKey,
+      cfg.apiKey,
       systemPrompt,
       history,
       userMessage,
     );
-  } else if (cfg.anthropicApiKey) {
-    const anthropic = new Anthropic({ apiKey: cfg.anthropicApiKey });
+  } else if (cfg.apiKey) {
+    const anthropic = new Anthropic({ apiKey: cfg.apiKey });
     yield* streamAnthropic(
       anthropic,
       cfg.anthropicModel,
@@ -62,7 +61,7 @@ export async function* streamChat(
       userMessage,
     );
   } else {
-    yield "No LLM provider configured. Set API keys in Settings.";
+    yield "No LLM provider configured. Set API key in Settings.";
   }
 }
 
@@ -184,11 +183,18 @@ async function* streamCustomOpenAI(
 }
 
 function buildSystemPrompt(context: string): string {
-  return `You are the Credit Analyst Copilot, an AI assistant for consumer credit analysts at Bank Maju Bersama (JOKI AI), Indonesia.
+  const skillContent = getActiveSkillContent();
+  let prompt = `You are the Credit Analyst Copilot, an AI assistant for consumer credit analysts at Bank Maju Bersama (JOKI AI), Indonesia.
 
 You have access to the following application data, read directly from the Loan Origination System (LOS) by the AI agent:
 
-${context}
+${context}`;
+
+  if (skillContent) {
+    prompt += `\n\n## Active Skills / SOP\n${skillContent}`;
+  }
+
+  prompt += `
 
 INSTRUCTIONS:
 - Answer using formal English ONLY. Never respond in German or any other language.
@@ -199,4 +205,6 @@ INSTRUCTIONS:
 - Help the analyst understand the credit data — do not make credit decisions yourself
 - Format responses clearly: use bullet points, specific figures, and concise explanations
 - Remain professional and objective`;
+
+  return prompt;
 }

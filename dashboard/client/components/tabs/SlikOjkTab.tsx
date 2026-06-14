@@ -135,7 +135,7 @@ export function SlikOjkTab({ slik }: { slik: Slik }) {
               <div className="mt-0.5">
                 <KolBadge kol={m.collectability} />
               </div>
-              <div className="text-[9px] mt-0.5 leading-tight" style={{ color: '#64748b' }}>{m.collectability_label.split(' - ')[1] || m.collectability_label}</div>
+              <div className="text-[10px] mt-0.5 leading-tight" style={{ color: '#64748b' }}>{m.collectability_label.split(' - ')[1] || m.collectability_label}</div>
             </div>
           ))}
         </div>

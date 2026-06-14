@@ -125,7 +125,7 @@ function AppRoutes() {
   }
 
   return (
-    <div className="flex h-screen bg-[#f8f3f3] overflow-hidden" style={{ fontFamily: "'DM Sans', sans-serif" }}>
+    <div className="flex h-screen bg-[#f8f3f3] overflow-hidden" style={{ fontFamily: "var(--font-sans)" }}>
       <Sidebar agentmode="" />
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         <AuthHeader />
@@ -144,13 +144,11 @@ function AppRoutes() {
 }
 
 function AuthHeader() {
-  const { agentMode, setAgentMode, liveOn, setLiveOn, setSidebarOpen } = useLayout();
+  const { agentMode, setAgentMode, setSidebarOpen } = useLayout();
   return (
     <Header
       agentMode={agentMode}
       onAgentMode={setAgentMode}
-      liveOn={liveOn}
-      onLive={setLiveOn}
       onMenuClick={() => setSidebarOpen(true)}
     />
   );
