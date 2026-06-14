@@ -100,7 +100,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside
         className={`fixed lg:relative z-50 top-0 left-0 h-full flex flex-col transition-all duration-300 ${collapsed ? 'w-28' : 'w-64'} ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}
-        style={{ background: 'linear-gradient(180deg, #8B1A1A 0%, #590000 100%)' }}
+        style={{ background: 'linear-gradient(188deg, rgba(207, 0, 0, 1) 0%, rgba(74, 0, 6, 1) 62%)' }}
       >
         {/* Brand */}
         <div className={`flex ${collapsed ? 'justify-left' : 'gap-3'} px-4 py-5`}>
@@ -155,7 +155,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </>
             )}
           </button>
-          {!collapsed && <img src="/img/sidebar-rmv.png" alt="logo" className="w-full" />}
+          {!collapsed && <img src="/img/sidebar-smv.png" alt="logo" className="w-full" />}
         </div>
         <div className="hidden lg:block absolute right-0 top-0 h-full w-10 rounded-l-[30px] bg-[#f8f3f3]"></div>
       </aside>
