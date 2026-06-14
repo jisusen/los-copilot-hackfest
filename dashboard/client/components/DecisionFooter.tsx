@@ -2,6 +2,7 @@ import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import type { MemoDraft } from "../lib/types";
+import { CheckCircle, FileText, Loader2, X } from "lucide-react";
 
 export function DecisionFooter({ appId, debtorName, memo }: { appId: string; debtorName: string; memo: MemoDraft | null }) {
   const navigate = useNavigate();
@@ -27,96 +28,102 @@ export function DecisionFooter({ appId, debtorName, memo }: { appId: string; deb
 
   return (
     <>
-      {/* Sticky memo submission bar */}
-      <div style={{
-        position: "sticky", bottom: 0, left: 0, right: 0,
-        padding: "14px 24px",
-        background: "rgba(255,255,255,0.96)",
-        backdropFilter: "blur(10px)",
-        borderTop: "1px solid var(--line)",
-        boxShadow: "0 -4px 16px rgba(15,18,22,0.04)",
-        zIndex: 10,
-        display: "flex", alignItems: "center", gap: 10,
-      }}>
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="var(--ink-3)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-          <polyline points="10 9 9 9 8 9" />
-        </svg>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, textTransform: "uppercase", letterSpacing: ".1em", color: "var(--ink-3)", fontWeight: 600 }}>
-          Submit memo to LOS
-        </span>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
-          <input
-            data-testid="memo-note-input"
-            type="text"
-            value={note}
-            onChange={e => setNote(e.target.value)}
-            placeholder="Optional note for LOS…"
-            style={{
-              flex: 1, padding: "8px 12px",
-              border: "1px solid var(--line)", borderRadius: "var(--r)",
-              fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--ink)",
-              outline: "none",
-            }}
-            onFocus={e => { e.currentTarget.style.borderColor = "var(--accent)"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "var(--line)"; }}
-          />
+      {/* Sticky footer bar */}
+      <div className="sticky bottom-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
+        <div className="flex items-center gap-3 px-6 py-4">
+          <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
+            <FileText className="w-4 h-4 text-red-500" />
+          </div>
+          <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-400 shrink-0">
+            Submit Memo
+          </span>
+          <div className="flex-1 flex items-center gap-3 min-w-0">
+            <input
+              data-testid="memo-note-input"
+              type="text"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              placeholder="Tambahkan catatan untuk LOS..."
+              className="flex-1 px-4 py-2 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-800 placeholder-slate-400 outline-none transition-all focus:border-red-300 focus:ring-2 focus:ring-red-100 focus:bg-white"
+            />
+          </div>
+          <button
+            data-testid="btn-submit-memo"
+            disabled={loading || !memo}
+            onClick={handleSubmit}
+            className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+            ) : (
+              <><CheckCircle className="w-4 h-4" /> Submit Memo</>
+            )}
+          </button>
         </div>
-        <button
-          data-testid="btn-submit-memo"
-          className="btn primary"
-          disabled={loading || !memo}
-          onClick={handleSubmit}
-          style={{ padding: "8px 18px", whiteSpace: "nowrap" }}
-        >
-          {loading ? "Submitting…" : "Submit Memo →"}
-        </button>
       </div>
 
       {/* Confirmation modal */}
       {showConfirm && (
         <div
-          style={{ position: "fixed", inset: 0, background: "rgba(15,18,22,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 50 }}
-          className="fade-in"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50" style={{ marginTop: "0px" }}
           onClick={() => !loading && setShowConfirm(false)}
         >
           <div
-            style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: "var(--r-lg)", padding: "28px 28px 24px", maxWidth: 460, width: "90%", boxShadow: "0 20px 60px rgba(15,18,22,0.12)" }}
-            className="slide-up"
+            className="bg-white rounded-2xl p-7 max-w-md w-[90%] shadow-2xl border border-slate-100 animate-in"
             onClick={e => e.stopPropagation()}
           >
-            <div style={{ fontFamily: "var(--font-serif)", fontSize: 22, fontWeight: 600, color: "var(--ink)", marginBottom: 6, letterSpacing: "-0.01em" }}>
-              Confirm Submission
-            </div>
-            <div style={{ fontSize: 14, color: "var(--ink-2)", marginBottom: 16, lineHeight: 1.5 }}>
-              Submit the credit analysis memo for:
-            </div>
-            <div style={{ padding: "12px 14px", background: "var(--paper-2)", borderRadius: "var(--r)", border: "1px solid var(--line)", marginBottom: 20 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", marginBottom: 2 }}>{appId}</div>
-              <div style={{ fontFamily: "var(--font-serif)", fontSize: 16, fontWeight: 600, color: "var(--ink)" }}>{debtorName}</div>
-              {note && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--ink-3)", marginTop: 8 }}>Note: {note}</div>}
-            </div>
-            <div style={{ fontSize: 12, color: "var(--ink-3)", marginBottom: 16, lineHeight: 1.5 }}>
-              The memo will be saved in LOS Notes & Memo. Final approval/rejection must be done in the LOS application.
-            </div>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-200">
+                <CheckCircle className="w-6 h-6 text-white" />
+              </div>
               <button
-                className="btn primary"
+                onClick={() => setShowConfirm(false)}
+                className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-400 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <h2 className="text-xl font-bold text-slate-900 mb-1">Konfirmasi Submission</h2>
+            <p className="text-sm text-slate-500 mb-5 leading-relaxed">
+              Memo analisis kredit akan dikirim ke sistem LOS untuk aplikasi:
+            </p>
+
+            <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 mb-5">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-mono text-slate-400">ID:</span>
+                <span className="text-[11px] font-mono font-semibold text-slate-600">{appId}</span>
+              </div>
+              <div className="text-base font-bold text-slate-900">{debtorName}</div>
+              {note && (
+                <div className="mt-2 pt-2 border-t border-slate-200">
+                  <span className="text-[11px] font-semibold text-slate-400 block mb-1">CATATAN:</span>
+                  <span className="text-sm text-slate-600">{note}</span>
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-slate-400 mb-5 leading-relaxed">
+              Memo akan disimpan di LOS Notes &amp; Memo. Persetujuan akhir harus dilakukan di aplikasi LOS.
+            </p>
+
+            <div className="flex gap-3">
+              <button
                 onClick={() => { setShowConfirm(false); submitMemo(); }}
                 disabled={loading}
-                style={{ flex: 1, padding: "10px" }}
+                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-700 hover:to-red-600 text-white text-sm font-semibold py-3 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-40"
               >
-                {loading ? "Processing…" : "Submit to LOS"}
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Memproses...</>
+                ) : (
+                  <><CheckCircle className="w-4 h-4" /> Submit ke LOS</>
+                )}
               </button>
               <button
-                className="btn outline"
                 onClick={() => setShowConfirm(false)}
-                style={{ flex: 1, padding: "10px" }}
+                className="flex-1 py-3 text-sm font-semibold rounded-xl border-2 border-slate-200 text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all"
               >
-                Cancel
+                Batal
               </button>
             </div>
           </div>

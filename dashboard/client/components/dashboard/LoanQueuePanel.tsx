@@ -15,23 +15,32 @@ export default function LoanQueuePanel({
   selected,
   sessions,
   onToggle,
+  onSync,
+  syncing,
 }: {
   loans: LoanSummary[];
   selected: Set<string>;
   sessions: Map<string, AgentState>;
   onToggle: (id: string) => void;
+  onSync?: () => void;
+  syncing?: boolean;
 }) {
   const [query, setQuery] = useState("");
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
-    if (!q) return loans;
-    return loans.filter(l =>
+    const available = loans.filter(l => {
+      const s = sessions.get(l.id);
+      if (!s) return true;
+      return s.status === "error";
+    });
+    if (!q) return available;
+    return available.filter(l =>
       l.id.toLowerCase().includes(q) ||
       l.debtor_name.toLowerCase().includes(q) ||
       l.product_type.toLowerCase().includes(q),
     );
-  }, [loans, query]);
+  }, [loans, query, sessions]);
 
   if (loans.length === 0) {
     return (
@@ -46,11 +55,22 @@ export default function LoanQueuePanel({
   }
   return (
     <>
-      <div className="px-4 pt-4 pb-2 flex items-center gap-2">
-        <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <div className="px-4 pt-4 pb-2 flex items-center justify-between">
+         <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
         </svg>
-        <h2 className="text-base font-bold text-gray-900">Task List</h2>
+        <h2 className="text-base font-bold text-gray-900">Task list</h2>
+        <button
+          onClick={onSync}
+          disabled={syncing}
+          className="inline-flex items-center gap-1 px-2.5 py-1 text-[10px] font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50"
+        >
+          <svg className={`w-3 h-3 ${syncing ? "animate-spin" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M1 4v6h6M23 20v-6h-6" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
+          </svg>
+          {syncing ? "Syncing..." : "Sync"}
+        </button>
       </div>
       <div className="px-3 pb-2 flex gap-2">
         <div className="relative flex-1">
@@ -140,7 +160,7 @@ export default function LoanQueuePanel({
                     : "bg-orange-100 text-orange-600 border border-orange-200"
                 }`}
               >
-                {loan.risk_score}
+               {`CRDE SCORE: ${loan.risk_score}`}
               </span>
             );
           };

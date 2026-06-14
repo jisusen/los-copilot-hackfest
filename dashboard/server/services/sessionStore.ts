@@ -54,6 +54,7 @@ class SessionStore {
       const rules = Array.isArray(crde.rulesTriggered) ? crde.rulesTriggered : [];
       const content = `CRDE: ${crde.decision} · Risk: ${crde.riskScore} · Score: ${crde.numericScore}/1000${rules.length ? `\nRules: ${rules.join('; ')}` : ''}\n\n${rec}`.trim();
       saveLoanNote(appId, 'agent', 'agent', content, JSON.stringify(session.memoDraft));
+      addAuditLog(appId, 'agent', 'AGENT_COMPLETED', `Memo draft saved. CRDE: ${crde.decision}, Risk: ${crde.riskScore}`);
     } catch (e) {
       console.error('[sessionStore] Failed to persist AI memo:', e);
     }

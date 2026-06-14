@@ -14,12 +14,10 @@ export default function Header({
   onMenuClick,
 }: HeaderProps) {
   return (
-    <header className="h-16 flex items-center justify-between px-6 gap-5 shrink-0 border-b border-slate-200/80 bg-white/80 backdrop-blur-sm">
+    <header className="h-16 flex items-center justify-between px-6 gap-5 shrink-0 border-b  backdrop-blur-sm">
       {/* Left — Brand */}
       <div className="flex items-center gap-3 min-w-0">
-        <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-sm shrink-0">
-          <span className="text-white text-sm font-bold tracking-tight">J</span>
-        </div>
+        
         <div className="hidden lg:block min-w-0">
           <span className="text-base font-bold text-slate-800 tracking-tight">
             Credit Analyst Copilot
@@ -33,13 +31,13 @@ export default function Header({
       {/* Center — Controls */}
       <div className="hidden md:flex items-center gap-2.5">
         {/* Agent Mode */}
-        <div className="flex items-center bg-slate-100/80 rounded-lg p-0.5">
+        <div className="flex items-center bg-red-600 rounded-lg p-0.5">
           <button
             onClick={() => onAgentMode("real")}
             className={`px-3.5 py-2 text-xs font-semibold rounded-lg transition-all ${
               agentMode === "real"
                 ? "bg-white text-red-600 shadow-sm border border-slate-200/50"
-                : "text-slate-500 hover:text-slate-700"
+                : "text-white"
             }`}
           >
             <span className="flex items-center gap-1.5">

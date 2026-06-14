@@ -237,7 +237,7 @@ export function SettingsPage() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* Tab Header */}
-      <div className="shrink-0 border-b border-slate-200 bg-white">
+      <div className="shrink-0 ">
         <div className="max-w-3xl mx-auto px-6 flex items-center gap-1">
           <button
             onClick={() => setActiveTab("config")}

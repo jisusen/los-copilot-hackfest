@@ -10,6 +10,7 @@ import { Dashboard } from "./pages/DashboardPage";
 import { ReviewPage } from "./pages/ReviewPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AuditLogPage } from "./pages/AuditLogPage";
+import { AuditLogDetailPage } from "./pages/AuditLogDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import Sidebar from "./components/layout/Sidebar";
 import Header from "./components/layout/Header";
@@ -62,6 +63,7 @@ export function App() {
 
   const login = useCallback((username: string) => {
     setUser(username);
+    localStorage.removeItem("bms_tour_seen");
   }, []);
 
   const logout = useCallback(() => {
@@ -135,6 +137,7 @@ function AppRoutes() {
             <Route path="/review/:appId" element={<ReviewPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/audit" element={<AuditLogPage />} />
+            <Route path="/audit/:appId" element={<AuditLogDetailPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>

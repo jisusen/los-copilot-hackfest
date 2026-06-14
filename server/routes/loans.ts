@@ -26,6 +26,11 @@ export async function handleLoans(req: Request, pathname: string, url: URL): Pro
         db.query('UPDATE loan_applications SET status = ? WHERE id = ?').run(body.status, id);
       }
     }
+    try {
+      const actionName = isTerminal ? `DECISION_${body.status.toUpperCase()}` : `STATUS_CHANGED_${body.status.toUpperCase().replace(/\s+/g, '_')}`;
+      db.query('INSERT INTO audit_logs (app_id, actor, action, detail, created_at) VALUES (?, ?, ?, ?, ?)')
+        .run(id, body.analystId ?? 'system', actionName, `Status changed to ${body.status}`, new Date().toISOString());
+    } catch {}
     return Response.json({ ok: true });
   }
 
@@ -38,6 +43,10 @@ export async function handleLoans(req: Request, pathname: string, url: URL): Pro
     const db = getDb();
     db.query('UPDATE loan_applications SET analyst_id = ?, assigned_at = datetime("now"), status = ? WHERE id = ? AND (analyst_id IS NULL OR analyst_id = ?)').run(analystId, 'Under Review', id, analystId);
     const app = db.query('SELECT analyst_id, assigned_at FROM loan_applications WHERE id = ?').get(id);
+    try {
+      db.query('INSERT INTO audit_logs (app_id, actor, action, detail, created_at) VALUES (?, ?, ?, ?, ?)')
+        .run(id, analystId, 'ASSIGNED', `Application assigned to ${analystId}`, new Date().toISOString());
+    } catch {}
     return Response.json({ ok: true, assigned: app });
   }
 
@@ -53,8 +62,13 @@ export async function handleLoans(req: Request, pathname: string, url: URL): Pro
     if (req.method === 'POST') {
       const body = await req.json() as { content?: string; author?: string; category?: string };
       if (!body.content?.trim()) return Response.json({ error: 'content required' }, { status: 400 });
+      const author = body.author ?? 'analyst01';
       db.query('INSERT INTO loan_notes (app_id, author, author_type, content, category, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(id, body.author ?? 'analyst01', 'manual', body.content.trim(), body.category ?? 'General', new Date().toISOString());
+        .run(id, author, 'manual', body.content.trim(), body.category ?? 'General', new Date().toISOString());
+      try {
+        db.query('INSERT INTO audit_logs (app_id, actor, action, detail, created_at) VALUES (?, ?, ?, ?, ?)')
+          .run(id, author, 'NOTE_ADDED', `Note added: ${body.content.trim().substring(0, 100)}`, new Date().toISOString());
+      } catch {}
       return Response.json({ ok: true });
     }
   }

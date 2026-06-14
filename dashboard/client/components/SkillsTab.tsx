@@ -370,7 +370,7 @@ export function SkillsTab() {
     <div className="flex h-[calc(100vh-200px)]">
       {/* Skills List */}
       <div
-        className={`flex flex-col border-r border-slate-200 bg-slate-50 ${
+        className={`flex flex-col  ${
           selectedSkill || creating ? "w-72" : "flex-1"
         } transition-all`}
       >

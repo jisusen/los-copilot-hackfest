@@ -9,6 +9,8 @@ import { handleInternal } from "./routes/internal";
 import { handleSettings } from "./routes/settings";
 import { handleSkills } from "./routes/skills";
 import { handleAuth } from "./routes/auth";
+import { handleAudit } from "./routes/audit";
+import { handleNotes } from "./routes/notes";
 import autoprefixer from 'autoprefixer';
 import cssLoader from 'bun-css-loader';
 import tailwindcss from 'tailwindcss';
@@ -156,6 +158,16 @@ async function handleRequest(req: Request): Promise<Response> {
 
   if (pathname.startsWith("/api/skills")) {
     const res = await handleSkills(req);
+    if (res) return withCors(res, req);
+  }
+
+  if (pathname === "/api/audit") {
+    const res = await handleAudit(req, url);
+    if (res) return withCors(res, req);
+  }
+
+  if (pathname.startsWith("/api/notes/") && req.method === "POST") {
+    const res = await handleNotes(req, pathname);
     if (res) return withCors(res, req);
   }
 
