@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { sessionStore } from '../services/sessionStore';
 import { wsManager } from '../services/wsManager';
-import { saveLoanNote } from '../db/dashboardDb';
+import { saveLoanNote, addAuditLog } from '../db/dashboardDb';
 
 export async function handleDecisions(req: Request, pathname: string): Promise<Response | null> {
   const match = pathname.match(/^\/api\/decisions\/(APP-\d{3})$/);
@@ -24,6 +24,8 @@ export async function handleDecisions(req: Request, pathname: string): Promise<R
     // Save memo as agent note in LOS loan_notes table (shared SQLite DB)
     const memoJson = JSON.stringify(memo);
     saveLoanNote(appId, 'Copilot Analyst', 'agent', content, memoJson);
+
+    addAuditLog(appId, body.analystId ?? 'system', 'MEMO_SUBMITTED', `Memo submitted with recommendation. Additional note: ${note || '(none)'}`);
 
     wsManager.broadcast({
       type: 'agent:decided',

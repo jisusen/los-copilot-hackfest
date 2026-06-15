@@ -1,6 +1,7 @@
 import { sessionStore } from '../services/sessionStore';
 import { wsManager } from '../services/wsManager';
 import { getElapsedMs } from '../services/agentManager';
+import { addAuditLog } from '../db/dashboardDb';
 import type { LosData, MemoDraft } from '../services/sessionStore';
 
 export async function handleInternal(req: Request, pathname: string): Promise<Response | null> {
@@ -22,6 +23,12 @@ export async function handleInternal(req: Request, pathname: string): Promise<Re
       elapsedMs: getElapsedMs(body.taskId),
     });
 
+    if (body.pct === 0) {
+      try {
+        addAuditLog(body.appId, 'agent', 'AGENT_RUNNING', `Agent started: ${body.step}`);
+      } catch {}
+    }
+
     return Response.json({ ok: true });
   }
 
@@ -37,6 +44,13 @@ export async function handleInternal(req: Request, pathname: string): Promise<Re
       losData: body.losData,
       memoDraft: body.memoDraft,
     });
+
+    // Log audit
+    const crdeDecision = body.losData.hasilCrde?.decision ?? 'UNKNOWN';
+    const riskScore = body.losData.hasilCrde?.riskScore ?? 'UNKNOWN';
+    try {
+      addAuditLog(body.appId, 'agent', 'AGENT_COMPLETED', `Agent finished. CRDE: ${crdeDecision}, Risk: ${riskScore}, DTI: ${body.losData.dataKeuangan?.dtiRatio ?? 'N/A'}`);
+    } catch {}
 
     // Extract summary from losData for the card
     const crde = body.losData.hasilCrde;
@@ -86,6 +100,10 @@ export async function handleInternal(req: Request, pathname: string): Promise<Re
 
   if (pathname === '/api/internal/error') {
     const body = await req.json() as { taskId: string; appId: string; error: string; retryable: boolean };
+
+    try {
+      addAuditLog(body.appId, 'agent', 'AGENT_ERROR', `Error: ${body.error} (retryable: ${body.retryable})`);
+    } catch {}
 
     wsManager.broadcast({
       type: 'agent:error',

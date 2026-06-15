@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { addAuditLog } from "../db/dashboardDb";
 import {
   spawnAgent,
   spawnMockAgent,
@@ -13,10 +14,12 @@ export async function handleBatch(req: Request): Promise<Response> {
     appIds?: string[];
     mock?: boolean;
     locale?: "en" | "id";
+    analystId?: string
   };
   const appIds = body.appIds ?? [];
   const useMock = body.mock ?? ENV_MOCK;
   const locale = body.locale === "id" ? "id" : "en";
+  const analystId = body.analystId ?? 'system';
 
   if (!Array.isArray(appIds) || appIds.length === 0) {
     return Response.json({ error: "appIds is required" }, { status: 400 });
@@ -30,6 +33,13 @@ export async function handleBatch(req: Request): Promise<Response> {
 
   const batchId = randomUUID();
   const tasks = appIds.map((appId) => createTask(appId, locale));
+
+  // Log audit for each app
+  for (const appId of appIds) {
+    try {
+      addAuditLog(appId, analystId, 'BATCH_STARTED', `Batch review triggered (mode: ${useMock ? 'sim' : 'real'})`);
+    } catch {}
+  }
 
   // Immediately broadcast that agents are starting
   for (const task of tasks) {

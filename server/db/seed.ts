@@ -754,6 +754,8 @@ export function resetAndSeed(reset = false) {
     db.exec(`
       DELETE FROM sessions;
       DELETE FROM audit_logs;
+      DELETE FROM agent_sessions;
+      DELETE FROM audit_logs;
       DELETE FROM collaterals;
       DELETE FROM crde_results;
       DELETE FROM aml_fraud;
