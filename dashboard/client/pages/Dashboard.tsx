@@ -80,47 +80,42 @@ export function Dashboard() {
     {
       label: "Total Applications",
       value: data.total.toLocaleString(),
+      iconBg: "#FEE2E2",
       icon: (
-        <svg viewBox="0 0 36 36" className="w-9 h-9">
-          <circle cx="18" cy="18" r="18" fill="#fde8e8" />
-          <circle cx="18" cy="18" r="10" fill="none" stroke="#c0392b" strokeWidth="3" />
-          <circle cx="18" cy="18" r="5" fill="#c0392b" />
-          <circle cx="26" cy="10" r="3" fill="#e74c3c" />
+        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
     },
     {
       label: "Waiting Approval",
       value: data.waitingApproval.toLocaleString(),
+      iconBg: "#FEF3C7",
       icon: (
-        <svg viewBox="0 0 36 36" className="w-9 h-9">
-          <circle cx="18" cy="18" r="18" fill="#fde8e8" />
-          <circle cx="18" cy="18" r="9" fill="none" stroke="#c0392b" strokeWidth="2.5" />
-          <path d="M18 10v8l5 3" stroke="#c0392b" strokeWidth="2.5" strokeLinecap="round" fill="none" />
+        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="#D97706" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10" />
+          <polyline points="12,6 12,12 16,14" />
         </svg>
       ),
     },
     {
       label: "Approved This Month",
       value: data.approvedThisMonth.toLocaleString(),
+      iconBg: "#D1FAE5",
       icon: (
-        <svg viewBox="0 0 36 36" className="w-9 h-9">
-          <circle cx="18" cy="18" r="18" fill="#fde8e8" />
-          <circle cx="18" cy="14" r="5" fill="#e67e22" />
-          <circle cx="26" cy="12" r="3.5" fill="#27ae60" />
-          <path d="M8 28c0-5 4.5-8 10-8s10 3 10 8" fill="#c0392b" />
+        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="#059669" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
       ),
     },
     {
-      label: "Disbursment Volume",
+      label: "Disbursement Volume",
       value: formatRp(data.disbursementVolume),
+      iconBg: "#E0E7FF",
       icon: (
-        <svg viewBox="0 0 36 36" className="w-9 h-9">
-          <circle cx="18" cy="18" r="18" fill="#fde8e8" />
-          <rect x="9" y="14" width="18" height="12" rx="2" fill="#7f8c8d" />
-          <rect x="9" y="17" width="18" height="3" fill="#95a5a6" />
-          <circle cx="14" cy="22" r="2" fill="#bdc3c7" />
+        <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23" />
+          <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
         </svg>
       ),
     },
@@ -188,12 +183,14 @@ export function Dashboard() {
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-red-50 border border-red-100 rounded-2xl px-4 py-4 flex items-center justify-between shadow-sm">
-            <div>
-              <p className="text-xs text-gray-500 font-medium leading-tight">{stat.label}</p>
-              <p className="text-xl sm:text-2xl font-black text-gray-900 mt-1 tabular-nums">{stat.value}</p>
+          <div key={stat.label} className="bg-white border border-gray-200 rounded-2xl px-5 py-4 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className="shrink-0 w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: stat.iconBg }}>
+              {stat.icon}
             </div>
-            <div className="shrink-0 ml-2">{stat.icon}</div>
+            <div className="min-w-0">
+              <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider leading-tight truncate">{stat.label}</p>
+              <p className="text-xl sm:text-2xl font-black text-gray-900 mt-0.5 tabular-nums leading-tight">{stat.value}</p>
+            </div>
           </div>
         ))}
       </div>

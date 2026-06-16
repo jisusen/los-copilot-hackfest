@@ -15,6 +15,9 @@ export type AppSettings = {
   browseModel: string;
   browseEndpoint: string;
   browseApiKey: string;
+  browseVertexProject: string;
+  browseVertexLocation: string;
+  browseVertexCredentials: string;
   losUrl: string;
   losUsername: string;
   losPassword: string;
@@ -36,6 +39,11 @@ type NestedSettings = {
       model: string;
       endpoint: string;
       apiKey: string;
+      vertex?: {
+        project: string;
+        location: string;
+        credentials: string;
+      };
     };
   };
   los: { url: string; username: string; password: string; loginPath: string };
@@ -50,10 +58,14 @@ function flatDefaults(): AppSettings {
     geminiModel: process.env.GEMINI_MODEL ?? "gemini-2.0-flash",
     customEndpoint: process.env.CUSTOM_LLM_ENDPOINT ?? "",
     customModel: process.env.CUSTOM_LLM_MODEL ?? "",
-    browseProvider: process.env.BROWSE_PROVIDER ?? "",
-    browseModel: process.env.BROWSE_MODEL ?? "",
+    browseProvider: process.env.BROWSE_PROVIDER ?? "gemini",
+    browseModel: process.env.BROWSE_MODEL ?? "gemini-2.5-flash-lite",
     browseEndpoint: process.env.BROWSE_ENDPOINT ?? "",
     browseApiKey: process.env.BROWSE_API_KEY ?? "",
+    browseVertexProject: process.env.BROWSE_VERTEX_PROJECT ?? "",
+    browseVertexLocation:
+      process.env.BROWSE_VERTEX_LOCATION ?? "asia-southeast1",
+    browseVertexCredentials: process.env.GOOGLE_APPLICATION_CREDENTIALS ?? "",
     losUrl: process.env.LOS_URL ?? "http://localhost:3333",
     losUsername: process.env.LOS_USERNAME ?? "analyst01",
     losPassword: process.env.LOS_PASSWORD ?? "bms2025",
@@ -77,6 +89,11 @@ function nest(flat: AppSettings): NestedSettings {
         model: flat.browseModel,
         endpoint: flat.browseEndpoint,
         apiKey: flat.browseApiKey,
+        vertex: {
+          project: flat.browseVertexProject,
+          location: flat.browseVertexLocation,
+          credentials: flat.browseVertexCredentials,
+        },
       },
     },
     los: {
@@ -114,10 +131,22 @@ function flatten(
     geminiModel: llm.geminiModel || defaults.geminiModel,
     customEndpoint: llm.customEndpoint || defaults.customEndpoint,
     customModel: llm.customModel || defaults.customModel,
-    browseProvider: br.provider || defaults.browseProvider,
-    browseModel: br.model || defaults.browseModel,
+    browseProvider:
+      br.provider ||
+      ((llm.provider || defaults.llmProvider) === "custom"
+        ? "gemini"
+        : defaults.browseProvider),
+    browseModel:
+      br.model ||
+      ((llm.provider || defaults.llmProvider) === "custom"
+        ? "gemini-2.5-flash-lite"
+        : defaults.browseModel),
     browseEndpoint: br.endpoint || defaults.browseEndpoint,
     browseApiKey: br.apiKey || defaults.browseApiKey,
+    browseVertexProject: br.vertex?.project || defaults.browseVertexProject,
+    browseVertexLocation: br.vertex?.location || defaults.browseVertexLocation,
+    browseVertexCredentials:
+      br.vertex?.credentials || defaults.browseVertexCredentials,
     losUrl: los.url || defaults.losUrl,
     losUsername: los.username || defaults.losUsername,
     losPassword: los.password || defaults.losPassword,
@@ -191,6 +220,12 @@ export function setSettings(settings: AppSettings) {
   process.env.BROWSE_MODEL = settings.browseModel;
   process.env.BROWSE_ENDPOINT = settings.browseEndpoint;
   process.env.BROWSE_API_KEY = settings.browseApiKey;
+  process.env.BROWSE_VERTEX_PROJECT = settings.browseVertexProject;
+  process.env.BROWSE_VERTEX_LOCATION = settings.browseVertexLocation;
+  if (settings.browseVertexCredentials) {
+    process.env.GOOGLE_APPLICATION_CREDENTIALS =
+      settings.browseVertexCredentials;
+  }
   process.env.LOS_URL = settings.losUrl;
   process.env.LOS_USERNAME = settings.losUsername;
   process.env.LOS_PASSWORD = settings.losPassword;
@@ -214,6 +249,9 @@ export async function handleSettings(req: Request): Promise<Response | null> {
         browseModel: s.browseModel,
         browseEndpoint: s.browseEndpoint,
         browseApiKey: s.browseApiKey,
+        browseVertexProject: s.browseVertexProject,
+        browseVertexLocation: s.browseVertexLocation,
+        browseVertexCredentials: s.browseVertexCredentials,
         losUrl: s.losUrl,
         losUsername: s.losUsername,
         losPassword: s.losPassword,
@@ -239,6 +277,12 @@ export async function handleSettings(req: Request): Promise<Response | null> {
       browseModel: body.browseModel ?? current.browseModel,
       browseEndpoint: body.browseEndpoint ?? current.browseEndpoint,
       browseApiKey: body.browseApiKey ?? current.browseApiKey,
+      browseVertexProject:
+        body.browseVertexProject ?? current.browseVertexProject,
+      browseVertexLocation:
+        body.browseVertexLocation ?? current.browseVertexLocation,
+      browseVertexCredentials:
+        body.browseVertexCredentials ?? current.browseVertexCredentials,
       losUrl: body.losUrl ?? current.losUrl,
       losUsername: body.losUsername ?? current.losUsername,
       losPassword: body.losPassword ?? current.losPassword,

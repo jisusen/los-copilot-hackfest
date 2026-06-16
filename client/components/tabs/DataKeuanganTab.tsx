@@ -144,7 +144,7 @@ export function DataKeuanganTab({ financials }: { financials: Financials }) {
       {financials.past_loans && financials.past_loans.length > 0 && (
         <div className="bg-white border rounded-lg overflow-hidden mb-6" style={{ borderColor: '#e2e8f0' }}>
           <div className="text-sm font-bold uppercase tracking-wide" style={{ padding: '12px 16px', borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>
-            Past Loans with BMS
+            Past Loans with CIMB Niaga
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 0 }}>
             {financials.past_loans.map((loan, i) => (
@@ -154,7 +154,7 @@ export function DataKeuanganTab({ financials }: { financials: Financials }) {
                 background: '#f8fafc',
               }}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="font-mono text-xs font-bold uppercase" style={{ color: '#1a3a5c' }}>{loan.product}</span>
+                  <span className="font-mono text-xs font-bold uppercase" style={{ color: '#8B1A1A' }}>{loan.product}</span>
                   <span className="font-mono text-xs px-1.5 py-0.5 rounded" style={{
                     background: loan.status === 'Paid' ? '#e3f0e9' : '#fff1d8',
                     color: loan.status === 'Paid' ? '#0d6e3f' : '#8a5a08',

@@ -126,7 +126,7 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
           {/* Sections */}
           <Section title="1. Debtor Profile">
             <Field label="Full Name" value={debtor?.full_name} />
-            <Field label="NIK" value={debtor?.nik} />
+            <Field label="NIK" value={(() => { const n = debtor?.nik ?? ""; return n.length >= 4 ? "**** **** **** " + n.slice(-4) : n || "—"; })()} />
             <Field label="NPWP" value={debtor?.npwp} />
             <Field label="Date of Birth" value={debtor?.date_of_birth ? formatDate(debtor.date_of_birth) : '—'} />
             <Field label="Marital Status" value={debtor?.marital_status} />
@@ -158,8 +158,8 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
             <Field label="Existing Obligations" value={financials?.existing_obligations ? formatRp(financials.existing_obligations) : '—'} />
             <Field label="Requested Installment" value={financials?.requested_installment ? formatRp(financials.requested_installment) : '—'} />
             <Field label="Total Obligations" value={financials?.total_obligations ? formatRp(financials.total_obligations) : '—'} />
-            <Field label="DSR Ratio" value={financials?.dti_ratio ? formatPercent(financials.dti_ratio) : '—'} />
-            <Field label="DSR Threshold" value={financials?.dti_threshold ? `${Math.round(financials.dti_threshold * 100)}%` : '—'} />
+            <Field label="DBR Ratio" value={financials?.dti_ratio ? formatPercent(financials.dti_ratio) : '—'} />
+            <Field label="DBR Threshold" value={financials?.dti_threshold ? `${Math.round(financials.dti_threshold * 100)}%` : '—'} />
             <Field label="Remaining Income" value={financials?.remaining_income ? formatRp(financials.remaining_income) : '—'} />
           </Section>
 
@@ -205,8 +205,8 @@ export function PrintMemoView({ loan, onClose }: { loan: LoanDetail; onClose: ()
             <Field label="Risk Score" value={crde?.risk_score} />
             <Field label="Decision" value={crde?.decision} />
             <Field label="Numeric Score" value={`${crde?.numeric_score}/1000`} />
-            <Field label="DSR Actual" value={crde?.dti_actual ? formatPercent(crde.dti_actual) : '—'} />
-            <Field label="DSR Passed" value={crde?.dti_passed ? '✅ Yes' : '❌ No'} />
+            <Field label="DBR Actual" value={crde?.dti_actual ? formatPercent(crde.dti_actual) : '—'} />
+            <Field label="DBR Passed" value={crde?.dti_passed ? '✅ Yes' : '❌ No'} />
             <Field label="Kol Passed" value={crde?.kol_passed ? '✅ Yes' : '❌ No'} />
             <Field label="AML Passed" value={crde?.aml_passed ? '✅ Yes' : '❌ No'} />
             <Field label="Fraud Passed" value={crde?.fraud_passed ? '✅ Yes' : '❌ No'} />

@@ -3,7 +3,7 @@ name: CRDE Rules Reference
 description: Credit Risk Decision Engine rules and scoring reference
 version: 1.0.0
 author: Bank Maju Bersama
-trigger: crde
+trigger: manual
 ---
 
 # CRDE Rules Reference
@@ -26,7 +26,7 @@ trigger: crde
 ## Common Rules Triggered
 
 ### R1: DBR Exceeds Limit
-- **Condition**: DTI ratio > 40%
+- **Condition**: DBR ratio > 40%
 - **Impact**: -150 points
 - **Mitigation**: Reduce loan amount or extend tenor
 

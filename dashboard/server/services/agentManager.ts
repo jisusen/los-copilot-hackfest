@@ -31,6 +31,18 @@ export function getElapsedMs(taskId: string): number {
   return task ? Date.now() - task.startedAt : 0;
 }
 
+function getProductTypeForApp(appId: string): string {
+  try {
+    const db = getLosDb();
+    const row = db
+      .query("SELECT product_type FROM loan_applications WHERE id = ?")
+      .get(appId) as { product_type?: string } | null;
+    return row?.product_type?.trim() || "KTA";
+  } catch {
+    return "KTA";
+  }
+}
+
 const AGENT_SCRIPT = join(import.meta.dir, "../../agent/agent.py");
 const VENV_PYTHON = join(
   import.meta.dir,
@@ -49,14 +61,43 @@ function getLosConfig() {
   };
 }
 
+/** Don't put mimo/custom keys into ANTHROPIC_API_KEY — breaks browse LLM auth. */
+function resolveProviderApiKeys(s: ReturnType<typeof getSettings>) {
+  const main = s.apiKey ?? "";
+  const browse = s.browseApiKey ?? "";
+  return {
+    anthropic:
+      s.llmProvider === "anthropic"
+        ? main
+        : s.browseProvider === "anthropic"
+          ? browse || main
+          : "",
+    gemini:
+      s.llmProvider === "gemini"
+        ? main
+        : s.browseProvider === "gemini" || s.browseProvider === "vertex"
+          ? browse || main
+          : "",
+    custom: s.llmProvider === "custom" ? main : "",
+    browse: browse,
+  };
+}
+
 export async function spawnAgent(task: AgentTask): Promise<void> {
   const cfg = getLosConfig();
   const taskJson = JSON.stringify(task);
   console.log(`[Agent] Spawning for ${task.appId} (task: ${task.taskId})`);
 
   const s = getSettings();
+  const keys = resolveProviderApiKeys(s);
   const locale = task.locale ?? "en";
-  const skillContent = getActiveSkillContent(locale);
+  const productType = getProductTypeForApp(task.appId);
+  const skillContent = getActiveSkillContent(locale, productType);
+  if (s.llmProvider === "custom" && !s.browseProvider) {
+    console.warn(
+      `[Agent] ${task.appId}: memo uses custom LLM but Browsing LLM is empty — configure Settings → Browsing LLM or browser navigation will fail (API fallback still applies).`,
+    );
+  }
   const proc = Bun.spawn({
     cmd: [VENV_PYTHON, AGENT_SCRIPT, "--task", taskJson],
     stdout: "pipe",
@@ -65,18 +106,24 @@ export async function spawnAgent(task: AgentTask): Promise<void> {
       ...process.env,
       PYTHONIOENCODING: "utf-8",
       BROWSER_USE_DISABLE_EXTENSIONS: "1",
-      ANTHROPIC_API_KEY: s.apiKey ?? "",
-      GEMINI_API_KEY: s.apiKey ?? "",
+      ANTHROPIC_API_KEY: keys.anthropic,
+      GEMINI_API_KEY: keys.gemini,
       LLM_PROVIDER: s.llmProvider ?? "anthropic",
       ANTHROPIC_MODEL: s.anthropicModel ?? "claude-sonnet-4-6",
       GEMINI_MODEL: s.geminiModel ?? "gemini-2.0-flash",
       CUSTOM_LLM_ENDPOINT: s.customEndpoint ?? "",
       CUSTOM_LLM_MODEL: s.customModel ?? "",
-      CUSTOM_LLM_API_KEY: s.apiKey ?? "",
+      CUSTOM_LLM_API_KEY: keys.custom,
       BROWSE_PROVIDER: s.browseProvider ?? "",
       BROWSE_MODEL: s.browseModel ?? "",
       BROWSE_ENDPOINT: s.browseEndpoint ?? "",
-      BROWSE_API_KEY: s.browseApiKey ?? "",
+      BROWSE_API_KEY: keys.browse,
+      BROWSE_VERTEX_PROJECT: s.browseVertexProject ?? "",
+      BROWSE_VERTEX_LOCATION: s.browseVertexLocation ?? "asia-southeast1",
+      BROWSE_VERTEX_CREDENTIALS: s.browseVertexCredentials ?? "",
+      ...(s.browseVertexCredentials
+        ? { GOOGLE_APPLICATION_CREDENTIALS: s.browseVertexCredentials }
+        : {}),
       MEMO_SKILL: skillContent,
       MEMO_LOCALE: locale,
       EXTRACTION_MODE: s.extractionMode ?? "browser",
@@ -185,9 +232,14 @@ function buildMockMemoDraft(
     rulesTriggered,
   } = params;
 
+  const concernBullets = (label: string, flags: string[]) =>
+    flags.length > 0
+      ? `\n\n${label}:\n${flags.map((f) => `• ${f}`).join("\n")}`
+      : "";
+
   if (locale === "id") {
     const execSummary = isHighRisk
-      ? `${debtorName} mengajukan **Rp ${amtM} juta ${product}** dengan **profil risiko tinggi**. Kekhawatiran utama: ${redFlags.slice(0, 2).join("; ")}. CRDE merekomendasikan **PENOLAKAN** dengan skor **${numericScore}/1000**. Analis perlu menilai faktor mitigasi sebelum override.`
+      ? `${debtorName} mengajukan **Rp ${amtM} juta ${product}** dengan **profil risiko tinggi**.${concernBullets("Kekhawatiran utama", redFlags.slice(0, 4))}\n\nCRDE merekomendasikan **PENOLAKAN** dengan skor **${numericScore}/1000**. Analis perlu menilai faktor mitigasi sebelum override.`
       : isMediumRisk
         ? `${debtorName} mengajukan **Rp ${amtM} juta ${product}** dengan **profil risiko sedang**. DBR ${dtiPct}% dan kolektibilitas ${slikKol} memerlukan peninjauan lebih lanjut. CRDE merekomendasikan **RUJUK KOMITE KREDIT** dengan skor **${numericScore}/1000**.`
         : `${debtorName} mengajukan **Rp ${amtM} juta ${product}** dengan **profil risiko rendah**. DBR ${dtiPct}% dalam batas dan SLIK bersih. CRDE merekomendasikan **PERSETUJUAN** dengan skor **${numericScore}/1000**.`;
@@ -199,14 +251,14 @@ function buildMockMemoDraft(
         : `Penghasilan bersih **Rp ${netM} juta/bulan** memberikan coverage nyaman. **DBR ${dtiPct}%** jauh di bawah batas RAC 40%.`;
 
     const section8 = isHighRisk
-      ? `**Rekomendasi: TOLAK**\n\nAplikasi tidak memenuhi standar kredit minimum. ${redFlags.length > 0 ? "Faktor penentu: " + redFlags.join("; ") + "." : ""}`
+      ? `**Rekomendasi: TOLAK**\n\nAplikasi tidak memenuhi standar kredit minimum.${concernBullets("Faktor penentu", redFlags)}`
       : isMediumRisk
-        ? `**Rekomendasi: RUJUK KOMITE KREDIT**\n\nMemerlukan review komite karena: ${redFlags.join("; ")}.`
+        ? `**Rekomendasi: RUJUK KOMITE KREDIT**\n\nMemerlukan review komite karena:${redFlags.map((f) => `\n• ${f}`).join("")}`
         : `**Rekomendasi: SETUJU**\n\nMemenuhi seluruh kriteria RAC. DBR dalam batas, SLIK baik, AML bersih. **Disarankan persetujuan dengan syarat standar.**`;
 
     return {
       executive_summary: execSummary,
-      section1_profil: `${debtorName} adalah **${employmentType}** di **${employerName}**. Identitas terverifikasi via NIK **${nik}**. Data pekerjaan dan domisili konsisten.`,
+      section1_profil: `${debtorName} adalah **${employmentType}** di **${employerName}**. Identitas terverifikasi via NIK **${nik.length >= 4 ? "**** **** **** " + nik.slice(-4) : nik}**. Data pekerjaan dan domisili konsisten.`,
       section2_permohonan: `Permohonan **${product}** sebesar **Rp ${amtM} juta** tenor **${tenorMonths} bulan**. Tujuan: **${loanPurpose}**. Estimasi cicilan: **Rp ${requestedInstallment.toLocaleString("id-ID")}**.`,
       section3_keuangan: section3,
       section4_slik: `Kolektibilitas SLIK OJK: **${slikKol} — ${kolektibilitasLabel}**. ${paymentHistory}.`,
@@ -223,7 +275,7 @@ function buildMockMemoDraft(
   }
 
   const execSummary = isHighRisk
-    ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **high-risk profile**. Key concerns: ${redFlags.slice(0, 2).join("; ")}. CRDE recommends **REJECTION** with a score of **${numericScore}/1000**. The analyst should verify if any mitigating factors exist before overriding.`
+    ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **high-risk profile**.${concernBullets("Key concerns", redFlags.slice(0, 4))}\n\nCRDE recommends **REJECTION** with a score of **${numericScore}/1000**. The analyst should verify if any mitigating factors exist before overriding.`
     : isMediumRisk
       ? `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **moderate-risk profile**. DBR ${dtiPct}% and collectability ${slikKol} require closer review. CRDE recommends **COMMITTEE REVIEW** with a score of **${numericScore}/1000**. The analyst should assess compensating factors.`
       : `${debtorName} applies for a **Rp ${amtM}M ${product}** with a **low-risk profile**. DBR ${dtiPct}% is within limits and SLIK is clean. CRDE recommends **APPROVAL** with a score of **${numericScore}/1000**. Standard terms apply.`;
@@ -235,14 +287,14 @@ function buildMockMemoDraft(
       : `Net monthly income **Rp ${netM}M** provides comfortable coverage. **DBR ${dtiPct}%** is well within the 40% RAC limit. Total obligations **Rp ${totalOblig.toLocaleString("id-ID")}** leave healthy disposable income.`;
 
   const section8 = isHighRisk
-    ? `**Recommended: REJECT**\n\nApplication does not meet minimum credit standards. ${redFlags.length > 0 ? "Key deal-breakers: " + redFlags.join("; ") + "." : ""} Risk profile is unacceptable for the requested product. Suggest regret letter with explanation of RAC non-compliance.`
+    ? `**Recommended: REJECT**\n\nApplication does not meet minimum credit standards.${concernBullets("Key deal-breakers", redFlags)}\n\nRisk profile is unacceptable for the requested product. Suggest regret letter with explanation of RAC non-compliance.`
     : isMediumRisk
-      ? `**Recommended: REFER TO CREDIT COMMITTEE**\n\nApplication requires committee review due to: ${redFlags.join("; ")}. While some criteria are met, the combination of risk factors exceeds delegated authority. Enhanced due diligence and compensating documentation recommended.`
+      ? `**Recommended: REFER TO CREDIT COMMITTEE**\n\nApplication requires committee review due to:${redFlags.map((f) => `\n• ${f}`).join("")}\n\nWhile some criteria are met, the combination of risk factors exceeds delegated authority. Enhanced due diligence and compensating documentation recommended.`
       : `**Recommended: APPROVE**\n\nApplication meets all RAC criteria. DBR is within limit, SLIK collectability is good, and AML screening is clear. No triggered rules or red flags. **Suggest approval with standard terms.**`;
 
   return {
     executive_summary: execSummary,
-    section1_profil: `${debtorName} is a **${employmentType}** employed at **${employerName}**. Identity verified via NIK **${nik}**. Employment and domicile data are consistent across submitted documents.`,
+    section1_profil: `${debtorName} is a **${employmentType}** employed at **${employerName}**. Identity verified via NIK **${nik.length >= 4 ? "**** **** **** " + nik.slice(-4) : nik}**. Employment and domicile data are consistent across submitted documents.`,
     section2_permohonan: `**${product}** application for **Rp ${amtM}M** over **${tenorMonths} months**. Purpose: **${loanPurpose}**. Estimated monthly installment: **Rp ${requestedInstallment.toLocaleString("id-ID")}**.`,
     section3_keuangan: section3,
     section4_slik: `SLIK OJK collectability: **${slikKol} — ${kolektibilitasLabel}**. ${paymentHistory}.`,
@@ -407,7 +459,7 @@ export function spawnMockAgent(task: AgentTask): void {
     },
     slikOjk: {
       kolektibilitas: slikKol,
-      label: d?.kolektibilitas_label ?? "Current",
+      kolektibilitas_label: d?.kolektibilitas_label ?? "Current",
       riwayat24m: d?.payment_history_24m ?? "Good",
     },
     amlFraud: {

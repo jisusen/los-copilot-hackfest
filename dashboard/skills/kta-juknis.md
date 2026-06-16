@@ -1,67 +1,145 @@
 ---
-name: KTA Product Juknis
-description: Juknis khusus Kredit Tanpa Agunan (KTA) — Bank Maju Bersama
-version: 1.0.0
-author: Bank Maju Bersama
+name: Juknis KTA
+description: Panduan analis untuk Kredit Tanpa Agunan — keputusan, batas RAC, dan rekomendasi
+version: 2.0.0
+author: Tim Kredit Konsumer
 trigger: memo
+source: PDF
+product: KTA
 ---
 
-# Juknis Produk KTA (Kredit Tanpa Agunan)
+# Juknis KTA — Kredit Tanpa Agunan
 
-**Berlaku jika** `product_type` = `KTA` di data LOS. Jika bukan KTA, abaikan skill ini.
+> **Sumber kebijakan:** Dokumen Juknis KTA resmi bank (PDF) yang di-upload dan dikelola tim kredit.
+> Copilot memakai isi ini sebagai acuan saat menulis memo — bukan aturan teknis sistem.
 
-## Karakteristik KTA di BMB
+**Berlaku untuk:** permohonan dengan produk **KTA** (tanpa agunan).
 
-- **Tanpa agunan** — `section6_agunan` wajib: `Produk tanpa agunan — tidak diperlukan jaminan.`
-- Plafon tipikal demo: Rp 10 juta – Rp 150 juta
-- Tenor umum: 12–60 bulan
-- Suku bunga: sesuai field `interest_rate` di LOS
+---
 
-## RAC KTA (Risk Acceptance Criteria)
+## Untuk siapa
 
-| Kriteria | Batas | Catatan |
-|----------|-------|---------|
-| DBR / DTI | ≤ **40%** | Pelanggaran → biasanya `COMMITTEE REVIEW` atau `REJECTED` |
-| SLIK Kol | ideal **1** | Kol ≥2 → red flag, jelaskan di section4 |
-| SLIK worst 12m | ideal **1** | Kol 3+ → cenderung ditolak |
-| AML / fraud | Clear | PEP atau DTTOT → EDD atau tolak |
-| Numeric score | ≥700 prefer approve | &lt;500 → tolak; 500–699 → komite |
+Analis kredit konsumer yang meninjau aplikasi KTA sebelum menyetujui, menolak, atau merujuk ke komite.
 
-## Rules CRDE yang sering muncul (KTA)
+---
 
-Contoh dari aplikasi demo BMB — sebutkan jika ada di `rules_triggered`:
+## Apa yang harus dicek (checklist analis)
 
-- `DTI X% exceeds KTA limit (40%)` — jelaskan dampak pada kapasitas bayar
-- `DTI slightly exceeds KTA limit (40%) — within override tolerance` — catat toleransi analis
-- `Collectability 2/3` — riwayat kredit buruk, mitigasi atau tolak
-- `PEP flag` — wajib EDD di section5 + rujuk komite di section8
+Sebelum menulis rekomendasi, pastikan sudah menilai:
 
-## Isi section khusus KTA
+- [ ] **Kapasitas bayar** — penghasilan bersih vs total kewajiban + cicilan baru
+- [ ] **DBR** — apakah masih dalam batas kebijakan?
+- [ ] **SLIK** — kolektibilitas terkini & riwayat 24 bulan
+- [ ] **AML & fraud** — PEP, DTTOT, inkonsistensi data
+- [ ] **Tujuan kredit** — masuk akal vs profil debitur
+- [ ] **Keputusan CRDE** — setuju dengan mesin atau ada alasan override?
 
-### section2_permohonan
-Sebutkan eksplisit: **KTA (unsecured personal loan)**, plafon, tenor, tujuan (`loan_purpose`), estimasi angsuran.
+---
 
-### section3_keuangan
-Hitung DBR dengan rumus LOS:
-`(existing_obligations + requested_installment) / net_income × 100%`
-Bandingkan dengan `dti_threshold` (biasanya 0.40 = 40%).
-Sebut **sisa penghasilan** (`remaining_income`) setelah total kewajiban.
+## Batas RAC KTA (aturan keputusan)
 
-### section6_agunan
-Selalu satu kalimat: produk KTA tidak memerlukan agunan.
+*Tim kredit dapat mengubah angka di bawah sesuai PDF Juknis terbaru.*
 
-### section8_rekomendasi
-Sesuaikan dengan CRDE, tambahkan syarat KTA jika disetujui, mis.:
-- auto-debit rekening gaji
-- asuransi jiwa kredit (jika berlaku di BMB)
-- tidak ada restrukturisasi 12 bulan pertama
+| Kriteria | Batas | Jika melanggar |
+|----------|-------|----------------|
+| DBR | **maks 40%** | Rujuk komite atau tolak |
+| SLIK Kol terkini | ideal **1** | Kol ≥2 → red flag, jelaskan di memo |
+| SLIK terburuk 12 bln | ideal **1** | Kol 3+ → cenderung ditolak |
+| AML / sanctions | **bersih** | PEP → EDD wajib; DTTOT → tolak |
+| Plafon KTA | sesuai kebijakan produk | Plafon di atas wewenang analis → komite |
 
-## Contoh mapping keputusan (KTA)
+### Wewenang rekomendasi
 
-| CRDE | Rekomendasi baris pertama |
-|------|---------------------------|
-| `APPROVED` | `**Recommended: APPROVE**` (EN) atau `**Rekomendasi: SETUJU**` (ID) |
-| `COMMITTEE REVIEW` | `**Recommended: REFER TO CREDIT COMMITTEE**` atau `**Rekomendasi: RUJUK KOMITE KREDIT**` |
-| `REJECTED` | `**Recommended: REJECT**` atau `**Rekomendasi: TOLAK**` |
+| Kondisi | Rekomendasi analis |
+|---------|-------------------|
+| Semua RAC terpenuhi, CRDE APPROVED | **SETUJU** |
+| DBR 40–45% + pekerjaan/mapnas stabil | **RUJUK KOMITE KREDIT** |
+| DBR > 45% | **TOLAK** |
+| SLIK Kol ≥2 + riwayat buruk | **RUJUK KOMITE** atau **TOLAK** |
+| PEP teridentifikasi | **RUJUK KOMITE** (setelah EDD) |
+| DTTOT / sanksi UN | **TOLAK** |
+| CRDE REJECTED + ≥2 kekhawatiran | **TOLAK** |
 
-Gunakan pasangan bahasa sesuai skill **Memo Bahasa Indonesia** jika aktif.
+---
+
+## Kekhawatiran utama (tulis sebagai bullet)
+
+Jangan satu paragraf panjang. Gunakan daftar:
+
+- DBR **X%** — bandingkan dengan batas 40% dan sisa penghasilan
+- SLIK Kol **X** — sebut fasilitas bermasalah jika ada
+- AML — jenis flag (PEP, fraud, dll.)
+- Setiap aturan CRDE yang terpicu — **satu bullet per aturan**
+
+---
+
+## Rekomendasi akhir (format wajib)
+
+**Baris pertama** harus salah satu:
+
+- `**Rekomendasi: SETUJU**`
+- `**Rekomendasi: RUJUK KOMITE KREDIT**`
+- `**Rekomendasi: TOLAK**`
+
+Lalu:
+
+1. **Alasan** — 2–3 kalimat, merujuk DBR / SLIK / AML
+2. **Kekhawatiran** — bullet jika lebih dari satu poin
+3. **Syarat pencairan** (hanya jika SETUJU), contoh:
+   - Auto-debit rekening gaji
+   - Asuransi jiwa kredit
+   - Tidak restrukturisasi 12 bulan pertama
+
+### Contoh — SETUJU
+
+```
+**Rekomendasi: SETUJU**
+
+KTA tanpa agunan; DBR **32%**, SLIK Kol 1, AML bersih. Kapasitas bayar memadai.
+
+Syarat:
+• Auto-debit rekening gaji
+• Asuransi jiwa sesuai plafon
+```
+
+### Contoh — RUJUK KOMITE
+
+```
+**Rekomendasi: RUJUK KOMITE KREDIT**
+
+DBR **43%** di atas RAC; pekerjaan tetap namun buffer tipis.
+
+Kekhawatiran utama:
+• DBR 43% melebihi batas 40%
+• SLIK Kol 2 (sudah lancar 14 bulan terakhir)
+```
+
+### Contoh — TOLAK
+
+```
+**Rekomendasi: TOLAK**
+
+DBR tidak memadai untuk KTA tanpa agunan.
+
+Kekhawatiran utama:
+• DBR **52%** jauh di atas batas 40%
+• SLIK Kol 3 pada fasilitas aktif
+```
+
+---
+
+## Override keputusan CRDE
+
+Boleh hanya jika ada **faktor mitigasi** yang tidak tercermin di data LOS (bonus tetap, pensiun, dll.).
+
+Tulis eksplisit: *"Override CRDE karena …"* + bukti yang diperlukan.
+
+Tanpa mitigasi → **ikuti CRDE**.
+
+---
+
+## Catatan khusus KTA
+
+- Produk **tanpa agunan** — DBR dan SLIK adalah pertahanan utama
+- Jangan setujui hanya karena skor CRDE tinggi jika DBR melanggar RAC
+- Naskah formal, singkat, untuk arsip internal bank — bukan bahasa marketing

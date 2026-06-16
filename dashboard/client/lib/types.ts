@@ -34,7 +34,7 @@ export type AgentResult = {
 };
 
 export type AgentState =
-  | { status: 'running'; logs: string[]; pct: number; elapsedMs: number; startedAt: number }
+  | { status: 'running'; logs: string[]; pct: number; elapsedMs: number; startedAt: number; currentStep?: string; stepIndex?: number; totalSteps?: number }
   | { status: 'ready'; result: AgentResult; elapsedMs: number }
   | { status: 'decided'; decision: string; analystId: string; decidedAt: string; result?: AgentResult }
   | { status: 'error'; error: string; retryable: boolean };

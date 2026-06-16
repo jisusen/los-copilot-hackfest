@@ -138,7 +138,7 @@ function MemoSection({ s, content, editable, onChange }: {
 function KeyMetrics({ result }: { result: AgentResult }) {
   const r = result;
   const items: [string, string, string][] = [
-    ["DTI",   `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
+    ["DBR",   `${(r.dtiActual * 100).toFixed(1)}%`, r.dtiActual > 0.4 ? "red" : ""],
     ["SLIK",  `Kol.${r.slikKol}`,                   r.slikKol > 1 ? "amber" : ""],
     ["AML",   r.amlClear ? "Clear" : "Flag",        !r.amlClear ? "red" : ""],
     ["Score", `${r.numericScore}`,                  r.numericScore < 500 ? "red" : r.numericScore < 750 ? "amber" : ""],

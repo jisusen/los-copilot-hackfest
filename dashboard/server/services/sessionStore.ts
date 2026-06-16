@@ -50,10 +50,9 @@ class SessionStore {
     // Persist AI memo to shared DB so LOS can display it
     try {
       const crde = session.losData.hasilCrde;
-      const rec = session.memoDraft.section8_rekomendasi || '';
-      const rules = Array.isArray(crde.rulesTriggered) ? crde.rulesTriggered : [];
-      const content = `CRDE: ${crde.decision} · Risk: ${crde.riskScore} · Score: ${crde.numericScore}/1000${rules.length ? `\nRules: ${rules.join('; ')}` : ''}\n\n${rec}`.trim();
-      saveLoanNote(appId, 'agent', 'agent', content, JSON.stringify(session.memoDraft));
+      const summary = session.memoDraft.executive_summary?.trim();
+      const content = summary || session.memoDraft.section8_rekomendasi?.trim() || 'Copilot analysis complete.';
+      saveLoanNote(appId, 'Copilot Analyst', 'agent', content, JSON.stringify(session.memoDraft));
       addAuditLog(appId, 'agent', 'AGENT_COMPLETED', `Memo draft saved. CRDE: ${crde.decision}, Risk: ${crde.riskScore}`);
     } catch (e) {
       console.error('[sessionStore] Failed to persist AI memo:', e);

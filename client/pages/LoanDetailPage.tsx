@@ -164,7 +164,9 @@ export function LoanDetailPage() {
   const isUnderwriting = application.status === 'Under Review';
 
   // AML warning check
-  const hasAmlFlag = amlFraud && (amlFraud.is_pep || amlFraud.dttot_match || amlFraud.adverse_media);
+  const hasAmlFlag = amlFraud && (
+    amlFraud.pep_status || amlFraud.dttot_match || amlFraud.un_sanctions_match || amlFraud.adverse_media_match
+  );
 
   return (
     <Layout>
@@ -236,6 +238,11 @@ export function LoanDetailPage() {
               <span data-testid="loan-detail-status">
                 <Pill text={application.status} style={statusStyle} />
               </span>
+              {crde?.decision && aiAgentStyle && (
+                <span data-testid="loan-detail-crde-badge">
+                  <Pill text={crde.decision} style={aiAgentStyle} />
+                </span>
+              )}
             </div>
             <div data-testid="loan-detail-debtor-name" style={{ fontSize: 18, fontWeight: 600, color: '#0f172a', letterSpacing: '-0.01em' }}>
               {debtor?.full_name}
@@ -353,21 +360,21 @@ export function LoanDetailPage() {
         <div style={{
           background: '#f0f3f8',
           border: '1px solid #c4d0e0',
-          borderLeft: '3px solid #1f3b5c',
+          borderLeft: '3px solid #8B1A1A',
           borderRadius: 8,
           padding: '12px 16px',
           marginBottom: 12,
           fontSize: 12,
-          color: '#1f3b5c',
+          color: '#8B1A1A',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
         }}>
-          <span style={{ fontFamily: "'Open Sans', sans-serif", fontSize: 10, fontWeight: 600, background: '#1f3b5c', color: '#fff', padding: '2px 8px', borderRadius: 4 }}>AI</span>
+          <span style={{ fontFamily: "'Open Sans', sans-serif", fontSize: 10, fontWeight: 600, background: '#8B1A1A', color: '#fff', padding: '2px 8px', borderRadius: 4 }}>AI</span>
           <span>AI analysis memo is available for this application.</span>
           <button
             onClick={() => navigate(`/loans/${application.id}?tab=notes`)}
-            style={{ marginLeft: 'auto', fontSize: 11, color: '#1f3b5c', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontFamily: "'Open Sans', sans-serif" }}
+            style={{ marginLeft: 'auto', fontSize: 11, color: '#8B1A1A', background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0, fontFamily: "'Open Sans', sans-serif" }}
           >
             View in Notes & Memo →
           </button>
@@ -379,17 +386,17 @@ export function LoanDetailPage() {
         <div style={{
           background: '#f0f3f8',
           border: '1px solid #c4d0e0',
-          borderLeft: '3px solid #1f3b5c',
+          borderLeft: '3px solid #8B1A1A',
           borderRadius: 8,
           padding: '12px 16px',
           marginBottom: 12,
           fontSize: 12,
-          color: '#1f3b5c',
+          color: '#8B1A1A',
           display: 'flex',
           alignItems: 'center',
           gap: 10,
         }}>
-          <svg width="14" height="14" fill="none" stroke="#1f3b5c" strokeWidth="1.5" viewBox="0 0 24 24">
+          <svg width="14" height="14" fill="none" stroke="#8B1A1A" strokeWidth="1.5" viewBox="0 0 24 24">
             <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
             <circle cx="12" cy="7" r="4" />
           </svg>

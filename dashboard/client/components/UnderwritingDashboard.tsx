@@ -223,7 +223,7 @@ export function UnderwritingDashboard({
                 <SectionHeader num="01" title="Debtor Profile" />
                 <div className="grid grid-cols-2 gap-y-3 gap-x-5">
                   <Field label="Full Name" value={profil.nama ?? debtorName} />
-                  <Field label="NIK" value={profil.nik ?? "—"} />
+                  <Field label="NIK" value={(() => { const n = profil.nik ?? ""; return n.length >= 4 ? "**** **** **** " + n.slice(-4) : n || "—"; })()} />
                   <Field label="Employment Type" value={profil.jenisPekerjaan ?? "—"} />
                   <Field label="Employer" value={profil.namaPerusahaan ?? "—"} />
                   <Field label="Job Title" value={profil.jabatan ?? "—"} />
@@ -264,7 +264,7 @@ export function UnderwritingDashboard({
                   <Row label="Total Obligations" value={formatRp(totalOblig)} bold />
                   <Row label="Disposable Income" value={formatRp(disposable)} bold />
                   <Row
-                    label="DTI (Debt to Income)"
+                    label="DBR (Debt Burden Ratio)"
                     value={dtiExceeds ? (
                       <span className="flex items-center gap-2">
                         <span className="text-red-600 font-bold">{dtiPct}%</span>
@@ -362,7 +362,7 @@ export function UnderwritingDashboard({
               <SidebarMetric label="Risk Level" value={<span className="bg-[#DC2626] text-white text-[10px] font-bold px-1.5 py-0.5 rounded">{r.riskScore}</span>} />
               <SidebarMetric label="Rules Triggered" value={String(r.rulesTriggered.length)} violated={r.rulesTriggered.length > 0} />
               <SidebarMetric
-                label="DTI"
+                label="DBR"
                 value={`${dtiPct}%`}
                 sub={dtiExceeds ? "Exceeds Limit" : "Within Limit"}
                 violated={dtiExceeds}

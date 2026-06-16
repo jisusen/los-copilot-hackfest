@@ -310,8 +310,8 @@ export function CreditUnderwritingDashboard({
     { key: "existing_obligations", label: "Existing Obligations", fmt: "curr" },
     { key: "requested_installment", label: "Requested Installment", fmt: "curr" },
     { key: "total_obligations", label: "Total Obligations", fmt: "curr" },
-    { key: "dti_ratio", label: "DTI Ratio", fmt: "pct" },
-    { key: "dti_threshold", label: "DTI Threshold", fmt: "pct" },
+    { key: "dti_ratio", label: "DBR Ratio", fmt: "pct" },
+    { key: "dti_threshold", label: "DBR Threshold", fmt: "pct" },
     { key: "remaining_income", label: "Remaining Income", fmt: "curr" },
   ];
   const finAliases: Record<string, string[]> = {
@@ -380,43 +380,73 @@ export function CreditUnderwritingDashboard({
     <div className="bg-white rounded-2xl overflow-hidden" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.04)' }}>
       {/* Executive Summary */}
       <div className={`px-6 py-5 ${execBg}`}>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-white/80 px-2.5 py-1 rounded-lg">EXECUTIVE SUMMARY (AI) <Sparkles className="w-3 h-3 text-amber-500" /></div>
+            <div className="inline-flex items-center gap-1.5 text-[10px] font-bold text-gray-400 uppercase tracking-wider bg-white/80 px-2.5 py-1 rounded-lg">
+              <Sparkles className="w-3 h-3 text-amber-500" />
+              AI Analysis Summary
+            </div>
             <div className={`text-2xl font-black mt-2 ${execDecisionColor}`}>
               {execDecisionText}
             </div>
-            <div className="mt-3 text-xs text-gray-600 leading-relaxed">
-              {memo.executive_summary ? renderInline(memo.executive_summary) : null}
+          </div>
+          {result && (
+            <div className="flex items-center gap-3">
+              {/* Score Circle */}
+              <div className="relative w-16 h-16">
+                <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                  <circle cx="32" cy="32" r="28" fill="none" stroke="#e5e7eb" strokeWidth="4" />
+                  <circle cx="32" cy="32" r="28" fill="none" 
+                    stroke={result.numericScore >= 750 ? "#10B981" : result.numericScore >= 500 ? "#F59E0B" : "#EF4444"} 
+                    strokeWidth="4" 
+                    strokeDasharray={`${(result.numericScore / 1000) * 175.93} 175.93`}
+                    strokeLinecap="round" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-lg font-black text-gray-800">{result.numericScore}</span>
+                  <span className="text-[8px] text-gray-400 -mt-0.5">/1000</span>
+                </div>
+              </div>
+              {/* Risk Badge */}
+              <div className="flex flex-col items-end gap-1.5">
+                <div className={`inline-flex items-center gap-1.5 ${riskBadgeColor} text-white text-[11px] font-bold px-3 py-1.5 rounded-lg shadow-sm`}>
+                  <AlertTriangle className="w-3 h-3" />
+                  {result.riskScore === "HIGH" ? "HIGH RISK" : result.riskScore === "LOW" ? "LOW RISK" : "MEDIUM RISK"}
+                </div>
+                <div className="flex items-center gap-2 text-[10px]">
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: result.dtiActual > 0.4 ? "#EF4444" : result.dtiActual > 0.35 ? "#F59E0B" : "#10B981" }} />
+                    <span className="text-gray-500">DBR {(result.dtiActual * 100).toFixed(0)}%</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: result.slikKol > 2 ? "#EF4444" : result.slikKol > 1 ? "#F59E0B" : "#10B981" }} />
+                    <span className="text-gray-500">KOL {result.slikKol}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: result.amlClear ? "#10B981" : "#EF4444" }} />
+                    <span className="text-gray-500">AML {result.amlClear ? "✓" : "⚠"}</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="text-xs text-gray-600 leading-relaxed">
+          {memo.executive_summary ? renderInline(memo.executive_summary) : null}
+        </div>
+        {result && result.rulesTriggered.length > 0 && (
+          <div className="mt-4 bg-white/60 rounded-xl p-3 border border-white/80">
+            <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Key Risk Factors</div>
+            <div className="flex flex-wrap gap-1.5">
+              {result.rulesTriggered.map((r, i) => (
+                <span key={i} className="inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-full bg-white border border-gray-200 text-gray-600">
+                  <span className={`w-1 h-1 rounded-full ${decisionType === "approved" ? "bg-emerald-400" : decisionType === "committee" ? "bg-amber-400" : "bg-red-400"}`} />
+                  {r}
+                </span>
+              ))}
             </div>
           </div>
-          <div className="text-right">
-            {result && (
-              <div className={`inline-flex items-center gap-1.5 ${riskBadgeColor} text-white text-[11px] font-bold px-2.5 py-1 rounded-lg shadow-sm`}>
-                <AlertTriangle className="w-3 h-3" />
-                {result.riskScore === "HIGH" ? "HIGH RISK" : result.riskScore === "LOW" ? "LOW RISK" : "MEDIUM RISK"}
-              </div>
-            )}
-            {result && (
-              <div className="mt-2.5 font-mono text-xs text-gray-400">
-                Score: <span className="font-bold text-gray-700">{result.numericScore}</span>/1000
-              </div>
-            )}
-            {result && result.rulesTriggered.length > 0 && (
-              <div className="mt-4 text-left bg-white/60 rounded-xl p-3">
-                <div className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-2">Key Reasons</div>
-                <ul className="space-y-1.5">
-                  {result.rulesTriggered.map((r, i) => (
-                    <li key={i} className="flex gap-2 text-[11px] text-gray-600 leading-tight">
-                      <span className={`w-1.5 h-1.5 rounded-full shrink-0 mt-0.5 ${decisionType === "approved" ? "bg-emerald-400" : decisionType === "committee" ? "bg-amber-400" : "bg-red-400"}`} />
-                      <span>{r}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
+        )}
       </div>
 
       {/* 2 Column Content */}
@@ -458,7 +488,7 @@ export function CreditUnderwritingDashboard({
             {financialRows.length > 0 ? financialRows.map((row) => (
               <div
                 key={row.label}
-                className={`flex justify-between items-center py-2.5 text-sm ${row.flagged ? "bg-red-50/70 -mx-3 px-3 rounded-lg" : ""}`}
+                className={`flex justify-between items-center py-2.5 text-sm ${row.flagged ? "bg-red-50/70 -mx-3 px-3 rounded-lg border border-red-100" : ""}`}
                 style={{ borderBottom: '1px solid #f1f3f5' }}
               >
                 <span className="text-gray-500 text-xs">{row.label}</span>
@@ -479,7 +509,11 @@ export function CreditUnderwritingDashboard({
           <AccordionBlock icon={ShieldAlert} number="04" title="SLIK OJK Results" copyContent={memo.section4_slik}>
             <div className="flex items-center gap-2 mb-3">
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${slikBadgeClass}`}>{slikLabel}</span>
-              {slikKol > 0 && <span className="text-xs text-gray-400">Kol. {slikKol}</span>}
+              {slikKol > 0 && (
+                <span className="text-xs font-mono text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                  Kol. {slikKol}
+                </span>
+              )}
             </div>
             <div className="text-xs text-gray-600 leading-relaxed">{renderText(memo.section4_slik)}</div>
           </AccordionBlock>
@@ -490,6 +524,9 @@ export function CreditUnderwritingDashboard({
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${amlBadgeClass}`}>
                 {amlFlagged ? "FLAGGED" : "CLEAR"}
               </span>
+              {amlFlagged && (
+                <span className="text-[10px] text-red-500 font-medium">Requires review</span>
+              )}
             </div>
             <div className="text-xs text-gray-600 leading-relaxed">{renderText(memo.section5_aml)}</div>
           </AccordionBlock>
@@ -502,17 +539,45 @@ export function CreditUnderwritingDashboard({
           {/* 07 CRDE Decision */}
           <AccordionBlock icon={FileCheck} number="07" title="CRDE Decision" copyContent={memo.section7_crde}>
             {result && (
-              <div className="mb-3 p-3 rounded-xl" style={{
-                background: result ? `color-mix(in srgb, ${result.crdeDecision === "REJECT" || result.crdeDecision === "REJECTED" ? "#DC2626" : result.crdeDecision === "APPROVED" || result.crdeDecision === "APPROVE" ? "#10B981" : "#F59E0B"} 8%, white)` : "#f8fafc",
-                border: `1px solid ${result ? (result.crdeDecision === "REJECT" || result.crdeDecision === "REJECTED" ? "#FCA5A5" : result.crdeDecision === "APPROVED" || result.crdeDecision === "APPROVE" ? "#6EE7B7" : "#FDE68A") : "#e2e8f0"}`,
+              <div className="mb-4 overflow-hidden rounded-xl border" style={{
+                borderColor: result.crdeDecision === "REJECT" || result.crdeDecision === "REJECTED" ? "#FCA5A5" : result.crdeDecision === "APPROVED" || result.crdeDecision === "APPROVE" ? "#6EE7B7" : "#FDE68A",
               }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-wider" style={{
-                    color: result.crdeDecision === "REJECT" || result.crdeDecision === "REJECTED" ? "#DC2626" : result.crdeDecision === "APPROVED" || result.crdeDecision === "APPROVE" ? "#059669" : "#D97706"
-                  }}>{result.crdeDecision}</span>
-                  <span className="text-[10px] text-gray-400 font-mono">Score {result.numericScore}/1000</span>
+                <div className="px-4 py-3" style={{
+                  background: `linear-gradient(135deg, ${result.crdeDecision === "REJECT" || result.crdeDecision === "REJECTED" ? "#FEF2F2" : result.crdeDecision === "APPROVED" || result.crdeDecision === "APPROVE" ? "#F0FDF4" : "#FFFBEB"} 0%, white 100%)`,
+                }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-bold uppercase tracking-wider" style={{
+                      color: result.crdeDecision === "REJECT" || result.crdeDecision === "REJECTED" ? "#DC2626" : result.crdeDecision === "APPROVED" || result.crdeDecision === "APPROVE" ? "#059669" : "#D97706"
+                    }}>{result.crdeDecision}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] font-mono text-gray-400">Score</span>
+                      <span className="text-sm font-black font-mono" style={{
+                        color: result.numericScore >= 750 ? "#059669" : result.numericScore >= 500 ? "#D97706" : "#DC2626"
+                      }}>{result.numericScore}</span>
+                      <span className="text-[10px] font-mono text-gray-400">/1000</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 text-[10px]">
+                    <span className="flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{
+                        background: result.riskScore === "HIGH" ? "#DC2626" : result.riskScore === "LOW" ? "#059669" : "#D97706"
+                      }} />
+                      <span className="font-medium text-gray-600">Risk: {result.riskScore}</span>
+                    </span>
+                    <span className="text-gray-300">|</span>
+                    <span className="font-medium text-gray-600">{result.rulesTriggered.length} rules triggered</span>
+                  </div>
                 </div>
-                <div className="text-[10px] text-gray-400">Risk: {result.riskScore} &middot; {result.rulesTriggered.length} rules triggered</div>
+                {result.rulesTriggered.length > 0 && (
+                  <div className="px-4 py-2.5 bg-gray-50/80 border-t border-gray-100">
+                    <div className="text-[9px] font-semibold text-gray-400 uppercase tracking-wider mb-1.5">Triggered Rules</div>
+                    <div className="flex flex-wrap gap-1">
+                      {result.rulesTriggered.map((r, i) => (
+                        <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-white border border-gray-200 text-gray-600">{r}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             <div className="text-xs text-gray-600 leading-relaxed">{renderText(memo.section7_crde)}</div>

@@ -279,7 +279,7 @@ export function ReviewPage() {
                   {/* Sticky Chat Toggle Button */}
                   <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3">
                     {chatOpen && (
-                      <div className="fixed bottom-20 right-4 sm:right-6 w-[calc(100vw-32px)] sm:w-[420px] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col" >
+                      <div className="fixed bottom-20 right-4 sm:right-6 w-[calc(100vw-32px)] sm:w-[420px] sm:h-[520px] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden flex flex-col" >
                         <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 shrink-0">
                           <span className="text-sm font-bold text-slate-900">Copilot Chat</span>
                           <button
@@ -290,7 +290,7 @@ export function ReviewPage() {
                             <X className="w-4 h-4" />
                           </button>
                         </div>
-                        <div className="flex-1 min-h-0" >
+                        <div className="flex-1 min-h-0 overflow-hidden flex flex-col" >
                           <CopilotChat appId={appId} debtorName={debtorName} />
                         </div>
                       </div>
@@ -365,7 +365,7 @@ export function ReviewPage() {
                           { label: "Credit Score", value: crde?.numericScore ? `${crde.numericScore}/1000` : "—", flagged: (crde?.numericScore ?? 999) < 500 },
                           { label: "Risk Level", value: crde?.riskScore ?? "—", flagged: crde?.riskScore === "HIGH" },
                           { label: "Rules Triggered", value: `${crde?.rulesTriggered?.length ?? 0}`, flagged: (crde?.rulesTriggered?.length ?? 0) > 0 },
-                          { label: "DTI Ratio", value: `${(dtiActual * 100).toFixed(1)}%`, flagged: dtiActual > 0.4 },
+                          { label: "DBR Ratio", value: `${(dtiActual * 100).toFixed(1)}%`, flagged: dtiActual > 0.4 },
                           { label: "SLIK Collectability", value: `Kol. ${slikKol}`, flagged: slikKol > 1 },
                           { label: "AML Screening", value: amlClear ? "CLEAR" : "FLAGGED", flagged: !amlClear },
                         ].map((m) => (
@@ -541,7 +541,7 @@ export function ReviewPage() {
                         { label: "Credit Score", value: crde?.numericScore ? `${crde.numericScore}/1000` : "—" },
                         { label: "Risk Level", value: crde?.riskScore ?? "—" },
                         { label: "Rules Triggered", value: `${crde?.rulesTriggered?.length ?? 0}` },
-                        { label: "DTI Ratio", value: `${(dtiActual * 100).toFixed(1)}%` },
+                        { label: "DBR Ratio", value: `${(dtiActual * 100).toFixed(1)}%` },
                         { label: "SLIK Collectability", value: `Kol. ${slikKol}` },
                         { label: "AML Screening", value: amlClear ? "CLEAR" : "FLAGGED" },
                       ].map((m) => (

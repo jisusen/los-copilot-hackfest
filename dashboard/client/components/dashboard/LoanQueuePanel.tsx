@@ -160,7 +160,7 @@ export default function LoanQueuePanel({
                     : "bg-orange-100 text-orange-600 border border-orange-200"
                 }`}
               >
-               {`CRDE SCORE: ${loan.risk_score}`}
+               {`Risk: ${loan.risk_score}`}
               </span>
             );
           };

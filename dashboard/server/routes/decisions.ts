@@ -16,8 +16,8 @@ export async function handleDecisions(req: Request, pathname: string): Promise<R
 
     // Only the recommendation section + optional additional note in content
     const contentLines = [
-      memo.section8_rekomendasi ?? '',
-      ...(note ? [`**Additional Note:** ${note}`] : []),
+      memo.executive_summary ?? memo.section8_rekomendasi ?? '',
+      ...(note ? [`**Analyst Note:** ${note}`] : []),
     ].filter(Boolean);
     const content = contentLines.join('\n\n');
 

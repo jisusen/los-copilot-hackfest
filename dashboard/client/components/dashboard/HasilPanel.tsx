@@ -135,37 +135,21 @@ export default function HasilPanel({
               onClick={() => navigate(`/review/${appId}`)}
               className="group px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-all duration-200"
             >
-              {/* Row 1: App ID + Status badge + Reset button */}
+              {/* Row 1: App ID + Review */}
               <div className="flex items-center justify-between mb-1">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-[10px] font-mono text-gray-400">{appId}</span>
-                  {loan && (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${riskBg} ${riskColor} uppercase tracking-wider`}>
-                      {loan.risk_score}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${statusCls}`}>
-                    {label}
-                  </span>
-                  <button
-                    onClick={handleReset}
-                    className="opacity-0 group-hover:opacity-100 px-1.5 py-0.5 text-[9px] text-gray-400 hover:text-red-600 border border-transparent hover:border-gray-200 rounded transition-all"
-                    title="Reset so it can be reviewed again"
-                  >
-                    ↺
-                  </button>
-                </div>
+                <span className="text-[10px] font-mono text-gray-400">{appId}</span>
+                <span className="text-[10px] font-semibold text-red-500 group-hover:translate-x-0.5 transition-transform">
+                  Review →
+                </span>
               </div>
 
               {/* Row 2: Debtor name */}
-              <div className="text-[13px] font-semibold text-gray-800 truncate">
+              <div className="text-[13px] font-semibold text-gray-800 truncate mb-1">
                 {loan ? loan.debtor_name : "Unknown Applicant"}
               </div>
 
               {/* Row 3: Product + Amount + Tenor */}
-              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 mb-2">
                 {loan && (
                   <span className="inline-flex items-center gap-1 text-[10px] font-medium text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
                     <span>{PRODUCT_ICON[loan.product_type] || "📄"}</span>
@@ -184,24 +168,61 @@ export default function HasilPanel({
                 )}
               </div>
 
-              {/* Row 4: CRDE + Score + Review link */}
-              <div className="flex items-center justify-between mt-2">
-                <div className="flex items-center gap-1.5">
-                  {loan && (
-                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${crdeColor}`}>
+              {/* Row 4: Risk + AI Decision */}
+              <div className="flex items-center gap-3 mb-1.5">
+                {loan && (
+                  <span className="text-[10px]">
+                    <span className="text-gray-400">Risk:</span>{" "}
+                    <span className={`font-bold uppercase ${riskColor}`}>
+                      {loan.risk_score}
+                    </span>
+                  </span>
+                )}
+                {loan && (
+                  <span className="text-[10px]">
+                    <span className="text-gray-400">AI Rec:</span>{" "}
+                    <span className={`font-bold uppercase ${crdeColor.split(" ")[0]}`}>
                       {loan.crde_decision}
                     </span>
-                  )}
-                  {loan && (
-                    <span className="text-[10px] font-mono text-gray-400">
-                      Score {loan.numeric_score}/1000
-                    </span>
-                  )}
-                </div>
-                <span className="text-[10px] font-semibold text-red-500 group-hover:translate-x-0.5 transition-transform">
-                  Review →
-                </span>
+                  </span>
+                )}
               </div>
+
+              {/* Row 5: Metrics */}
+              {result && (
+                <div className="flex items-center gap-1.5 text-[9px]">
+                  <span className="font-mono text-gray-400">Score</span>
+                  <span className={`font-bold font-mono ${
+                    result.numericScore >= 750 ? "text-emerald-600" : 
+                    result.numericScore >= 500 ? "text-amber-600" : "text-red-600"
+                  }`}>
+                    {result.numericScore}
+                  </span>
+                  <span className="text-gray-300">·</span>
+                  <span className="font-mono text-gray-400">DBR</span>
+                  <span className={`font-bold font-mono ${
+                    result.dtiActual > 0.4 ? "text-red-600" : 
+                    result.dtiActual > 0.35 ? "text-amber-600" : "text-emerald-600"
+                  }`}>
+                    {(result.dtiActual * 100).toFixed(0)}%
+                  </span>
+                  <span className="text-gray-300">·</span>
+                  <span className="font-mono text-gray-400">KOL</span>
+                  <span className={`font-bold font-mono ${
+                    result.slikKol > 2 ? "text-red-600" : 
+                    result.slikKol > 1 ? "text-amber-600" : "text-emerald-600"
+                  }`}>
+                    {result.slikKol}
+                  </span>
+                  <span className="text-gray-300">·</span>
+                  <span className="font-mono text-gray-400">AML</span>
+                  <span className={`font-bold font-mono ${
+                    result.amlClear ? "text-emerald-600" : "text-red-600"
+                  }`}>
+                    {result.amlClear ? "✓" : "⚠"}
+                  </span>
+                </div>
+              )}
             </div>
           );
         })}

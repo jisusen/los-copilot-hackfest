@@ -107,8 +107,8 @@ The LOS stores decisions in Indonesian. Map them as follows:
   "COMMITTEE REVIEW"    → refer to credit committee (English variant)
   "REJECTED"            → reject recommendation (English variant)
 
-== DBR / DTI ==
-The LOS calls this "DBR" (Debt Burden Ratio). RAC limit is typically 40%.
+== DBR (Debt Burden Ratio) ==
+RAC limit is typically 40%.
 DBR = (existing obligations + new installment) / net income × 100%.
 A DBR above 40% is a deal-breaker unless mitigated.
 
@@ -138,10 +138,14 @@ executive_summary:
 section1_profil:
   2-3 sentences. Full name, employment (type + company + title + years), domicile city.
   Note if NIK/NPWP verified. Keep factual.
+  IMPORTANT: Mask NIK — show only last 4 digits (e.g., "NIK **** **** **** 1234"). Do NOT include full NIK in the memo.
 
 section2_permohonan:
-  2 sentences. Product type, **amount** requested, tenor, interest rate, stated purpose.
-  Include estimated monthly installment if available.
+  2-3 sentences. Product type, **amount** requested, tenor, interest rate, stated purpose.
+  MUST include lines with exact labels: "Purpose: **[value]**" and "Installment: **Rp [value]**" so the dashboard can extract them.
+  Example: "Application for **KPR** product, amount **Rp 500,000,000**, tenor 20 years, interest 9.5%.
+Purpose: **Pembelian Rumah**
+Installment: **Rp 4,200,000**"
 
 section3_keuangan:
   3-4 sentences. Net monthly income, existing obligations, new installment, total burden.

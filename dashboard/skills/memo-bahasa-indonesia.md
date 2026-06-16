@@ -2,8 +2,10 @@
 name: Memo Bahasa Indonesia
 description: Keluaran memo dalam Bahasa Indonesia formal (bukan English)
 version: 1.0.0
-author: Bank Maju Bersama
+author: Tim Kredit Konsumer
 trigger: memo
+product: locale
+source: manual
 ---
 
 # Output Memo — Bahasa Indonesia
@@ -14,7 +16,7 @@ Skill ini **mengganti bahasa output memo** dari English ke **Bahasa Indonesia fo
 
 - Tulis **seluruh isi** 9 field JSON dalam Bahasa Indonesia formal (naskah analis kredit bank).
 - **Nama key JSON tetap English** (`executive_summary`, `section1_profil`, dll.) — jangan diubah.
-- Istilah teknis boleh tetap: NIK, NPWP, SLIK, DBR/DTI, KTA, KPR, CRDE, PEP, DTTOT, Rp.
+- Istilah teknis boleh tetap: NIK, NPWP, SLIK, DBR, KTA, KPR, CRDE, PEP, DTTOT, Rp.
 - Angka: format Indonesia boleh (`Rp 75.000.000`, `42,1%`) atau standar (`Rp 75,000,000`) — konsisten per memo.
 - Gunakan **bold** (`**teks**`) untuk angka penting, keputusan, dan persentase.
 

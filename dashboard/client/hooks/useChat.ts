@@ -1,6 +1,42 @@
 import { useState, useCallback } from 'react';
 import type { Message } from '../lib/types';
 
+/** Strip thinking/reasoning tags and meta-commentary that some models inject into output. */
+function stripThinkingTags(text: string): string {
+  let cleaned = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  cleaned = cleaned.replace(/<thinking>[\s\S]*?<\/thinking>/gi, "");
+  // Strip lines that are meta-commentary (model talking about the question, not answering)
+  const lines = cleaned.split("\n");
+  const result: string[] = [];
+  let headStripped = false;
+  for (const line of lines) {
+    const lower = line.toLowerCase().trim();
+    if (!headStripped && (
+      /^(hmm|huh|oh|ah|okay|ok|right|well|let me|i see|so|actually|however|while|now)[,!. ]/i.test(lower) ||
+      /^(the user|user) (is |just |wants |needs |asking|said)/i.test(lower) ||
+      /^(i think|i need to|i should|i'll|let me (think|analyze|check|explain|review))/i.test(lower) ||
+      /^(based on|looking at|from the|according to|reading)/i.test(lower) ||
+      /^(the instructions|my instructions|the system|my role|my purpose|as an? (ai|assistant|copilot|model))/i.test(lower) ||
+      /^(i (am|'m) (a |an )?(ai |assistant |copilot |model ))/i.test(lower) ||
+      /^(i'?ll (just |simply |now )?(print|output|respond|answer|give|provide|show|keep|respond|answer))/i.test(lower) ||
+      /^(i (will|can|should) (just |simply )?(print|output|respond|answer|give|provide|show))/i.test(lower) ||
+      /^(the (correct|right|proper|actual) (answer|response|output) is)/i.test(lower) ||
+      /^(since the user|because the user|as the user)/i.test(lower) ||
+      /^(i (notice|see|understand|realize|recognize))/i.test(lower) ||
+      /^(this (request|question|task|message))/i.test(lower) ||
+      /^(the (request|question|task))/i.test(lower) ||
+      /^(my (task|goal|purpose|role|job))/i.test(lower) ||
+      /^(i'?m (a |an )?(ai |assistant |copilot |model ))/i.test(lower) ||
+      /^(i'?m (looking|reading|examining|analyzing|reviewing|checking|thinking))/i.test(lower)
+    )) {
+      continue; // skip this line
+    }
+    headStripped = true;
+    result.push(line);
+  }
+  return result.join("\n").trim();
+}
+
 export function useChat(appId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [streaming, setStreaming] = useState(false);
@@ -46,13 +82,13 @@ export function useChat(appId: string) {
               setStreamingText(fullText);
             } else if (chunk) {
               fullText += chunk;
-              setStreamingText(fullText);
+              setStreamingText(stripThinkingTags(fullText));
             }
           } catch {}
         }
       }
 
-      setMessages(prev => [...prev, { role: 'assistant', content: fullText }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: stripThinkingTags(fullText) }]);
     } catch (err) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'An error occurred. Please try again.' }]);
     } finally {

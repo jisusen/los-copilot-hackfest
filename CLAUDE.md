@@ -106,7 +106,7 @@ Every interactive and data element needs a `data-testid`. The agent relies on th
 Eight tables (full DDL in `server/db/schema.sql`):
 - `loan_applications` — core record (id like `APP-001`, status, product_type, created_at)
 - `debtors` — personal data (NIK, NPWP, employer, address)
-- `financials` — income, DTI, obligations
+- `financials` — income, DBR, obligations
 - `slik_ojk` — credit bureau results (kolektibilitas, 24-month history)
 - `aml_fraud` — AML/sanctions/PEP screening results
 - `crde_results` — Credit Risk Decision Engine output (decision, score, rules fired)

@@ -81,7 +81,7 @@ export function AmlFraudTab({ aml }: { aml: AmlFraud }) {
           </div>
           <div className="text-right">
             <span className="text-xs font-medium uppercase tracking-wide" style={{ color: '#64748b' }}>Screening Ref</span>
-            <div className="text-sm font-mono mt-1" style={{ color: '#1a3a5c' }}>{aml.screening_reference_id}</div>
+            <div className="text-sm font-mono mt-1" style={{ color: '#8B1A1A' }}>{aml.screening_reference_id}</div>
           </div>
         </div>
       </div>
@@ -89,6 +89,9 @@ export function AmlFraudTab({ aml }: { aml: AmlFraud }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
         <div className="bg-white border rounded-lg" style={{ borderColor: '#e2e8f0' }}>
           <h3 className="font-semibold text-sm uppercase tracking-wide px-5 pt-4 pb-2" style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>DTTOT Screening</h3>
+          <div className="px-5 pb-2">
+            <span className="text-[11px] italic" style={{ color: '#64748b' }}>Daftar Teralisasi Terkait Organisasi Teroris — Indonesian terrorism financing watchlist</span>
+          </div>
           <div className="px-5">
             <Field label="DTTOT Status" testId="dttot-status">
               <StatusBadge good={!aml.dttot_match} label="Not Listed" badLabel="LISTED" />
@@ -102,6 +105,9 @@ export function AmlFraudTab({ aml }: { aml: AmlFraud }) {
 
         <div className="bg-white border rounded-lg" style={{ borderColor: '#e2e8f0' }}>
           <h3 className="font-semibold text-sm uppercase tracking-wide px-5 pt-4 pb-2" style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>UN Sanctions Screening</h3>
+          <div className="px-5 pb-2">
+            <span className="text-[11px] italic" style={{ color: '#64748b' }}>United Nations Security Council Sanctions — international sanctions list</span>
+          </div>
           <div className="px-5">
             <Field label="UN Sanctions Status" testId="un-sanctions-status">
               <StatusBadge good={!aml.un_sanctions_match} label="Not Listed" badLabel="LISTED" />
@@ -115,6 +121,9 @@ export function AmlFraudTab({ aml }: { aml: AmlFraud }) {
 
       <div className="bg-white border rounded-lg px-5 mb-6" style={{ borderColor: '#e2e8f0' }}>
         <h3 className="font-semibold text-sm uppercase tracking-wide pt-4 pb-2" style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>PEP Screening</h3>
+        <div className="px-5 pb-2">
+          <span className="text-[11px] italic" style={{ color: '#64748b' }}>Politically Exposed Person — individual with prominent public function, requires Enhanced Due Diligence</span>
+        </div>
         <Field label="PEP Status" testId="pep-status">
           <StatusBadge good={!aml.pep_status} label="Not a PEP" badLabel="IDENTIFIED AS PEP" />
         </Field>
@@ -133,6 +142,9 @@ export function AmlFraudTab({ aml }: { aml: AmlFraud }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
         <div className="bg-white border rounded-lg px-5" style={{ borderColor: '#e2e8f0' }}>
           <h3 className="font-semibold text-sm uppercase tracking-wide pt-4 pb-2" style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>Adverse Media</h3>
+          <div className="px-5 pb-2">
+            <span className="text-[11px] italic" style={{ color: '#64748b' }}>Negative news screening — checks for unfavorable media coverage</span>
+          </div>
           <Field label="Adverse Media Match" testId="adverse-media-status">
             <StatusBadge good={!aml.adverse_media_match} label="No Match" badLabel="Match Found" />
           </Field>
@@ -173,6 +185,9 @@ export function AmlFraudTab({ aml }: { aml: AmlFraud }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-6">
         <div className="bg-white border rounded-lg px-5" style={{ borderColor: '#e2e8f0' }}>
           <h3 className="font-semibold text-sm uppercase tracking-wide pt-4 pb-2" style={{ borderBottom: '1px solid #e2e8f0', color: '#0f172a' }}>EDD Status</h3>
+          <div className="px-5 pb-2">
+            <span className="text-[11px] italic" style={{ color: '#64748b' }}>Enhanced Due Diligence — deeper investigation for high-risk profiles</span>
+          </div>
           <Field label="EDD Status" testId="edd-status">{aml.edd_status}</Field>
           {aml.edd_completed_date ? (
             <Field label="EDD Complete Date" testId="edd-date">{aml.edd_completed_date}</Field>

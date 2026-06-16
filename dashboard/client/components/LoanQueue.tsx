@@ -120,9 +120,8 @@ export function LoanQueue({
                 {/* Row 4: Status tag + CRDE (after agent completes) */}
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                   <span
-                    className="font-mono text-xs font-semibold"
+                    className="font-mono text-[10px] font-semibold px-2 py-0.5 rounded-md"
                     style={{
-                      padding: '1px 8px',
                       background: '#1e3a52',
                       color: '#60a5fa',
                       border: '1px solid #2a4a6a',
@@ -134,27 +133,90 @@ export function LoanQueue({
                   {/* CRDE result badge — shown after agent finishes */}
                   {agentResult && (
                     <span
-                      className="font-mono text-xs font-semibold"
+                      className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider"
                       style={{
-                        padding: '1px 8px',
                         color: CRDE_COLOR[agentResult.crdeDecision] ?? '#8892a4',
                         border: `1px solid ${CRDE_COLOR[agentResult.crdeDecision] ?? '#2a3a52'}`,
-                        background: `${CRDE_COLOR[agentResult.crdeDecision] ?? '#2a3a52'}18`,
+                        background: `${CRDE_COLOR[agentResult.crdeDecision] ?? '#2a3a52'}20`,
                       }}
                     >
                       {CRDE_SHORT[agentResult.crdeDecision] ?? agentResult.crdeDecision}
                     </span>
                   )}
+                </div>
 
-                  {/* Risk score after ready */}
-                  {agentResult && (
-                    <span
-                      className="font-mono text-xs"
-                      style={{ color: RISK_COLOR[agentResult.riskScore] ?? '#8892a4' }}
-                    >
-                      {agentResult.riskScore} · {agentResult.numericScore}/1000
-                    </span>
-                  )}
+                {/* Analysis Results Key Stats */}
+                {agentResult && (
+                  <div className="mt-2.5 p-2.5 rounded-lg" style={{ background: '#0d1520', border: '1px solid #1e2d3d' }}>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      {/* Risk Level */}
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full" style={{ background: RISK_COLOR[agentResult.riskScore] ?? '#8892a4' }} />
+                        <span className="font-mono text-[10px] font-bold uppercase" style={{ color: RISK_COLOR[agentResult.riskScore] ?? '#8892a4' }}>
+                          {agentResult.riskScore}
+                        </span>
+                      </div>
+                      
+                      <span className="text-[10px]" style={{ color: '#2a4a6a' }}>|</span>
+                      
+                      {/* Score */}
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-[10px]" style={{ color: '#6b7c93' }}>Score</span>
+                        <span className="font-mono text-[10px] font-bold" style={{ color: agentResult.numericScore >= 750 ? '#22c55e' : agentResult.numericScore >= 500 ? '#f59e0b' : '#ef4444' }}>
+                          {agentResult.numericScore}
+                        </span>
+                      </div>
+                      
+                      <span className="text-[10px]" style={{ color: '#2a4a6a' }}>|</span>
+                      
+                      {/* DSR */}
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-[10px]" style={{ color: '#6b7c93' }}>DBR</span>
+                        <span className="font-mono text-[10px] font-bold" style={{ color: agentResult.dtiActual > 0.4 ? '#ef4444' : agentResult.dtiActual > 0.35 ? '#f59e0b' : '#22c55e' }}>
+                          {(agentResult.dtiActual * 100).toFixed(0)}%
+                        </span>
+                      </div>
+                      
+                      <span className="text-[10px]" style={{ color: '#2a4a6a' }}>|</span>
+                      
+                      {/* SLIK KOL */}
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-[10px]" style={{ color: '#6b7c93' }}>KOL</span>
+                        <span className="font-mono text-[10px] font-bold" style={{ color: agentResult.slikKol > 2 ? '#ef4444' : agentResult.slikKol > 1 ? '#f59e0b' : '#22c55e' }}>
+                          {agentResult.slikKol}
+                        </span>
+                      </div>
+                      
+                      <span className="text-[10px]" style={{ color: '#2a4a6a' }}>|</span>
+                      
+                      {/* AML */}
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono text-[10px]" style={{ color: '#6b7c93' }}>AML</span>
+                        <span className="font-mono text-[10px] font-bold" style={{ color: agentResult.amlClear ? '#22c55e' : '#ef4444' }}>
+                          {agentResult.amlClear ? 'CLEAR' : 'FLAG'}
+                        </span>
+                      </div>
+                    </div>
+                    
+                    {/* Rules triggered */}
+                    {agentResult.rulesTriggered.length > 0 && (
+                      <div className="mt-2 pt-2" style={{ borderTop: '1px solid #1e2d3d' }}>
+                        <div className="flex flex-wrap gap-1">
+                          {agentResult.rulesTriggered.slice(0, 3).map((r, i) => (
+                            <span key={i} className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ background: '#1a2b3d', color: '#8892a4', border: '1px solid #2a4a6a' }}>
+                              {r}
+                            </span>
+                          ))}
+                          {agentResult.rulesTriggered.length > 3 && (
+                            <span className="font-mono text-[9px] px-1.5 py-0.5 rounded" style={{ color: '#6b7c93' }}>
+                              +{agentResult.rulesTriggered.length - 3} more
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 </div>
               </div>
             </div>

@@ -6,13 +6,11 @@ import {
   Plus,
   Trash2,
   Save,
-  X,
-  ChevronDown,
-  ChevronRight,
-  Clock,
   User,
   Tag,
   AlertCircle,
+  Upload,
+  BookOpen,
 } from "lucide-react";
 
 type SkillMeta = {
@@ -22,9 +20,19 @@ type SkillMeta = {
   version: string;
   author: string;
   trigger: string;
+  product: string;
+  source: string;
   size: number;
   modified: string;
 };
+
+const PRODUCT_OPTIONS = [
+  { value: "KTA", label: "KTA — Kredit Tanpa Agunan" },
+  { value: "KPR", label: "KPR — Kredit Pemilikan Rumah" },
+  { value: "KKB", label: "KKB — Kredit Kendaraan Bermotor" },
+  { value: "Multiguna", label: "Multiguna" },
+  { value: "locale", label: "Locale (bahasa output)" },
+];
 
 type SkillFile = SkillMeta & {
   content: string;
@@ -65,7 +73,9 @@ function SkillCard({
         <div className="flex items-center gap-2 min-w-0">
           <div
             className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-              isActive ? "bg-amber-100 text-amber-700" : "bg-slate-100 text-slate-500"
+              isActive
+                ? "bg-amber-100 text-amber-700"
+                : "bg-slate-100 text-slate-500"
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -97,6 +107,16 @@ function SkillCard({
       )}
 
       <div className="mt-2 flex items-center gap-2 flex-wrap">
+        {skill.product && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded">
+            {skill.product}
+          </span>
+        )}
+        {skill.source?.toUpperCase() === "PDF" && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+            PDF
+          </span>
+        )}
         <span className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-400 bg-slate-50 px-1.5 py-0.5 rounded">
           <Tag className="w-2.5 h-2.5" />
           {triggerLabel}
@@ -117,14 +137,18 @@ function SkillCard({
 
 function SkillEditor({
   skill,
+  initialContent,
   onSave,
   onCancel,
 }: {
   skill: SkillFile | null;
+  initialContent?: string;
   onSave: (filename: string, content: string) => Promise<void>;
   onCancel: () => void;
 }) {
-  const [content, setContent] = useState(skill?.content || "");
+  const [content, setContent] = useState(
+    skill?.content || initialContent || "",
+  );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -158,7 +182,9 @@ function SkillEditor({
     setSaving(true);
     setError("");
     try {
-      const filename = skill?.filename || `${meta.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.md`;
+      const filename =
+        skill?.filename ||
+        `${meta.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}.md`;
       await onSave(filename, content);
     } catch (err: any) {
       setError(err.message || "Failed to save");
@@ -215,21 +241,61 @@ function SkillEditor({
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
-              Skill Name
+              Nama Juknis
             </label>
             <input
               value={meta.name || ""}
               onChange={(e) => updateMeta("name", e.target.value)}
               className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-              placeholder="Credit Memo SOP"
+              placeholder="Juknis KTA"
             />
+          </div>
+          <div>
+            <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
+              Produk
+            </label>
+            <select
+              value={meta.product || "KTA"}
+              onChange={(e) => updateMeta("product", e.target.value)}
+              className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+            >
+              {PRODUCT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
+              Deskripsi
+            </label>
+            <input
+              value={meta.description || ""}
+              onChange={(e) => updateMeta("description", e.target.value)}
+              className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+              placeholder="Panduan analis untuk produk ini"
+            />
+          </div>
+          <div>
+            <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
+              Sumber
+            </label>
+            <select
+              value={meta.source || "PDF"}
+              onChange={(e) => updateMeta("source", e.target.value)}
+              className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+            >
+              <option value="PDF">PDF resmi bank (production)</option>
+              <option value="manual">Manual / demo</option>
+            </select>
           </div>
           <div>
             <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
               Trigger
             </label>
             <select
-              value={meta.trigger || "always"}
+              value={meta.trigger || "memo"}
               onChange={(e) => updateMeta("trigger", e.target.value)}
               className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
             >
@@ -239,17 +305,6 @@ function SkillEditor({
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
-              Description
-            </label>
-            <input
-              value={meta.description || ""}
-              onChange={(e) => updateMeta("description", e.target.value)}
-              className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-              placeholder="What this skill does"
-            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
@@ -271,7 +326,7 @@ function SkillEditor({
                 value={meta.author || ""}
                 onChange={(e) => updateMeta("author", e.target.value)}
                 className="w-full px-3 py-1.5 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
-                placeholder="Bank Maju Bersama"
+                placeholder="Tim Kredit Konsumer"
               />
             </div>
           </div>
@@ -287,7 +342,7 @@ function SkillEditor({
             setContent(newContent);
           }}
           className="w-full h-full px-4 py-3 text-sm font-mono text-slate-900 bg-white outline-none resize-none leading-relaxed"
-          placeholder="Write your SOP/Juknis content here using Markdown..."
+          placeholder="Paste or edit your Juknis here (from official PDF). Write for analysts — decision rules, RAC limits, recommendation format. No JSON/API instructions."
           spellCheck={false}
         />
       </div>
@@ -319,7 +374,9 @@ export function SkillsTab() {
 
   async function handleSelect(filename: string) {
     try {
-      const data = await apiFetch<{ skill: SkillFile }>(`/api/skills/${filename}`);
+      const data = await apiFetch<{ skill: SkillFile }>(
+        `/api/skills/${filename}`,
+      );
       setSelectedSkill(data.skill);
       setCreating(false);
     } catch {
@@ -355,6 +412,21 @@ export function SkillsTab() {
     setCreating(true);
   }
 
+  const newJuknisTemplate = `---
+name: Juknis Baru
+description: Panduan analis — aturan RAC dan format rekomendasi
+version: 1.0.0
+author: Tim Kredit Konsumer
+trigger: memo
+product: KTA
+source: PDF
+---
+
+# Juknis [Produk]
+
+> Paste isi dari PDF Juknis resmi bank. Tulis untuk analis — batas DBR, SLIK, AML, dan format rekomendasi (SETUJU / RUJUK KOMITE / TOLAK).
+`;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64 text-slate-400">
@@ -375,20 +447,42 @@ export function SkillsTab() {
         } transition-all`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200">
-          <div>
-            <div className="text-sm font-bold text-slate-900">Skills</div>
-            <div className="text-[10px] text-slate-400">
-              {skills.length} skill{skills.length !== 1 ? "s" : ""} configured
+        <div className="px-4 py-3 border-b border-slate-200 space-y-2">
+          <div className="flex items-start justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-1.5 text-sm font-bold text-slate-900">
+                <BookOpen className="w-4 h-4 text-amber-600" />
+                Juknis Kredit
+              </div>
+              <div className="text-[10px] text-slate-500 mt-1 leading-relaxed max-w-md">
+                Di production, tim kredit upload PDF Juknis resmi per produk.
+                Copilot pakai isinya untuk rekomendasi memo. Demo: edit teks di
+                bawah.
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                disabled
+                title="Upload PDF — tersedia di production"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-400 bg-slate-100 border border-slate-200 rounded-lg cursor-not-allowed"
+              >
+                <Upload className="w-3 h-3" />
+                Upload PDF
+              </button>
+              <button
+                onClick={handleCreateNew}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
+              >
+                <Plus className="w-3 h-3" />
+                Baru
+              </button>
             </div>
           </div>
-          <button
-            onClick={handleCreateNew}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
-          >
-            <Plus className="w-3 h-3" />
-            New
-          </button>
+          <div className="text-[10px] text-slate-400">
+            {skills.length} juknis · aktif untuk memo:{" "}
+            <span className="font-mono text-amber-700">KTA</span>
+          </div>
         </div>
 
         {/* Skills Grid */}
@@ -396,8 +490,10 @@ export function SkillsTab() {
           {skills.length === 0 ? (
             <div className="text-center py-8 text-slate-400">
               <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <div className="text-sm">No skills yet</div>
-              <div className="text-xs mt-1">Create your first SOP skill</div>
+              <div className="text-sm">Belum ada juknis</div>
+              <div className="text-xs mt-1">
+                Upload PDF atau paste isi Juknis dari dokumen resmi bank
+              </div>
             </div>
           ) : (
             skills.map((skill) => (
@@ -419,6 +515,7 @@ export function SkillsTab() {
           {creating ? (
             <SkillEditor
               skill={null}
+              initialContent={newJuknisTemplate}
               onSave={handleSave}
               onCancel={() => setCreating(false)}
             />

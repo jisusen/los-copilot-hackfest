@@ -51,7 +51,7 @@ function UserDropdown({ user, onLogout }: { user: User | null; onLogout: () => v
           <div className="px-4 py-3 border-b border-slate-100">
             <div className="text-sm font-semibold text-slate-900">{displayName}</div>
             <div className="text-xs text-slate-500">Credit Analyst</div>
-            <div className="text-[10px] font-mono text-slate-400 mt-1">{displayName}@bankmajubersama.co.id</div>
+            <div className="text-[10px] font-mono text-slate-400 mt-1">{displayName}@cimbniaga.co.id</div>
           </div>
           <button
             onClick={onLogout}

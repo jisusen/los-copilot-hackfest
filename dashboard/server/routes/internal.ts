@@ -49,7 +49,7 @@ export async function handleInternal(req: Request, pathname: string): Promise<Re
     const crdeDecision = body.losData.hasilCrde?.decision ?? 'UNKNOWN';
     const riskScore = body.losData.hasilCrde?.riskScore ?? 'UNKNOWN';
     try {
-      addAuditLog(body.appId, 'agent', 'AGENT_COMPLETED', `Agent finished. CRDE: ${crdeDecision}, Risk: ${riskScore}, DTI: ${body.losData.dataKeuangan?.dtiRatio ?? 'N/A'}`);
+      addAuditLog(body.appId, 'agent', 'AGENT_COMPLETED', `Agent finished. CRDE: ${crdeDecision}, Risk: ${riskScore}, DBR: ${body.losData.dataKeuangan?.dtiRatio ?? 'N/A'}`);
     } catch {}
 
     // Extract summary from losData for the card
@@ -58,7 +58,7 @@ export async function handleInternal(req: Request, pathname: string): Promise<Re
     const slik = body.losData.slikOjk;
     const aml = body.losData.amlFraud;
 
-    // Parse DTI — could be string "35%" or number 0.35
+    // Parse DBR — could be string "35%" or number 0.35
     let dtiActual = 0;
     const dtiRaw = keuangan.dtiRatio ?? keuangan.dti_ratio ?? 0;
     if (typeof dtiRaw === 'string') {

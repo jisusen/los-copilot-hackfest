@@ -23,6 +23,8 @@ export type SkillMeta = {
   version: string;
   author: string;
   trigger: string;
+  product: string;
+  source: string;
   size: number;
   modified: string;
 };
@@ -78,6 +80,8 @@ export function listSkills(): SkillMeta[] {
         version: meta.version || "1.0.0",
         author: meta.author || "",
         trigger: meta.trigger || "always",
+        product: meta.product || "",
+        source: meta.source || "",
         size: stat.size,
         modified: stat.modified,
       };
@@ -104,6 +108,8 @@ export function getSkill(filename: string): SkillFile | null {
     version: meta.version || "1.0.0",
     author: meta.author || "",
     trigger: meta.trigger || "always",
+    product: meta.product || "",
+    source: meta.source || "",
     size: stat.size,
     modified: stat.modified,
     content,
@@ -137,27 +143,50 @@ export type MemoLocale = "en" | "id";
 
 const ID_MEMO_SKILL = "memo-bahasa-indonesia.md";
 
-export function getActiveSkillContent(locale: MemoLocale = "en"): string {
-  const skills = listSkills();
-  const activeSkills = skills.filter((s) => {
-    if (s.trigger === "always" || s.trigger === "crde") return true;
-    if (s.trigger === "memo") {
-      if (s.filename === ID_MEMO_SKILL) return locale === "id";
-      return true;
-    }
-    return false;
-  });
+/** Demo stand-in for user-uploaded PDF juknis per product. Prod: same content, extracted from PDF. */
+const PRODUCT_JUKINS: Record<string, string> = {
+  KTA: "kta-juknis.md",
+};
 
-  let content = "";
-  for (const skill of activeSkills) {
-    const file = getSkill(skill.filename);
-    if (file) {
-      const { body } = parseFrontmatter(file.content);
-      content += `\n\n--- Skill: ${file.name} (v${file.version}) ---\n${body.trim()}`;
-    }
+function appendSkillBody(
+  parts: string[],
+  filename: string,
+  heading: string,
+): void {
+  const file = getSkill(filename);
+  if (!file) return;
+  const { body } = parseFrontmatter(file.content);
+  parts.push(
+    `--- ${heading}: ${file.name} (v${file.version}) ---\n${body.trim()}`,
+  );
+}
+
+/** User-facing juknis for memo generation — not system SOP / CRDE reference. */
+export function getActiveSkillContent(
+  locale: MemoLocale = "en",
+  productType = "KTA",
+): string {
+  const product = productType.trim().toUpperCase() || "KTA";
+  const parts: string[] = [];
+
+  const juknisFile = PRODUCT_JUKINS[product];
+  if (juknisFile) {
+    appendSkillBody(parts, juknisFile, "Juknis");
+  } else {
+    const fallback = listSkills().find(
+      (s) =>
+        s.trigger === "memo" &&
+        s.filename !== ID_MEMO_SKILL &&
+        s.product.toUpperCase() === product,
+    );
+    if (fallback) appendSkillBody(parts, fallback.filename, "Juknis");
   }
 
-  return content.trim();
+  if (locale === "id") {
+    appendSkillBody(parts, ID_MEMO_SKILL, "Bahasa");
+  }
+
+  return parts.join("\n\n").trim();
 }
 
 export async function handleSkills(req: Request): Promise<Response | null> {
