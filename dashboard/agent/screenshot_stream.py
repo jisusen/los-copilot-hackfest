@@ -61,16 +61,23 @@ async def run(task: dict):
             # ── Login ──────────────────────────────────────────────────────────
             await page.goto(f"{los_url}/login")
             await page.wait_for_selector('[data-testid="input-username"]', timeout=10000)
+            
+            # Send screenshot immediately on login page
+            await send_screenshot(page, backend_url, task_id, app_id, "login-page")
+            
             await page.fill('[data-testid="input-username"]', creds["username"])
             await page.fill('[data-testid="input-password"]', creds["password"])
-            await send_screenshot(page, backend_url, task_id, app_id)
+            
+            # Send screenshot after filling credentials
+            await send_screenshot(page, backend_url, task_id, app_id, "login-filled")
+            
             await page.click('[data-testid="btn-login"]')
             await page.wait_for_url(f"{los_url}/loans**", timeout=15000)
 
             # ── Navigate to loan ───────────────────────────────────────────────
             await page.goto(f"{los_url}/loans/{app_id}")
             await asyncio.sleep(1)
-            await send_screenshot(page, backend_url, task_id, app_id)
+            await send_screenshot(page, backend_url, task_id, app_id, "loan-detail")
 
             # ── Click through each tab, streaming screenshots ──────────────────
             for tab_id in TABS:

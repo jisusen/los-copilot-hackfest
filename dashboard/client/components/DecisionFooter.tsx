@@ -2,7 +2,7 @@ import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../lib/api";
 import type { MemoDraft } from "../lib/types";
-import { CheckCircle, FileText, Loader2, X } from "lucide-react";
+import { CheckCircle, FileText, Loader2, X, ChevronLeft } from "lucide-react";
 
 export function DecisionFooter({ appId, debtorName, memo }: { appId: string; debtorName: string; memo: MemoDraft | null }) {
   const navigate = useNavigate();
@@ -31,6 +31,15 @@ export function DecisionFooter({ appId, debtorName, memo }: { appId: string; deb
       {/* Sticky footer bar */}
       <div className="sticky bottom-0 left-0 right-0 z-10 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-[0_-4px_20px_rgba(0,0,0,0.04)]">
         <div className="flex items-center gap-3 px-6 py-4">
+          <button
+            data-testid="btn-return-tasklist"
+            onClick={() => navigate("/")}
+            className="flex items-center gap-1.5 border border-slate-200 bg-white text-xs font-semibold text-slate-600 px-3 py-2 rounded-lg transition-colors hover:bg-slate-50 shrink-0"
+          >
+            <ChevronLeft className="w-3.5 h-3.5" />
+            Task List
+          </button>
+          <div className="w-px h-6 bg-slate-200 shrink-0" />
           <div className="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center shrink-0">
             <FileText className="w-4 h-4 text-red-500" />
           </div>

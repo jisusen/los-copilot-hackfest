@@ -113,14 +113,14 @@ function UserDropdown() {
         onClick={() => setOpen(!open)}
         className="flex items-center gap-3 pl-2.5 pr-3 py-2 rounded-xl hover:bg-slate-100 transition-colors"
       >
-        <div className="w-9 h-9 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-sm">
-          <span className="text-white text-sm font-bold">{initial}</span>
+        <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-sm">
+          <span className="text-white text-base font-bold">{initial}</span>
         </div>
         <div className="hidden sm:block text-left">
-          <div className="text-sm font-semibold text-slate-800 leading-tight">
+          <div className="text-[15px] font-semibold text-slate-800 leading-tight uppercase">
             {displayName}
           </div>
-          <div className="text-[11px] text-slate-400 font-medium">
+          <div className="text-[12px] text-slate-400 font-medium">
             Credit Analyst
           </div>
         </div>

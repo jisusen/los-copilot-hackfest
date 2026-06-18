@@ -135,12 +135,21 @@ export default function HasilPanel({
               onClick={() => navigate(`/review/${appId}`)}
               className="group px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-all duration-200"
             >
-              {/* Row 1: App ID + Review */}
+              {/* Row 1: App ID + Actions */}
               <div className="flex items-center justify-between mb-1">
                 <span className="text-[10px] font-mono text-gray-400">{appId}</span>
-                <span className="text-[10px] font-semibold text-red-500 group-hover:translate-x-0.5 transition-transform">
-                  Review →
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleReset}
+                    className="text-[10px] font-semibold text-gray-400 hover:text-orange-500 transition-colors"
+                    title="Reset to Tasklist"
+                  >
+                    ↺ Reset
+                  </button>
+                  <span className="text-[10px] font-semibold text-red-500 group-hover:translate-x-0.5 transition-transform">
+                    Review →
+                  </span>
+                </div>
               </div>
 
               {/* Row 2: Debtor name */}
