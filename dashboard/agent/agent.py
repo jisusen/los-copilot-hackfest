@@ -208,6 +208,23 @@ async def report_progress(
     )
 
 
+async def report_usage(
+    backend_url: str, app_id: str, component: str, model: str, input_tokens: int, output_tokens: int
+):
+    """Report LLM token usage to the dashboard backend."""
+    await _http_post_with_retry(
+        f"{backend_url}/api/internal/usage",
+        {
+            "appId": app_id,
+            "component": component,
+            "model": model,
+            "inputTokens": input_tokens,
+            "outputTokens": output_tokens,
+        },
+        timeout=5,
+    )
+
+
 async def report_complete(
     backend_url: str, task_id: str, app_id: str, los_data: dict, memo_draft: dict
 ):
@@ -569,8 +586,8 @@ def build_memo_system() -> str:
         f"{MEMO_SKILL}"
     )
 
-async def _call_llm(system: str, prompt: str) -> str:
-    """Call the configured LLM and return raw text response."""
+async def _call_llm(system: str, prompt: str) -> tuple[str, int, int]:
+    """Call the configured LLM and return (text, input_tokens, output_tokens)."""
     if PROVIDER == "gemini":
         client = genai.Client(api_key=os.environ["GEMINI_API_KEY"])
         response = await client.aio.models.generate_content(
@@ -578,7 +595,9 @@ async def _call_llm(system: str, prompt: str) -> str:
             contents=prompt,
             config={"system_instruction": system},
         )
-        return response.text.strip()
+        input_tokens = response.usage_metadata.prompt_token_count if response.usage_metadata else 0
+        output_tokens = response.usage_metadata.candidates_token_count if response.usage_metadata else 0
+        return response.text.strip(), input_tokens, output_tokens
     elif PROVIDER == "custom" and CUSTOM_ENDPOINT:
         client = AsyncOpenAI(
             base_url=CUSTOM_ENDPOINT, api_key=CUSTOM_API_KEY or "dummy"
@@ -591,7 +610,9 @@ async def _call_llm(system: str, prompt: str) -> str:
                 {"role": "user", "content": prompt},
             ],
         )
-        return response.choices[0].message.content.strip()
+        input_tokens = response.usage.prompt_tokens if response.usage else 0
+        output_tokens = response.usage.completion_tokens if response.usage else 0
+        return response.choices[0].message.content.strip(), input_tokens, output_tokens
     else:
         client = anthropic.AsyncAnthropic()
         response = await client.messages.create(
@@ -600,7 +621,9 @@ async def _call_llm(system: str, prompt: str) -> str:
             system=system,
             messages=[{"role": "user", "content": prompt}],
         )
-        return response.content[0].text.strip()
+        input_tokens = response.usage.input_tokens if response.usage else 0
+        output_tokens = response.usage.output_tokens if response.usage else 0
+        return response.content[0].text.strip(), input_tokens, output_tokens
 
 
 def _strip_markdown_fences(text: str) -> str:
@@ -643,15 +666,20 @@ Return exactly these 9 keys:
 """
 
 
-async def generate_memo(extracted_data: dict, app_id: str) -> dict:
+async def generate_memo(extracted_data: dict, app_id: str, backend_url: str = "") -> dict:
     prompt = f"LOS data for application {app_id}:\n\n{json.dumps(extracted_data, ensure_ascii=False, indent=2)}"
     system = build_memo_system()
     model_name = ANTHROPIC_MODEL if PROVIDER == "anthropic" else GEMINI_MODEL if PROVIDER == "gemini" else CUSTOM_MODEL
     print(f"[{app_id}] Generating memo via {PROVIDER}/{model_name} (system={len(system)} chars, prompt={len(prompt)} chars)")
 
+    total_input = 0
+    total_output = 0
+
     # Attempt 1: full prompt
     try:
-        raw = await _call_llm(system, prompt)
+        raw, input_tok, output_tok = await _call_llm(system, prompt)
+        total_input += input_tok
+        total_output += output_tok
     except Exception as e:
         print(f"[{app_id}] ✗ LLM API call failed: {type(e).__name__}: {e}", file=sys.stderr)
         raise
@@ -659,6 +687,9 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
     raw = _strip_markdown_fences(raw)
     result = _try_parse_json(raw)
     if result:
+        # Report usage for memo generation
+        if backend_url and (total_input > 0 or total_output > 0):
+            await report_usage(backend_url, app_id, "memo", model_name, total_input, total_output)
         return result
 
     print(f"[{app_id}] ⚠ First attempt returned non-JSON (first 300 chars): {raw[:300]}", file=sys.stderr)
@@ -666,15 +697,24 @@ async def generate_memo(extracted_data: dict, app_id: str) -> dict:
     # Attempt 2: retry with simplified system prompt
     retry_prompt = f"Convert this loan data to JSON memo:\n{json.dumps(extracted_data, ensure_ascii=False)}"
     try:
-        raw2 = await _call_llm(RETRY_SYSTEM, retry_prompt)
+        raw2, input_tok2, output_tok2 = await _call_llm(RETRY_SYSTEM, retry_prompt)
+        total_input += input_tok2
+        total_output += output_tok2
         raw2 = _strip_markdown_fences(raw2)
         result2 = _try_parse_json(raw2)
         if result2:
             print(f"[{app_id}] ✓ Retry succeeded", file=sys.stderr)
+            # Report usage for memo generation (including retry)
+            if backend_url and (total_input > 0 or total_output > 0):
+                await report_usage(backend_url, app_id, "memo", model_name, total_input, total_output)
             return result2
         print(f"[{app_id}] ✗ Retry also returned non-JSON (first 300 chars): {raw2[:300]}", file=sys.stderr)
     except Exception as e:
         print(f"[{app_id}] ✗ Retry LLM call failed: {type(e).__name__}: {e}", file=sys.stderr)
+
+    # Report usage even on failure
+    if backend_url and (total_input > 0 or total_output > 0):
+        await report_usage(backend_url, app_id, "memo", model_name, total_input, total_output)
 
     # Fallback: dump raw data
     print(f"[{app_id}] ✗ Memo generation failed — using raw data fallback", file=sys.stderr)
@@ -1271,7 +1311,7 @@ Navigate loan {app_id} at Bank CIMB Niaga LOS — visual review only, no extract
         stop_memo = asyncio.Event()
         memo_task = asyncio.create_task(memo_progress_heartbeat(progress, stop_memo))
 
-        memo_draft = await generate_memo(extracted_data, app_id)
+        memo_draft = await generate_memo(extracted_data, app_id, backend_url)
         stop_memo.set()
         memo_task.cancel()
         try:

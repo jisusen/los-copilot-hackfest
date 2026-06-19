@@ -4,6 +4,9 @@ import { randomUUID } from 'crypto';
 const USERS: Record<string, { password: string; role: string }> = {
   analyst01: { password: 'bms2025', role: 'analyst' },
   analyst02: { password: 'bms2025', role: 'analyst' },
+  analyst03: { password: 'bms2025', role: 'analyst' },
+  analyst04: { password: 'bms2025', role: 'analyst' },
+  analyst05: { password: 'bms2025', role: 'analyst' },
   supervisor: { password: 'bms2025', role: 'supervisor' },
 };
 

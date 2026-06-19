@@ -21,6 +21,15 @@ export function formatDateTime(iso: string): string {
   return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 }
 
+export function formatDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+export function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
 /** Color mapping for CRDE decisions — supports both Indonesian and English keys. */
 export const CRDE_COLOR: Record<string, string> = {
   // Indonesian (LOS system values)

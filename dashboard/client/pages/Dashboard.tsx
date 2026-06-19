@@ -12,7 +12,8 @@ import {
 } from "recharts";
 
 import { Layout } from '../components/Layout';
-import { apiFetch, formatRp } from '../lib/api';
+import { apiFetch } from '../lib/api';
+import { formatRp } from '../lib/format';
 
 type TrendEntry = { month: string; [key: string]: string | number };
 type WeeklyEntry = { day: string; apps: number };

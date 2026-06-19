@@ -56,21 +56,26 @@ export async function handleBatch(req: Request): Promise<Response> {
     });
   }
 
-  // Spawn agents (don't await — let them run in background)
-  for (const task of tasks) {
-    if (useMock) {
-      spawnMockAgent(task);
-    } else {
-      spawnAgent(task).catch((err) => {
-        console.error(`Failed to spawn agent for ${task.appId}:`, err);
-        wsManager.broadcast({
-          type: "agent:error",
-          appId: task.appId,
-          error: String(err),
-          retryable: true,
+  // Spawn agents — each gets a unique user (analyst01-05) for parallel sessions
+  // User rotation happens in createTask() → getLosConfig()
+  for (let i = 0; i < tasks.length; i++) {
+    const task = tasks[i];
+    // Small stagger (300ms) to avoid simultaneous process spawn overhead
+    setTimeout(() => {
+      if (useMock) {
+        spawnMockAgent(task);
+      } else {
+        spawnAgent(task).catch((err) => {
+          console.error(`Failed to spawn agent for ${task.appId}:`, err);
+          wsManager.broadcast({
+            type: "agent:error",
+            appId: task.appId,
+            error: String(err),
+            retryable: true,
+          });
         });
-      });
-    }
+      }
+    }, i * 300);
   }
 
   return Response.json({

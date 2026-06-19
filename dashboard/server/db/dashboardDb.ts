@@ -66,6 +66,24 @@ function initSchema(db: Database) {
       completed_at TEXT NOT NULL
     );
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS llm_usage (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      app_id TEXT NOT NULL,
+      component TEXT NOT NULL,
+      model TEXT NOT NULL,
+      input_tokens INTEGER NOT NULL,
+      output_tokens INTEGER NOT NULL,
+      input_cost REAL NOT NULL,
+      output_cost REAL NOT NULL,
+      total_cost REAL NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS idx_llm_usage_app_id ON llm_usage(app_id);
+    CREATE INDEX IF NOT EXISTS idx_llm_usage_component ON llm_usage(component);
+    CREATE INDEX IF NOT EXISTS idx_llm_usage_created_at ON llm_usage(created_at);
+  `);
 }
 
 export function saveDecision(
@@ -162,4 +180,160 @@ export function getAllAgentSessions(): Array<{ appId: string; losData: unknown; 
 export function deleteAgentSession(appId: string): void {
   const db = getDashboardDb();
   db.query('DELETE FROM agent_sessions WHERE app_id = ?').run(appId);
+}
+
+// ── LLM Usage Tracking ──────────────────────────────────────────────────────
+
+// Gemini pricing ($/MTok)
+const GEMINI_PRICING = {
+  'gemini-3.1-pro': { input: 1.25, output: 5.00 },
+  'gemini-2.5-pro': { input: 1.25, output: 5.00 },
+  'gemini-2.5-flash': { input: 0.15, output: 0.60 },
+  'gemini-2.0-flash': { input: 0.10, output: 0.40 },
+  'gemini-1.5-pro': { input: 1.25, output: 5.00 },
+  'gemini-1.5-flash': { input: 0.075, output: 0.30 },
+} as Record<string, { input: number; output: number }>;
+
+export function getModelPricing(model: string): { input: number; output: number } {
+  // Match partial model names
+  const lower = model.toLowerCase();
+  for (const [key, pricing] of Object.entries(GEMINI_PRICING)) {
+    if (lower.includes(key)) return pricing;
+  }
+  // Default Gemini Flash pricing
+  return { input: 0.10, output: 0.40 };
+}
+
+export function recordLlmUsage(
+  appId: string,
+  component: 'browse' | 'memo' | 'chat',
+  model: string,
+  inputTokens: number,
+  outputTokens: number
+): void {
+  const pricing = getModelPricing(model);
+  const inputCost = (inputTokens / 1_000_000) * pricing.input;
+  const outputCost = (outputTokens / 1_000_000) * pricing.output;
+  const totalCost = inputCost + outputCost;
+
+  const db = getDashboardDb();
+  db.query(
+    'INSERT INTO llm_usage (app_id, component, model, input_tokens, output_tokens, input_cost, output_cost, total_cost, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+  ).run(appId, component, model, inputTokens, outputTokens, inputCost, outputCost, totalCost, new Date().toISOString());
+}
+
+export type UsageSummary = {
+  component: string;
+  model: string;
+  total_calls: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_input_cost: number;
+  total_output_cost: number;
+  total_cost: number;
+};
+
+export type DailyUsage = {
+  date: string;
+  total_cost: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  calls: number;
+};
+
+export function getUsageSummary(): UsageSummary[] {
+  const db = getDashboardDb();
+  return db.query(`
+    SELECT 
+      component,
+      model,
+      COUNT(*) as total_calls,
+      SUM(input_tokens) as total_input_tokens,
+      SUM(output_tokens) as total_output_tokens,
+      SUM(input_cost) as total_input_cost,
+      SUM(output_cost) as total_output_cost,
+      SUM(total_cost) as total_cost
+    FROM llm_usage
+    GROUP BY component, model
+    ORDER BY total_cost DESC
+  `).all() as UsageSummary[];
+}
+
+export function getUsageByApp(appId: string): UsageSummary[] {
+  const db = getDashboardDb();
+  return db.query(`
+    SELECT 
+      component,
+      model,
+      COUNT(*) as total_calls,
+      SUM(input_tokens) as total_input_tokens,
+      SUM(output_tokens) as total_output_tokens,
+      SUM(input_cost) as total_input_cost,
+      SUM(output_cost) as total_output_cost,
+      SUM(total_cost) as total_cost
+    FROM llm_usage
+    WHERE app_id = ?
+    GROUP BY component, model
+    ORDER BY total_cost DESC
+  `).all(appId) as UsageSummary[];
+}
+
+export function getDailyUsage(days: number = 30): DailyUsage[] {
+  const db = getDashboardDb();
+  return db.query(`
+    SELECT 
+      DATE(created_at) as date,
+      SUM(total_cost) as total_cost,
+      SUM(input_tokens) as total_input_tokens,
+      SUM(output_tokens) as total_output_tokens,
+      COUNT(*) as calls
+    FROM llm_usage
+    WHERE created_at >= DATE('now', ?)
+    GROUP BY DATE(created_at)
+    ORDER BY date DESC
+  `).all(`-${days} days`) as DailyUsage[];
+}
+
+export function getTotalUsage(): {
+  total_cost: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  total_calls: number;
+  by_component: Record<string, number>;
+} {
+  const db = getDashboardDb();
+  const row = db.query(`
+    SELECT 
+      SUM(total_cost) as total_cost,
+      SUM(input_tokens) as total_input_tokens,
+      SUM(output_tokens) as total_output_tokens,
+      COUNT(*) as total_calls
+    FROM llm_usage
+  `).get() as any;
+
+  const components = db.query(`
+    SELECT 
+      component,
+      SUM(total_cost) as cost
+    FROM llm_usage
+    GROUP BY component
+  `).all() as Array<{ component: string; cost: number }>;
+
+  const byComponent: Record<string, number> = {};
+  for (const c of components) {
+    byComponent[c.component] = c.cost;
+  }
+
+  return {
+    total_cost: row?.total_cost ?? 0,
+    total_input_tokens: row?.total_input_tokens ?? 0,
+    total_output_tokens: row?.total_output_tokens ?? 0,
+    total_calls: row?.total_calls ?? 0,
+    by_component: byComponent,
+  };
+}
+
+export function clearUsageData(): void {
+  const db = getDashboardDb();
+  db.query('DELETE FROM llm_usage').run();
 }

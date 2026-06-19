@@ -18,6 +18,10 @@ export type AgentTask = {
 
 const activeTasks = new Map<string, { appId: string; startedAt: number }>();
 
+// Limit concurrent screenshot sidecars (5 users = 5 browsers OK)
+let activeScreenshotCount = 0;
+const MAX_SCREENSHOT_SIDECARS = 5;
+
 export function registerTask(taskId: string, appId: string) {
   activeTasks.set(taskId, { appId, startedAt: Date.now() });
 }
@@ -50,12 +54,27 @@ const VENV_PYTHON = join(
     ? "../../agent/.venv/Scripts/python.exe"
     : "../../agent/.venv/bin/python",
 );
+// 5 agent users for parallel browser sessions
+const AGENT_USERS = [
+  "analyst01",
+  "analyst02",
+  "analyst03",
+  "analyst04",
+  "analyst05",
+];
+let userRotationIndex = 0;
+
 function getLosConfig() {
   const s = getSettings();
+  
+  // Rotate through agent users for parallel sessions
+  const username = AGENT_USERS[userRotationIndex % AGENT_USERS.length];
+  userRotationIndex++;
+  
   return {
     losUrl: s.losUrl ?? "http://localhost:3333",
     backendUrl: `http://localhost:${process.env.PORT ?? "3003"}`,
-    losUsername: s.losUsername ?? "analyst01",
+    losUsername: username,
     losPassword: s.losPassword ?? "bms2025",
     losLoginPath: s.losLoginPath ?? "/login",
   };
@@ -86,7 +105,7 @@ function resolveProviderApiKeys(s: ReturnType<typeof getSettings>) {
 export async function spawnAgent(task: AgentTask): Promise<void> {
   const cfg = getLosConfig();
   const taskJson = JSON.stringify(task);
-  console.log(`[Agent] Spawning for ${task.appId} (task: ${task.taskId})`);
+  console.log(`[Agent] Spawning for ${task.appId} (task: ${task.taskId}, user: ${cfg.losUsername})`);
 
   const s = getSettings();
   const keys = resolveProviderApiKeys(s);
@@ -541,13 +560,20 @@ export function spawnMockAgent(task: AgentTask): void {
     "../../agent/screenshot_stream.py",
   );
   let screenshotProc: ReturnType<typeof Bun.spawn> | null = null;
-  if (existsSync(VENV_PYTHON) && existsSync(SCREENSHOT_SCRIPT)) {
+  
+  // Only spawn screenshot sidecar if under concurrency limit
+  if (existsSync(VENV_PYTHON) && existsSync(SCREENSHOT_SCRIPT) && activeScreenshotCount < MAX_SCREENSHOT_SIDECARS) {
+    activeScreenshotCount++;
+    // Get a separate user for screenshot sidecar
+    const screenshotUser = AGENT_USERS[userRotationIndex % AGENT_USERS.length];
+    userRotationIndex++;
+    
     const taskJson = JSON.stringify({
       taskId: task.taskId,
       appId: task.appId,
       losUrl: cfg.losUrl,
       backendUrl: cfg.backendUrl,
-      credentials: { username: cfg.losUsername, password: cfg.losPassword },
+      credentials: { username: screenshotUser, password: cfg.losPassword },
     });
     screenshotProc = Bun.spawn({
       cmd: [VENV_PYTHON, SCREENSHOT_SCRIPT, "--task", taskJson],
@@ -555,7 +581,19 @@ export function spawnMockAgent(task: AgentTask): void {
       stderr: "ignore",
       env: { ...process.env, PYTHONIOENCODING: "utf-8" },
     });
-    console.log(`[MockAgent] Screenshot sidecar started for ${task.appId}`);
+    
+    // Safety: decrement counter if sidecar crashes
+    screenshotProc.exited.then(() => {
+      if (activeScreenshotCount > 0) activeScreenshotCount--;
+    }).catch(() => {
+      if (activeScreenshotCount > 0) activeScreenshotCount--;
+    });
+    
+    console.log(`[MockAgent] Screenshot sidecar started for ${task.appId} (active: ${activeScreenshotCount})`);
+  } else if (activeScreenshotCount >= MAX_SCREENSHOT_SIDECARS) {
+    console.log(
+      `[MockAgent] Screenshot sidecar skipped for ${task.appId} — limit reached (${activeScreenshotCount}/${MAX_SCREENSHOT_SIDECARS})`,
+    );
   } else {
     console.log(
       `[MockAgent] No Python venv found — screenshots unavailable for ${task.appId}`,
@@ -583,6 +621,7 @@ export function spawnMockAgent(task: AgentTask): void {
         // Kill screenshot sidecar now that we're done
         try {
           screenshotProc?.kill();
+          if (screenshotProc) activeScreenshotCount--;
         } catch {}
 
         sessionStore.set(task.appId, {

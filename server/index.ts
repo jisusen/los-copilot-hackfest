@@ -132,4 +132,5 @@ const server = Bun.serve({
 
 console.log(`\n🏦 Bank CIMB Niaga — LOS`);
 console.log(`🚀 Server running at http://localhost:${PORT}`);
-console.log(`\nCredentials: analyst01 / analyst02 / supervisor — password: bms2025\n`);
+console.log(`\nCredentials: analyst01-05 / supervisor — password: bms2025`);
+console.log(`   5 parallel agent users available for concurrent browser sessions\n`);

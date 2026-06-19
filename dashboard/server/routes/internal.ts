@@ -1,7 +1,7 @@
 import { sessionStore } from '../services/sessionStore';
 import { wsManager } from '../services/wsManager';
 import { getElapsedMs } from '../services/agentManager';
-import { addAuditLog } from '../db/dashboardDb';
+import { addAuditLog, recordLlmUsage } from '../db/dashboardDb';
 import type { LosData, MemoDraft } from '../services/sessionStore';
 
 export async function handleInternal(req: Request, pathname: string): Promise<Response | null> {
@@ -111,6 +111,22 @@ export async function handleInternal(req: Request, pathname: string): Promise<Re
       error: body.error,
       retryable: body.retryable,
     });
+
+    return Response.json({ ok: true });
+  }
+
+  if (pathname === '/api/internal/usage') {
+    const body = await req.json() as {
+      appId: string; component: string; model: string;
+      inputTokens: number; outputTokens: number;
+    };
+
+    try {
+      recordLlmUsage(body.appId, body.component as any, body.model, body.inputTokens, body.outputTokens);
+      console.log(`[Usage] ${body.appId} | ${body.component} | ${body.model} | in:${body.inputTokens} out:${body.outputTokens}`);
+    } catch (e) {
+      console.error('[Usage] Failed to record:', e);
+    }
 
     return Response.json({ ok: true });
   }

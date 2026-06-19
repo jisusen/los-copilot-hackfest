@@ -220,7 +220,6 @@ export function LoanQueue({
                 </div>
               </div>
             </div>
-          </div>
         );
       })}
     </div>

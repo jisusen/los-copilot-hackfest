@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatRp, formatDate, formatPercent } from '../lib/api';
+import { formatRp, formatDate, formatPercent } from '../lib/format';
 
 type LoanDetail = {
   application: {

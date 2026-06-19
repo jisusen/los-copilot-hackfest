@@ -4,7 +4,8 @@ import { apiFetch } from "../lib/api";
 import { useToast } from "../components/Toast";
 import { SkeletonBlock } from "../components/Skeleton";
 import { SkillsTab } from "../components/SkillsTab";
-import { Settings, FileText } from "lucide-react";
+import { Settings, FileText, BarChart3 } from "lucide-react";
+import { UsageTab } from "../components/UsageTab";
 
 type SettingsData = {
   llmProvider: string;
@@ -138,6 +139,7 @@ function Field({
   type = "text",
   placeholder = "",
   password = false,
+  disabled = false,
 }: {
   label: string;
   value: string;
@@ -145,6 +147,7 @@ function Field({
   type?: string;
   placeholder?: string;
   password?: boolean;
+  disabled?: boolean;
 }) {
   const [visible, setVisible] = useState(false);
   return (
@@ -158,7 +161,8 @@ function Field({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
-          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+          disabled={disabled}
+          className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 bg-white outline-none transition-colors focus:border-amber-400 focus:ring-2 focus:ring-amber-100 disabled:bg-slate-50 disabled:text-slate-500 disabled:cursor-not-allowed"
         />
         {password && (
           <button
@@ -550,7 +554,7 @@ export function SettingsPage() {
     { value: "api", label: "API only (fastest — skip browser navigation)" },
   ];
 
-  const [activeTab, setActiveTab] = useState<"config" | "skills">("skills");
+  const [activeTab, setActiveTab] = useState<"skills" | "config" | "usage">("skills");
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -569,6 +573,13 @@ export function SettingsPage() {
           >
             <Settings className="w-4 h-4" />
             Configuration
+          </button>
+          <button
+            onClick={() => setActiveTab("usage")}
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === "usage" ? "border-amber-500 text-amber-700" : "border-transparent text-slate-500 hover:text-slate-700"}`}
+          >
+            <BarChart3 className="w-4 h-4" />
+            Usage
           </button>
         </div>
       </div>
@@ -635,11 +646,17 @@ export function SettingsPage() {
                       onChange={(v) => update("losUrl", v)}
                       placeholder="http://localhost:3333"
                     />
-                    <Field
-                      label="Username"
-                      value={settings.losUsername}
-                      onChange={(v) => update("losUsername", v)}
-                    />
+                    <div className="space-y-1">
+                      <Field
+                        label="Username (auto-rotates: analyst01-05)"
+                        value={settings.losUsername}
+                        onChange={(v) => update("losUsername", v)}
+                        disabled
+                      />
+                      <p className="text-[10px] text-slate-400">
+                        Agent automatically rotates through analyst01-05 for parallel sessions
+                      </p>
+                    </div>
                     <Field
                       label="Password"
                       value={settings.losPassword}
@@ -691,6 +708,8 @@ export function SettingsPage() {
               )}
             </div>
           </div>
+        ) : activeTab === "usage" ? (
+          <UsageTab />
         ) : (
           <SkillsTab />
         )}

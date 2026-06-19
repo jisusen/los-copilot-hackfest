@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { sessionStore } from "./sessionStore";
 import { getSettings } from "../routes/settings";
 import { getActiveSkillContent } from "../routes/skills";
+import { recordLlmUsage } from "../db/dashboardDb";
 
 export type Message = { role: "user" | "assistant"; content: string };
 
@@ -129,6 +130,7 @@ export async function* streamChat(
   appId: string,
   history: Message[],
   userMessage: string,
+  component: 'browse' | 'memo' | 'chat' = 'chat',
 ): AsyncGenerator<string> {
   const context = sessionStore.getChatContext(appId);
 
@@ -142,7 +144,24 @@ export async function* streamChat(
 
   if (cfg.provider === "gemini" && cfg.apiKey) {
     const gemini = new GoogleGenAI({ apiKey: cfg.apiKey });
-    yield* filterStream(streamGemini(gemini, cfg.geminiModel, systemPrompt, history, userMessage));
+    let totalInput = 0;
+    let totalOutput = 0;
+    
+    for await (const chunk of filterStream(streamGemini(gemini, cfg.geminiModel, systemPrompt, history, userMessage, (input, output) => {
+      totalInput = input;
+      totalOutput = output;
+    }))) {
+      yield chunk;
+    }
+    
+    // Record usage after stream completes
+    if (totalInput > 0 || totalOutput > 0) {
+      try {
+        recordLlmUsage(appId, component, cfg.geminiModel, totalInput, totalOutput);
+      } catch (e) {
+        console.error('[LLM] Failed to record usage:', e);
+      }
+    }
   } else if (cfg.provider === "custom" && cfg.customEndpoint) {
     yield* filterStream(streamCustomOpenAI(cfg.customEndpoint, cfg.customModel, cfg.apiKey, systemPrompt, history, userMessage));
   } else if (cfg.apiKey) {
@@ -186,6 +205,7 @@ async function* streamGemini(
   system: string,
   history: Message[],
   userMessage: string,
+  onUsage?: (inputTokens: number, outputTokens: number) => void,
 ): AsyncGenerator<string> {
   const contents = [
     ...history.map((m) => ({
@@ -201,9 +221,23 @@ async function* streamGemini(
     contents,
   });
 
+  let totalInput = 0;
+  let totalOutput = 0;
+
   for await (const chunk of result) {
+    // Capture usage metadata from Gemini
+    if (chunk.usageMetadata) {
+      totalInput = chunk.usageMetadata.promptTokenCount ?? 0;
+      totalOutput = chunk.usageMetadata.candidatesTokenCount ?? 0;
+    }
+    
     const text = chunk.candidates?.[0]?.content?.parts?.[0]?.text;
     if (text) yield text;
+  }
+
+  // Report final usage after stream completes
+  if (onUsage && (totalInput > 0 || totalOutput > 0)) {
+    onUsage(totalInput, totalOutput);
   }
 }
 

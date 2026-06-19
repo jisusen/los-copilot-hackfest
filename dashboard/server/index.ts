@@ -11,6 +11,7 @@ import { handleSkills } from "./routes/skills";
 import { handleAuth } from "./routes/auth";
 import { handleAudit } from "./routes/audit";
 import { handleNotes } from "./routes/notes";
+import { handleUsage } from "./routes/usage";
 import autoprefixer from 'autoprefixer';
 import cssLoader from 'bun-css-loader';
 import tailwindcss from 'tailwindcss';
@@ -168,6 +169,11 @@ async function handleRequest(req: Request): Promise<Response> {
 
   if (pathname.startsWith("/api/notes/") && req.method === "POST") {
     const res = await handleNotes(req, pathname);
+    if (res) return withCors(res, req);
+  }
+
+  if (pathname.startsWith("/api/usage")) {
+    const res = await handleUsage(req, pathname);
     if (res) return withCors(res, req);
   }
 

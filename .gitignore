@@ -12,4 +12,14 @@ dist
 __pycache__
 */__pycache__
 data/*.db
+data/*.db-shm
+data/*.db-wal
 .settings.json
+*.log
+server.err
+dashboard/server.err
+_fix_*.py
+_patch_*.py
+dashboard/agent/_patch_*.py
+dashboard/agent/*test*
+terminals/
