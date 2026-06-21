@@ -346,17 +346,20 @@ export function CreditUnderwritingDashboard({
     let numVal = 0;
     if (typeof raw === "number") {
       numVal = raw;
-      if (f.fmt === "curr") v = `Rp ${raw.toLocaleString("id-ID")}`;
+      const display = raw < 100000 ? raw * 1000000 : raw;
+      if (f.fmt === "curr") v = `Rp ${Math.round(display).toLocaleString("id-ID")}`;
       else if (f.fmt === "pct") v = `${(raw > 1 ? raw : raw * 100).toFixed(1)}%`;
       else v = String(raw);
     } else if (typeof raw === "string") {
       const cleaned = raw.replace(/[^0-9,.-]/g, "").replace(",", ".");
       numVal = parseFloat(cleaned) || 0;
+      const display = numVal < 100000 ? numVal * 1000000 : numVal;
       if (f.fmt === "pct") {
         v = raw.includes("%") ? raw : `${raw}%`;
       } else if (f.fmt === "curr") {
         const n = parseFloat(cleaned.replace(/[^0-9.-]/g, ""));
-        v = isNaN(n) ? raw : `Rp ${n.toLocaleString("id-ID")}`;
+        const displayN = isNaN(n) ? 0 : (n < 100000 ? n * 1000000 : n);
+        v = isNaN(n) ? raw : `Rp ${Math.round(displayN).toLocaleString("id-ID")}`;
       } else {
         v = raw;
       }
