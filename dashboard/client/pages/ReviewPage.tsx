@@ -127,7 +127,7 @@ export function ReviewPage() {
     dtiActual = dtiRaw > 1 ? dtiRaw / 100 : dtiRaw;
   }
 
-  const slikKol = Number(slik?.kolektibilitas ?? slik?.collectibility ?? 1);
+  const slikKol = Number(String(slik?.kolektibilitas ?? slik?.collectibility ?? "1").replace(/\D/g, "")) || 1;
   const amlClear = !(aml?.pepStatus || aml?.pep_status || aml?.dttotMatch || aml?.dttot_match);
 
   const agentResult: AgentResult | undefined = crde
