@@ -76,6 +76,7 @@ function AccordionBlock({
   children,
   defaultOpen = false,
   copyContent,
+  allOpen = false,
 }: {
   icon?: React.ElementType;
   number: string;
@@ -83,29 +84,34 @@ function AccordionBlock({
   children: React.ReactNode;
   defaultOpen?: boolean;
   copyContent?: string;
+  allOpen?: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const toast = useToast();
+  const isOpen = allOpen || open;
   return (
     <div className="border-b border-gray-100 last:border-b-0">
       <div className="flex items-center py-2.5 gap-2">
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="flex-1 flex items-center gap-2.5 text-left group"
-        >
+        <div className="flex-1 flex items-center gap-2.5">
           {Icon && (
-            <div className="w-7 h-7 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 group-hover:bg-gray-100 transition-colors border border-gray-100">
+            <div className="w-7 h-7 rounded-xl bg-gray-50 flex items-center justify-center shrink-0 border border-gray-100">
               <Icon className="w-3.5 h-3.5 text-gray-500" />
             </div>
           )}
           <span className="text-[11px] font-semibold text-gray-300 shrink-0">{number}</span>
           <span className="text-sm font-semibold text-gray-800">{title}</span>
-          <div className="flex-1" />
-          <div className={`transition-transform duration-200 ${open ? 'rotate-0' : '-rotate-90'}`}>
-            <ChevronDown className="w-4 h-4 text-gray-400" />
-          </div>
-        </button>
+        </div>
+        {!allOpen && (
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            className="text-gray-400 hover:text-gray-600 p-1 rounded-lg transition-colors"
+          >
+            <div className={`transition-transform duration-200 ${isOpen ? 'rotate-0' : '-rotate-90'}`}>
+              <ChevronDown className="w-4 h-4" />
+            </div>
+          </button>
+        )}
         {copyContent && (
           <button
             type="button"
@@ -119,7 +125,7 @@ function AccordionBlock({
           </button>
         )}
       </div>
-      {open && <div className="pb-5">{children}</div>}
+      {isOpen && <div className="pb-5">{children}</div>}
     </div>
   );
 }
@@ -201,6 +207,7 @@ interface CreditUnderwritingDashboardProps {
   dataKeuangan?: Record<string, string | number>;
   slikOjk?: Record<string, string | number>;
   amlFraud?: Record<string, boolean | string>;
+  allOpen?: boolean;
 }
 
 const PROFILE_FIELDS: { key: string; label: string; aliases: string[]; mask?: (v: string) => string }[] = [
@@ -232,6 +239,7 @@ export function CreditUnderwritingDashboard({
   dataKeuangan = {},
   slikOjk = {},
   amlFraud = {},
+  allOpen = false,
 }: CreditUnderwritingDashboardProps) {
   const toast = useToast();
   const decisionNorm = (d: string | undefined) => {
@@ -506,7 +514,7 @@ export function CreditUnderwritingDashboard({
           <div className="text-xs text-gray-600 leading-relaxed mb-6">{renderInline(memo.section3_keuangan)}</div>
 
           {/* 04 SLIK OJK */}
-          <AccordionBlock icon={ShieldAlert} number="04" title="SLIK OJK Results" copyContent={memo.section4_slik}>
+          <AccordionBlock icon={ShieldAlert} number="04" title="SLIK OJK Results" copyContent={memo.section4_slik} allOpen={allOpen}>
             <div className="flex items-center gap-2 mb-3">
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${slikBadgeClass}`}>{slikLabel}</span>
               {slikKol > 0 && (
@@ -519,7 +527,7 @@ export function CreditUnderwritingDashboard({
           </AccordionBlock>
 
           {/* 05 AML & Fraud */}
-          <AccordionBlock icon={Ban} number="05" title="AML & Fraud Screening" copyContent={memo.section5_aml}>
+          <AccordionBlock icon={Ban} number="05" title="AML & Fraud Screening" copyContent={memo.section5_aml} allOpen={allOpen}>
             <div className="flex items-center gap-2 mb-3">
               <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg ${amlBadgeClass}`}>
                 {amlFlagged ? "FLAGGED" : "CLEAR"}
@@ -532,12 +540,12 @@ export function CreditUnderwritingDashboard({
           </AccordionBlock>
 
           {/* 06 Collateral */}
-          <AccordionBlock icon={Building2} number="06" title="Collateral" copyContent={memo.section6_agunan}>
+          <AccordionBlock icon={Building2} number="06" title="Collateral" copyContent={memo.section6_agunan} allOpen={allOpen}>
             <div className="text-xs text-gray-600 leading-relaxed">{renderText(memo.section6_agunan)}</div>
           </AccordionBlock>
 
           {/* 07 CRDE Decision */}
-          <AccordionBlock icon={FileCheck} number="07" title="CRDE Decision" copyContent={memo.section7_crde}>
+          <AccordionBlock icon={FileCheck} number="07" title="CRDE Decision" copyContent={memo.section7_crde} allOpen={allOpen}>
             {result && (
               <div className="mb-4 overflow-hidden rounded-xl border" style={{
                 borderColor: result.crdeDecision === "REJECT" || result.crdeDecision === "REJECTED" ? "#FCA5A5" : result.crdeDecision === "APPROVED" || result.crdeDecision === "APPROVE" ? "#6EE7B7" : "#FDE68A",
@@ -584,7 +592,7 @@ export function CreditUnderwritingDashboard({
           </AccordionBlock>
 
           {/* 08 Notes & Analyst Recommendations */}
-          <AccordionBlock icon={Scale} number="08" title="Notes & Analyst Recommendations" defaultOpen={true} copyContent={memo.section8_rekomendasi}>
+          <AccordionBlock icon={Scale} number="08" title="Notes & Analyst Recommendations" defaultOpen={true} copyContent={memo.section8_rekomendasi} allOpen={allOpen}>
             <textarea
               data-testid="memo-section-8-textarea"
               value={memo.section8_rekomendasi}

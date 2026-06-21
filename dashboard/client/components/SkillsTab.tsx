@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { apiFetch } from "../lib/api";
 import { useToast } from "./Toast";
+import { useAuth } from "../App";
 import {
   FileText,
   Plus,
@@ -356,6 +357,22 @@ export function SkillsTab() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const toast = useToast();
+  const { user: currentUser } = useAuth();
+
+  async function logAuditJuknis(judulJuknis: string, beforeJuknis: string, afterJuknis: string, action: string) {
+    try {
+      await apiFetch("/api/audit-juknis", {
+        method: "POST",
+        body: JSON.stringify({
+          judul_juknis: judulJuknis,
+          before_juknis: beforeJuknis,
+          after_juknis: afterJuknis,
+          user: currentUser ?? "system",
+          action,
+        }),
+      });
+    } catch {}
+  }
 
   const fetchSkills = useCallback(async () => {
     try {
@@ -385,6 +402,8 @@ export function SkillsTab() {
   }
 
   async function handleSave(filename: string, content: string) {
+    const existing = selectedSkill?.content ?? "";
+    const isNew = creating;
     await apiFetch("/api/skills", {
       method: "POST",
       body: JSON.stringify({ filename, content }),
@@ -393,15 +412,23 @@ export function SkillsTab() {
     setSelectedSkill(null);
     setCreating(false);
     fetchSkills();
+    logAuditJuknis(
+      `Juknis: ${filename}`,
+      isNew ? "" : existing,
+      content,
+      isNew ? "CREATE" : "UPDATE",
+    );
   }
 
   async function handleDelete(filename: string) {
     if (!confirm(`Delete ${filename}?`)) return;
     try {
+      const deletedContent = selectedSkill?.filename === filename ? selectedSkill.content : "";
       await apiFetch(`/api/skills/${filename}`, { method: "DELETE" });
       toast("Skill deleted");
       if (selectedSkill?.filename === filename) setSelectedSkill(null);
       fetchSkills();
+      logAuditJuknis(`Juknis: ${filename}`, deletedContent, "", "DELETE");
     } catch {
       toast("Failed to delete skill", "error");
     }

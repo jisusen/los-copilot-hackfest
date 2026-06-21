@@ -1,4 +1,4 @@
-import { getDashboardDb, addAuditLog } from '../db/dashboardDb';
+import { getDashboardDb, addAuditLog, addAuditLogJuknis, getAuditLogJuknis } from '../db/dashboardDb';
 
 export async function handleAudit(req: Request, url: URL): Promise<Response | null> {
   const db = getDashboardDb();
@@ -54,6 +54,36 @@ export async function handleAudit(req: Request, url: URL): Promise<Response | nu
         timestamp: r.created_at,
       })),
     });
+  }
+
+  return null;
+}
+
+export async function handleAuditJuknis(req: Request): Promise<Response | null> {
+  if (req.method === 'GET') {
+    const logs = getAuditLogJuknis();
+    return Response.json({ logs });
+  }
+
+  if (req.method === 'POST') {
+    const body = await req.json() as {
+      judul_juknis: string;
+      before_juknis?: string;
+      after_juknis?: string;
+      user: string;
+      action: string;
+    };
+    if (!body.judul_juknis || !body.user || !body.action) {
+      return Response.json({ error: 'judul_juknis, user, and action are required' }, { status: 400 });
+    }
+    addAuditLogJuknis(
+      body.judul_juknis,
+      body.before_juknis ?? null,
+      body.after_juknis ?? null,
+      body.user,
+      body.action,
+    );
+    return Response.json({ ok: true });
   }
 
   return null;

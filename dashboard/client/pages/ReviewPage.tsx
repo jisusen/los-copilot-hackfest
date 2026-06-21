@@ -149,6 +149,312 @@ export function ReviewPage() {
 
   const amlFlagged = !!(aml?.pepStatus || aml?.pep_status || aml?.dttotMatch || aml?.dttot_match || aml?.fraudSignals || aml?.fraud_signals);
 
+  if (printing) {
+    const today = new Date().toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" });
+    const prodType = permohonan.produk ?? permohonan.product_type ?? "Loan";
+
+    function SectionLabel({ label }: { label: string }) {
+      return <div style={{ fontSize: '13px', fontWeight: 800, color: '#1a3a5c', borderBottom: '2px solid #1a3a5c', paddingBottom: '4px', marginBottom: '12px', marginTop: '24px' }}>{label}</div>;
+    }
+
+    function Field({ label, value }: { label: string; value: string }) {
+      return (
+        <tr>
+          <td style={{ padding: '3px 16px 3px 0', color: '#6b7c93', fontSize: '10px', fontWeight: 600, width: '180px', verticalAlign: 'top' }}>{label}</td>
+          <td style={{ padding: '3px 0', fontSize: '11px', fontWeight: 600, color: '#1f2d3d' }}>{value || '—'}</td>
+        </tr>
+      );
+    }
+
+    function getVal(obj: Record<string, unknown>, ...keys: string[]): string {
+      for (const k of keys) {
+        const v = obj[k];
+        if (v !== null && v !== undefined && v !== '') return String(v);
+      }
+      return '';
+    }
+
+    function fmtCurrency(n: string | number): string {
+      const num = typeof n === 'number' ? n : parseFloat(String(n).replace(/[^0-9.-]/g, ''));
+      return isNaN(num) ? String(n) : `Rp ${num.toLocaleString('id-ID')}`;
+    }
+
+    const namaDebitur = getVal(profil, 'nama', 'Nama Lengkap', 'full_name', 'nama_lengkap') || appId;
+    const nik = getVal(profil, 'nik');
+    const pekerjaan = getVal(profil, 'jenisPekerjaan', 'jenis_pekerjaan', 'employment_type', 'occupation');
+    const perusahaan = getVal(profil, 'namaPerusahaan', 'nama_perusahaan', 'employer_name', 'company');
+    const jabatan = getVal(profil, 'jabatan', 'job_title', 'position');
+
+    const plafon = getVal(permohonan, 'plafon', 'amount_requested', 'amount', 'amountRequested');
+    const tenor = getVal(permohonan, 'tenor', 'tenor_months', 'jangka_waktu');
+    const purpose = (memo.section2_permohonan.match(/Purpose:\s*\*\*([^*]+)\*\*/)?.[1] || '').trim();
+    const installment = (memo.section2_permohonan.match(/installment:\s*\*\*([^*]+)\*\*/)?.[1] || '').trim();
+
+    const financialPairs: { label: string; key: string; aliases: string[]; fmt?: 'curr' | 'pct' }[] = [
+      { label: 'Gross Monthly Income', key: 'gross_income', aliases: ['grossIncome', 'pendapatan_kotor'], fmt: 'curr' },
+      { label: 'Net Monthly Income', key: 'net_income', aliases: ['netIncome', 'pendapatan_bersih'], fmt: 'curr' },
+      { label: 'Existing Obligations', key: 'existing_obligations', aliases: ['existingObligations', 'kewajiban_eksisting'], fmt: 'curr' },
+      { label: 'Requested Installment', key: 'requested_installment', aliases: ['requestedInstallment', 'angsuran_diminta'], fmt: 'curr' },
+      { label: 'Total Obligations', key: 'total_obligations', aliases: ['totalObligations', 'total_kewajiban'], fmt: 'curr' },
+      { label: 'DBR Ratio', key: 'dti_ratio', aliases: ['dtiRatio', 'dsr', 'DSR', 'dti'], fmt: 'pct' },
+      { label: 'DBR Threshold', key: 'dti_threshold', aliases: ['dtiThreshold', 'dti_maksimal'], fmt: 'pct' },
+      { label: 'Remaining Income', key: 'remaining_income', aliases: ['remainingIncome', 'sisa_penghasilan'], fmt: 'curr' },
+    ];
+
+    const slikKol = (() => {
+      const v = slik?.kolektibilitas ?? slik?.collectibility ?? slik?.kol ?? 0;
+      return Number(v);
+    })();
+    const slikLabel = slikKol <= 1 ? 'CLEAR' : slikKol <= 2 ? 'Special Mention' : slikKol <= 3 ? 'Substandard' : 'Doubtful/Loss';
+
+    const amlFlagged = !!(aml?.pepStatus || aml?.pep_status || aml?.dttotMatch || aml?.dttot_match || aml?.fraudSignals || aml?.fraud_signals);
+
+    return (
+      <>
+        <style>{`
+          @page { margin: 0.4in; size: A4; }
+          @media print {
+            html, body, #root, #app { height: auto !important; min-height: auto !important; overflow: visible !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background: #fff !important; }
+            .flex, .h-screen, [class*="overflow-hidden"], .flex-1 { overflow: visible !important; height: auto !important; min-height: 0 !important; }
+            aside, header { display: none !important; }
+            .print-break-inside { page-break-inside: avoid; }
+          }
+        `}</style>
+        <div style={{ background: 'white', minHeight: '100vh', overflow: 'visible', fontFamily: "'IBM Plex Sans', sans-serif", color: '#1f2d3d', padding: '40px 48px' }}>
+          <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+
+            {/* ===== HEADER ===== */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '32px' }}>
+              <tbody>
+                <tr>
+                  <td style={{ width: '100px', verticalAlign: 'top', paddingRight: '24px' }}>
+                    <div style={{ width: '72px', height: '72px', background: '#1a3a5c', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '9px', fontWeight: 700, textAlign: 'center', lineHeight: '1.3', letterSpacing: '1px' }}>BMB</div>
+                  </td>
+                  <td>
+                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#1a3a5c', letterSpacing: '2px', textTransform: 'uppercase' }}>PT Bank Maju Bersama</div>
+                    <div style={{ fontSize: '22px', fontWeight: 800, color: '#1a3a5c', letterSpacing: '5px', marginTop: '4px' }}>C R E D I T &nbsp; P R O P O S A L</div>
+                    <div style={{ fontSize: '10px', color: '#6b7c93', marginTop: '2px', fontFamily: "'IBM Plex Mono', monospace" }}>No. {appId}/CRDE/{new Date().getFullYear()}</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* ===== I. EXECUTIVE SUMMARY ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="I. Executive Summary &amp; Recommendation" />
+
+              <div style={{ background: isCommittee ? '#FFFBEB' : isRejected ? '#FEF2F2' : '#F0FDF4', border: '1px solid', borderColor: isCommittee ? '#FDE68A' : isRejected ? '#FECACA' : '#A7F3D0', borderRadius: '6px', padding: '16px 20px', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: isCommittee ? '#D97706' : isRejected ? '#DC2626' : '#059669' }}>
+                      {isCommittee ? 'COMMITTEE REVIEW' : isRejected ? 'REJECTED' : 'APPROVED'}
+                    </div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: isCommittee ? '#B45309' : isRejected ? '#B91C1C' : '#047857' }}>
+                      {crde?.decision ?? 'N/A'}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '10px', color: '#6b7c93', fontWeight: 600 }}>Credit Score</div>
+                    <div style={{ fontSize: '24px', fontWeight: 800, fontFamily: "'IBM Plex Mono', monospace", color: '#1f2d3d' }}>
+                      {crde?.numericScore ?? '—'}
+                      <span style={{ fontSize: '12px', fontWeight: 400, color: '#9CA3AF' }}>/1000</span>
+                    </div>
+                  </div>
+                </div>
+                {memo.executive_summary && (
+                  <div style={{ fontSize: '11px', color: '#4B5563', marginTop: '12px', lineHeight: '1.6', borderTop: '1px solid', borderTopColor: isCommittee ? '#FDE68A' : isRejected ? '#FECACA' : '#A7F3D0', paddingTop: '12px' }}>
+                    {memo.executive_summary.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                  </div>
+                )}
+              </div>
+
+              <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse', marginBottom: '8px' }}>
+                <tbody>
+                  <Field label="Risk Level" value={crde?.riskScore ?? '—'} />
+                  <Field label="Rules Triggered" value={crde?.rulesTriggered?.length ? `${crde.rulesTriggered.length} rules` : 'None'} />
+                  <Field label="DBR Ratio" value={`${(dtiActual * 100).toFixed(1)}%`} />
+                  <Field label="SLIK Collectability" value={`Kol. ${slikKol} — ${slikLabel}`} />
+                  <Field label="AML Screening" value={amlFlagged ? 'FLAGGED' : 'CLEAR'} />
+                </tbody>
+              </table>
+
+              {crde?.rulesTriggered && crde.rulesTriggered.length > 0 && (
+                <div style={{ marginTop: '8px' }}>
+                  {crde.rulesTriggered.map((r, i) => (
+                    <span key={i} style={{ display: 'inline-block', fontSize: '10px', padding: '2px 10px', margin: '2px 4px 2px 0', borderRadius: '4px', background: '#F3F4F6', color: '#4B5563', border: '1px solid #E5E7EB' }}>
+                      {r}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* ===== II. DEBTOR PROFILE ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="II. Debtor Profile" />
+              <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <Field label="Full Name" value={namaDebitur} />
+                  <Field label="NIK" value={nik ? `**** **** **** ${nik.slice(-4)}` : '—'} />
+                  <Field label="Occupation" value={pekerjaan} />
+                  <Field label="Employer" value={perusahaan} />
+                  <Field label="Position" value={jabatan} />
+                </tbody>
+              </table>
+              {memo.section1_profil && (
+                <div style={{ fontSize: '11px', color: '#4B5563', marginTop: '8px', lineHeight: '1.6', borderTop: '1px solid #E5E7EB', paddingTop: '8px' }}>
+                  {memo.section1_profil.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                </div>
+              )}
+            </div>
+
+            {/* ===== III. LOAN APPLICATION ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="III. Loan Application Details" />
+              <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+                <tbody>
+                  <Field label="Product Type" value={prodType} />
+                  <Field label="Plafon / Amount" value={plafon ? fmtCurrency(plafon) : '—'} />
+                  <Field label="Tenor" value={tenor ? `${tenor} months` : '—'} />
+                  {purpose && <Field label="Purpose" value={purpose} />}
+                  {installment && <Field label="Installment" value={installment} />}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ===== IV. FINANCIAL ANALYSIS ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="IV. Financial Analysis &amp; Repayment Capacity" />
+              <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+                <tbody>
+                  {financialPairs.map((f) => {
+                    const raw = keuangan[f.key] ?? keuangan[f.key.replace(/_/g, '')] ?? (() => { for (const a of f.aliases) { const v = keuangan[a]; if (v !== null && v !== undefined && v !== '') return v; } return ''; })();
+                    if (raw === null || raw === undefined || raw === '') return null;
+                    let val = String(raw);
+                    if (f.fmt === 'curr') {
+                      const n = typeof raw === 'number' ? raw : parseFloat(String(raw).replace(/[^0-9.-]/g, ''));
+                      val = isNaN(n) ? val : `Rp ${n.toLocaleString('id-ID')}`;
+                    } else if (f.fmt === 'pct') {
+                      const n = typeof raw === 'number' ? raw : parseFloat(String(raw).replace(/[^0-9.-]/g, ''));
+                      val = isNaN(n) ? val : `${(n > 1 ? n : n * 100).toFixed(1)}%`;
+                    }
+                    const flagged = f.key === 'dti_ratio' && dtiActual > 0.4;
+                    return (
+                      <tr key={f.key}>
+                        <td style={{ padding: '3px 16px 3px 0', color: '#6b7c93', fontSize: '10px', fontWeight: 600, width: '180px', verticalAlign: 'top' }}>{f.label}</td>
+                        <td style={{ padding: '3px 0', fontSize: '11px', fontWeight: 600, color: flagged ? '#B91C1C' : '#1f2d3d' }}>
+                          {val}
+                          {flagged && <span style={{ marginLeft: '8px', fontSize: '9px', fontWeight: 700, color: '#B91C1C', background: '#FEF2F2', padding: '1px 6px', borderRadius: '3px' }}>EXCEEDS RAC 40%</span>}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              {memo.section3_keuangan && (
+                <div style={{ fontSize: '11px', color: '#4B5563', marginTop: '8px', lineHeight: '1.6', borderTop: '1px solid #E5E7EB', paddingTop: '8px' }}>
+                  {memo.section3_keuangan.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                </div>
+              )}
+            </div>
+
+            {/* ===== V. SLIK OJK ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="V. SLIK OJK Results" />
+              <div style={{ marginBottom: '8px' }}>
+                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', background: slikKol <= 1 ? '#ECFDF5' : slikKol <= 2 ? '#FFFBEB' : '#FEF2F2', color: slikKol <= 1 ? '#047857' : slikKol <= 2 ? '#B45309' : '#B91C1C' }}>
+                  Kol. {slikKol} — {slikLabel}
+                </span>
+              </div>
+              {memo.section4_slik && (
+                <div style={{ fontSize: '11px', color: '#4B5563', lineHeight: '1.6' }}>
+                  {memo.section4_slik.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                </div>
+              )}
+            </div>
+
+            {/* ===== VI. AML & FRAUD ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="VI. AML &amp; Fraud Screening" />
+              <div style={{ marginBottom: '8px' }}>
+                <span style={{ display: 'inline-block', fontSize: '10px', fontWeight: 700, padding: '3px 10px', borderRadius: '4px', background: amlFlagged ? '#FEF2F2' : '#ECFDF5', color: amlFlagged ? '#B91C1C' : '#047857' }}>
+                  {amlFlagged ? 'FLAGGED' : 'CLEAR'}
+                </span>
+              </div>
+              {memo.section5_aml && (
+                <div style={{ fontSize: '11px', color: '#4B5563', lineHeight: '1.6' }}>
+                  {memo.section5_aml.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                </div>
+              )}
+            </div>
+
+            {/* ===== VII. COLLATERAL ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="VII. Collateral" />
+              {memo.section6_agunan ? (
+                <div style={{ fontSize: '11px', color: '#4B5563', lineHeight: '1.6' }}>
+                  {memo.section6_agunan.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                </div>
+              ) : (
+                <div style={{ fontSize: '11px', color: '#9CA3AF' }}>No collateral data available</div>
+              )}
+            </div>
+
+            {/* ===== VIII. CRDE ASSESSMENT ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="VIII. Credit Risk Decision Engine (CRDE) Assessment" />
+              <div style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: '6px', padding: '12px 16px', marginBottom: '8px' }}>
+                <table style={{ width: '100%', fontSize: '11px', borderCollapse: 'collapse' }}>
+                  <tbody>
+                    <Field label="Decision" value={crde?.decision ?? 'N/A'} />
+                    <Field label="Score" value={crde?.numericScore ? `${crde.numericScore}/1000` : '—'} />
+                    <Field label="Risk Level" value={crde?.riskScore ?? '—'} />
+                    <Field label="Rules Triggered" value={crde?.rulesTriggered?.length ? `${crde.rulesTriggered.length} rules` : 'None'} />
+                  </tbody>
+                </table>
+                {crde?.rulesTriggered && crde.rulesTriggered.length > 0 && (
+                  <div style={{ marginTop: '8px', borderTop: '1px solid #E5E7EB', paddingTop: '8px' }}>
+                    <div style={{ fontSize: '9px', fontWeight: 700, color: '#6b7c93', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Triggered Rules</div>
+                    {crde.rulesTriggered.map((r, i) => (
+                      <span key={i} style={{ display: 'inline-block', fontSize: '10px', padding: '2px 10px', margin: '2px 4px 2px 0', borderRadius: '4px', background: '#F3F4F6', color: '#4B5563', border: '1px solid #E5E7EB' }}>
+                        {r}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              {memo.section7_crde && (
+                <div style={{ fontSize: '11px', color: '#4B5563', lineHeight: '1.6' }}>
+                  {memo.section7_crde.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                </div>
+              )}
+            </div>
+
+            {/* ===== IX. RECOMMENDATION ===== */}
+            <div className="print-break-inside">
+              <SectionLabel label="IX. Analyst Recommendation" />
+              {memo.section8_rekomendasi ? (
+                <div style={{ fontSize: '11px', color: '#4B5563', lineHeight: '1.6' }}>
+                  {memo.section8_rekomendasi.split('**').map((seg, i) => i % 2 ? <strong key={i}>{seg}</strong> : <span key={i}>{seg}</span>)}
+                </div>
+              ) : (
+                <div style={{ fontSize: '11px', color: '#9CA3AF' }}>No analyst notes</div>
+              )}
+            </div>
+
+            {/* ===== FOOTER ===== */}
+            <div style={{ marginTop: '40px', paddingTop: '16px', borderTop: '2px solid #1a3a5c', fontSize: '9px', color: '#9CA3AF', textAlign: 'center' }}>
+              <div style={{ fontWeight: 600 }}>PT Bank Maju Bersama Gibran — Credit Proposal Document</div>
+              <div style={{ marginTop: '2px' }}>Generated by AI Underwriting System — CRDE &middot; {today}</div>
+            </div>
+
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <div className="h-full flex flex-col " style={{ fontFamily: "'IBM Plex Sans', sans-serif" }}>
       {loading ? (
@@ -490,27 +796,8 @@ export function ReviewPage() {
             </div>
           )}
 
-          {/* ===== PRINT LAYOUT ===== */}
-          {printing && (
-            <div className="fixed inset-0 bg-white z-[9999] overflow-auto p-8">
-              <div className="mx-auto max-w-4xl space-y-8">
-                {/* Executive Summary */}
-                <div>
-                  <div className="text-xs font-bold text-slate-400 tracking-wider uppercase mb-1 flex items-center gap-1.5">EXECUTIVE SUMMARY (AI) <Sparkles className="w-3 h-3 text-amber-500" /></div>
-                  <div className={`text-2xl font-black mt-1 ${
-                    isRejected ? "text-red-600" : isCommittee ? "text-amber-600" : "text-emerald-600"
-                  }`}>
-                    {isApproved ? "APPROVED" : isRejected ? "REJECT" : isCommittee ? "COMMITTEE REVIEW" : crde?.decision ?? "N/A"}
-                  </div>
-                  <div className="mt-3 text-sm text-slate-700 leading-relaxed">
-                    {memo.executive_summary ? (
-                      memo.executive_summary.split("**").map((seg, i) =>
-                        i % 2 === 1 ? <strong key={i} className="text-slate-900">{seg}</strong> : seg
-                      )
-                    ) : "—"}
-                  </div>
-                </div>
 
+<<<<<<< refs/remotes/origin/gusti
                 <hr className="border-slate-200" />
 
                 {/* AI Decision Card */}
@@ -556,6 +843,8 @@ export function ReviewPage() {
               </div>
             </div>
           )}
+=======
+>>>>>>> local
         </>
       )}
     </div>

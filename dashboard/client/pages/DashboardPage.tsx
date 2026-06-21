@@ -221,6 +221,7 @@ export function Dashboard() {
   }, []);
   async function handleSync() {
     setSyncing(true);
+    await new Promise(r => setTimeout(r, 5000));
     await fetchLoans();
     setSyncing(false);
   }
@@ -324,14 +325,14 @@ export function Dashboard() {
       overlayOpacity: 0.85,
       smoothScroll: true,
       showProgress: true,
-      progressText: "Langkah {{current}} dari {{total}}",
-      nextBtnText: "Selanjutnya",
-      prevBtnText: "Sebelumnya",
-      doneBtnText: "Selesai",
+      progressText: t("tour.progress", locale),
+      nextBtnText: t("tour.next", locale),
+      prevBtnText: t("tour.prev", locale),
+      doneBtnText: t("tour.done", locale),
       popoverClass: "bms-driver-popover",
       onPopoverRender: (popover) => {
         const close = popover.closeButton;
-        close.textContent = "Skip";
+        close.textContent = t("tour.skip", locale);
         close.classList.add("driver-skip-btn");
         popover.previousButton.classList.add(
           "driver-nav-btn",
@@ -342,9 +343,8 @@ export function Dashboard() {
       steps: [
         {
           popover: {
-            title: "👋 Selamat Datang di JOKI AI",
-            description:
-              "Dashboard ini membantu Anda menjalankan AI Agent untuk menganalisis aplikasi kredit secara otomatis. Ikuti tur singkat ini untuk mengenal fitur-fitur utama.",
+            title: t("tour.welcome_title", locale),
+            description: t("tour.welcome_desc", locale),
             side: "over",
             align: "center",
             popoverClass: "bms-driver-popover bms-driver-welcome",
@@ -353,9 +353,8 @@ export function Dashboard() {
         {
           element: ".task-list-section",
           popover: {
-            title: "📋 Task List",
-            description:
-              "Daftar aplikasi kredit yang menunggu untuk diproses. Centang aplikasi yang ingin dianalisis oleh AI Agent (maksimal 5).",
+            title: t("tour.task_list_title", locale),
+            description: t("tour.task_list_desc", locale),
             side: "right",
             align: "start",
           },
@@ -363,9 +362,8 @@ export function Dashboard() {
         {
           element: "[data-testid='btn-run-review']",
           popover: {
-            title: "▶️ Run Review",
-            description:
-              "Setelah memilih aplikasi, klik tombol ini untuk menjalankan AI Agent. Agent akan secara otomatis membuka LOS, mengekstrak data, dan memberikan rekomendasi kredit.",
+            title: t("tour.run_review_title", locale),
+            description: t("tour.run_review_desc", locale),
             side: "top",
             align: "end",
           },
@@ -373,9 +371,8 @@ export function Dashboard() {
         {
           element: ".agents-section",
           popover: {
-            title: "🤖 Agents Working",
-            description:
-              "Lihat progress AI Agent secara real-time. Anda bisa melihat screenshot langsung dari browser agent saat sedang bekerja.",
+            title: t("tour.agents_title", locale),
+            description: t("tour.agents_desc", locale),
             side: "left",
             align: "center",
           },
@@ -383,9 +380,8 @@ export function Dashboard() {
         {
           element: ".hasil-section",
           popover: {
-            title: "📊 Hasil Panel",
-            description:
-              "Setelah agent selesai, hasil analisis akan muncul di panel ini. Ada 2 tab: 'Ready' (menunggu keputusan Anda) dan 'Decided' (yang sudah diputuskan).",
+            title: t("tour.hasil_title", locale),
+            description: t("tour.hasil_desc", locale),
             side: "left",
             align: "center",
           },
@@ -393,18 +389,16 @@ export function Dashboard() {
         {
           element: ".status-cards-area",
           popover: {
-            title: "📈 Status Cards",
-            description:
-              "Ringkasan jumlah aplikasi yang antri, sedang diproses, menunggu keputusan, dan sudah diputuskan hari ini.",
+            title: t("tour.status_title", locale),
+            description: t("tour.status_desc", locale),
             side: "bottom",
             align: "center",
           },
         },
         {
           popover: {
-            title: "🎉 Tur Selesai!",
-            description:
-              "Anda siap menggunakan JOKI AI! Pilih aplikasi, klik Run Review, dan biarkan AI bekerja. Gunakan menu Audit Log untuk melihat riwayat aktivitas.",
+            title: t("tour.end_title", locale),
+            description: t("tour.end_desc", locale),
             side: "over",
             align: "center",
           },
@@ -583,6 +577,8 @@ export function Dashboard() {
                       selected={selected}
                       sessions={sessions}
                       onToggle={toggle}
+                      onSync={handleSync}
+                      syncing={syncing}
                     />
                   )}
                   {/* Run Review Footer */}
@@ -756,6 +752,8 @@ export function Dashboard() {
                     selected={selected}
                     sessions={sessions}
                     onToggle={toggle}
+                    onSync={handleSync}
+                    syncing={syncing}
                   />
                   <div className="px-3 py-3 border-t border-gray-100 flex items-center justify-between">
                     <span className="text-xs text-gray-400">
@@ -914,7 +912,7 @@ export function Dashboard() {
       <button
         onClick={startTour}
         className="fixed bottom-4 right-16 z-40 w-9 h-9 bg-blue-600 border border-slate-200 rounded-xl shadow-md flex items-center justify-center text-xs font-bold text-white hover:bg-blue-800 transition-colors"
-        title="Panduan Dashboard"
+        title={t("tour.help", locale)}
       >
         ?
       </button>

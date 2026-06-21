@@ -112,6 +112,28 @@ const id = {
   "settings.configured": "Terkonfigurasi",
   "settings.incomplete": "Belum Lengkap",
   "settings.not_set": "Belum Diatur",
+
+  // Driver Tour
+  "tour.welcome_title": "👋 Selamat Datang di JOKI AI",
+  "tour.welcome_desc": "Dashboard ini membantu Anda menjalankan AI Agent untuk menganalisis aplikasi kredit secara otomatis. Ikuti tur singkat ini untuk mengenal fitur-fitur utama.",
+  "tour.task_list_title": "📋 Task List",
+  "tour.task_list_desc": "Daftar aplikasi kredit yang menunggu untuk diproses. Centang aplikasi yang ingin dianalisis oleh AI Agent (maksimal 5).",
+  "tour.run_review_title": "▶️ Run Review",
+  "tour.run_review_desc": "Setelah memilih aplikasi, klik tombol ini untuk menjalankan AI Agent. Agent akan secara otomatis membuka LOS, mengekstrak data, dan memberikan rekomendasi kredit.",
+  "tour.agents_title": "🤖 Agents Working",
+  "tour.agents_desc": "Lihat progress AI Agent secara real-time. Anda bisa melihat screenshot langsung dari browser agent saat sedang bekerja.",
+  "tour.hasil_title": "📊 Hasil Panel",
+  "tour.hasil_desc": "Setelah agent selesai, hasil analisis akan muncul di panel ini. Ada 2 tab: 'Ready' (menunggu keputusan Anda) dan 'Decided' (yang sudah diputuskan).",
+  "tour.status_title": "📈 Status Cards",
+  "tour.status_desc": "Ringkasan jumlah aplikasi yang antri, sedang diproses, menunggu keputusan, dan sudah diputuskan hari ini.",
+  "tour.end_title": "🎉 Tur Selesai!",
+  "tour.end_desc": "Anda siap menggunakan JOKI AI! Pilih aplikasi, klik Run Review, dan biarkan AI bekerja. Gunakan menu Audit Log untuk melihat riwayat aktivitas.",
+  "tour.progress": "Langkah {{current}} dari {{total}}",
+  "tour.next": "Selanjutnya",
+  "tour.prev": "Sebelumnya",
+  "tour.done": "Selesai",
+  "tour.skip": "Skip",
+  "tour.help": "Panduan Dashboard",
 };
 
 const en: typeof id = {
@@ -227,6 +249,28 @@ const en: typeof id = {
   "settings.configured": "Configured",
   "settings.incomplete": "Incomplete",
   "settings.not_set": "Not set",
+
+  // Driver Tour
+  "tour.welcome_title": "👋 Welcome to JOKI AI",
+  "tour.welcome_desc": "This dashboard helps you run AI Agents to analyze credit applications automatically. Take this quick tour to learn about the key features.",
+  "tour.task_list_title": "📋 Task List",
+  "tour.task_list_desc": "List of credit applications waiting to be processed. Check the applications you want the AI Agent to analyze (max 5).",
+  "tour.run_review_title": "▶️ Run Review",
+  "tour.run_review_desc": "After selecting applications, click this button to launch the AI Agent. The agent will automatically open LOS, extract data, and provide credit recommendations.",
+  "tour.agents_title": "🤖 Agents Working",
+  "tour.agents_desc": "See AI Agent progress in real-time. You can view live screenshots from the agent's browser as it works.",
+  "tour.hasil_title": "📊 Results Panel",
+  "tour.hasil_desc": "After the agent finishes, analysis results appear in this panel. There are 2 tabs: 'Ready' (awaiting your decision) and 'Decided' (already decided).",
+  "tour.status_title": "📈 Status Cards",
+  "tour.status_desc": "Summary of queued, processing, pending decision, and today's decided applications.",
+  "tour.end_title": "🎉 Tour Complete!",
+  "tour.end_desc": "You're ready to use JOKI AI! Select applications, click Run Review, and let AI work. Use the Audit Log menu to view activity history.",
+  "tour.progress": "Step {{current}} of {{total}}",
+  "tour.next": "Next",
+  "tour.prev": "Previous",
+  "tour.done": "Finish",
+  "tour.skip": "Skip",
+  "tour.help": "Dashboard Guide",
 };
 
 export type Locale = "id" | "en";

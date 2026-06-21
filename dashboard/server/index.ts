@@ -9,7 +9,7 @@ import { handleInternal } from "./routes/internal";
 import { handleSettings } from "./routes/settings";
 import { handleSkills } from "./routes/skills";
 import { handleAuth } from "./routes/auth";
-import { handleAudit } from "./routes/audit";
+import { handleAudit, handleAuditJuknis } from "./routes/audit";
 import { handleNotes } from "./routes/notes";
 import { handleUsage } from "./routes/usage";
 import autoprefixer from 'autoprefixer';
@@ -164,6 +164,11 @@ async function handleRequest(req: Request): Promise<Response> {
 
   if (pathname === "/api/audit") {
     const res = await handleAudit(req, url);
+    if (res) return withCors(res, req);
+  }
+
+  if (pathname === "/api/audit-juknis") {
+    const res = await handleAuditJuknis(req);
     if (res) return withCors(res, req);
   }
 

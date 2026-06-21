@@ -59,6 +59,18 @@ function initSchema(db: Database) {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_log_juknis (
+      no INTEGER PRIMARY KEY AUTOINCREMENT,
+      judul_juknis TEXT NOT NULL,
+      before_juknis TEXT,
+      after_juknis TEXT,
+      user TEXT NOT NULL,
+      action TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS agent_sessions (
       app_id TEXT PRIMARY KEY,
       los_data TEXT NOT NULL,
@@ -133,6 +145,32 @@ export function saveLoanNote(
 export function getLoanNotes(appId: string): Array<{ id: number; app_id: string; author: string; author_type: string; content: string; memo_json: string | null; created_at: string }> {
   const db = getDashboardDb();
   return db.query('SELECT * FROM loan_notes WHERE app_id = ? ORDER BY created_at ASC').all(appId) as any[];
+}
+
+export function addAuditLogJuknis(
+  judulJuknis: string,
+  beforeJuknis: string | null,
+  afterJuknis: string | null,
+  user: string,
+  action: string,
+): void {
+  const db = getDashboardDb();
+  db.query(
+    'INSERT INTO audit_log_juknis (judul_juknis, before_juknis, after_juknis, user, action, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(judulJuknis, beforeJuknis, afterJuknis, user, action, new Date().toISOString());
+}
+
+export function getAuditLogJuknis(): Array<{
+  no: number;
+  judul_juknis: string;
+  before_juknis: string | null;
+  after_juknis: string | null;
+  user: string;
+  action: string;
+  created_at: string;
+}> {
+  const db = getDashboardDb();
+  return db.query('SELECT * FROM audit_log_juknis ORDER BY created_at DESC LIMIT 500').all() as any[];
 }
 
 export function addAuditLog(appId: string, actor: string, action: string, detail?: string): void {
