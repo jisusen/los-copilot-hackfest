@@ -102,6 +102,47 @@ const server = Bun.serve({
         if (res) return withCors(res, req);
       }
 
+      // Dashboard stats
+      if (pathname === '/api/dashboard' && req.method === 'GET') {
+        const db = getDb();
+        const total = (db.query('SELECT COUNT(*) as c FROM loan_applications').get() as any).c;
+        const waitingApproval = (db.query("SELECT COUNT(*) as c FROM loan_applications WHERE status = 'Under Review'").get() as any).c;
+
+        const now = new Date();
+        const monthStart = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+        const approvedThisMonth = (db.query("SELECT COUNT(*) as c FROM loan_applications WHERE status = 'Approved' AND decided_at >= ?").get(monthStart) as any).c;
+
+        const disbursementVolume = (db.query("SELECT COALESCE(SUM(amount_requested), 0) as s FROM loan_applications WHERE status = 'Approved'").get() as any).s;
+
+        // Trend data: monthly applications by product type (last 6 months)
+        const months = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+          months.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: d.toLocaleString('id-ID', { month: 'short' }) });
+        }
+        const products = ['KTA', 'KPR', 'KKB', 'Multiguna'];
+        const trendData = months.map(m => {
+          const entry: Record<string, string | number> = { month: m.label };
+          for (const p of products) {
+            entry[p] = (db.query("SELECT COUNT(*) as c FROM loan_applications WHERE product_type = ? AND created_at LIKE ?").get(p, `${m.key}%`) as any).c;
+          }
+          return entry;
+        });
+
+        // Weekly data: last 7 days
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const weeklyData = [];
+        for (let i = 6; i >= 0; i--) {
+          const d = new Date(now);
+          d.setDate(d.getDate() - i);
+          const dateStr = d.toISOString().slice(0, 10);
+          const count = (db.query("SELECT COUNT(*) as c FROM loan_applications WHERE created_at LIKE ?").get(`${dateStr}%`) as any).c;
+          weeklyData.push({ day: dayNames[d.getDay()], apps: count });
+        }
+
+        return withCors(Response.json({ total, waitingApproval, approvedThisMonth, disbursementVolume, trendData, weeklyData }), req);
+      }
+
       return withCors(Response.json({ error: 'Not found' }, { status: 404 }), req);
     }
 
