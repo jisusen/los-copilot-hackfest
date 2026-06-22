@@ -12,7 +12,10 @@ import {
   AlertCircle,
   Upload,
   BookOpen,
+  ToggleLeft,
+  ToggleRight,
 } from "lucide-react";
+import { JuknisAuditLog } from "./JuknisAuditLog";
 
 type SkillMeta = {
   name: string;
@@ -23,6 +26,7 @@ type SkillMeta = {
   trigger: string;
   product: string;
   source: string;
+  active: boolean;
   size: number;
   modified: string;
 };
@@ -51,11 +55,13 @@ function SkillCard({
   isActive,
   onSelect,
   onDelete,
+  onToggleActive,
 }: {
   skill: SkillMeta;
   isActive: boolean;
   onSelect: () => void;
   onDelete: () => void;
+  onToggleActive: () => void;
 }) {
   const triggerLabel =
     TRIGGER_OPTIONS.find((t) => t.value === skill.trigger)?.label ||
@@ -67,7 +73,9 @@ function SkillCard({
       className={`group border rounded-xl p-3 cursor-pointer transition-all ${
         isActive
           ? "border-amber-400 bg-amber-50 shadow-sm"
-          : "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+          : skill.active
+          ? "border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm"
+          : "border-slate-100 bg-slate-50 opacity-60"
       }`}
     >
       <div className="flex items-start justify-between gap-2">
@@ -76,7 +84,9 @@ function SkillCard({
             className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
               isActive
                 ? "bg-amber-100 text-amber-700"
-                : "bg-slate-100 text-slate-500"
+                : skill.active
+                ? "bg-slate-100 text-slate-500"
+                : "bg-slate-50 text-slate-400"
             }`}
           >
             <FileText className="w-4 h-4" />
@@ -90,15 +100,35 @@ function SkillCard({
             </div>
           </div>
         </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete();
-          }}
-          className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleActive();
+            }}
+            className={`p-1 transition-all ${
+              skill.active
+                ? "text-green-500 hover:text-green-600"
+                : "text-slate-400 hover:text-slate-500"
+            }`}
+            title={skill.active ? "Click to deactivate" : "Click to activate"}
+          >
+            {skill.active ? (
+              <ToggleRight className="w-5 h-5" />
+            ) : (
+              <ToggleLeft className="w-5 h-5" />
+            )}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-500 transition-all"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
       </div>
 
       {skill.description && (
@@ -129,6 +159,11 @@ function SkillCard({
           <span className="inline-flex items-center gap-1 text-[10px] font-mono text-slate-400">
             <User className="w-2.5 h-2.5" />
             {skill.author}
+          </span>
+        )}
+        {!skill.active && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-mono text-red-500 bg-red-50 px-1.5 py-0.5 rounded">
+            INACTIVE
           </span>
         )}
       </div>
@@ -307,6 +342,34 @@ function SkillEditor({
               ))}
             </select>
           </div>
+          <div>
+            <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
+              Status
+            </label>
+            <div className="flex items-center gap-2 h-[34px] px-3 border border-slate-200 rounded-lg bg-white">
+              <button
+                type="button"
+                onClick={() => updateMeta("active", meta.active === "false" ? "true" : "false")}
+                className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                  meta.active !== "false"
+                    ? "text-green-600"
+                    : "text-slate-400"
+                }`}
+              >
+                {meta.active !== "false" ? (
+                  <>
+                    <ToggleRight className="w-5 h-5" />
+                    Active
+                  </>
+                ) : (
+                  <>
+                    <ToggleLeft className="w-5 h-5" />
+                    Inactive
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block font-mono text-[10px] font-medium text-slate-500 uppercase tracking-wider mb-1">
@@ -434,6 +497,25 @@ export function SkillsTab() {
     }
   }
 
+  async function handleToggleActive(filename: string) {
+    try {
+      const data = await apiFetch<{ ok: boolean; active: boolean }>(
+        `/api/skills/${filename}/toggle-active`,
+        { method: "PATCH" },
+      );
+      toast(`Skill ${data.active ? "activated" : "deactivated"}`);
+      fetchSkills();
+      // Update selected skill if it's the one being toggled
+      if (selectedSkill?.filename === filename) {
+        setSelectedSkill((prev) =>
+          prev ? { ...prev, active: data.active } : null,
+        );
+      }
+    } catch {
+      toast("Failed to toggle skill", "error");
+    }
+  }
+
   function handleCreateNew() {
     setSelectedSkill(null);
     setCreating(true);
@@ -447,6 +529,7 @@ author: Tim Kredit Konsumer
 trigger: memo
 product: KTA
 source: PDF
+active: true
 ---
 
 # Juknis [Produk]
@@ -507,32 +590,38 @@ source: PDF
             </div>
           </div>
           <div className="text-[10px] text-slate-400">
-            {skills.length} juknis · aktif untuk memo:{" "}
+            {skills.filter((s) => s.active).length} active / {skills.length} total · for memo:{" "}
             <span className="font-mono text-amber-700">KTA</span>
           </div>
         </div>
 
         {/* Skills Grid */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-2">
-          {skills.length === 0 ? (
-            <div className="text-center py-8 text-slate-400">
-              <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <div className="text-sm">Belum ada juknis</div>
-              <div className="text-xs mt-1">
-                Upload PDF atau paste isi Juknis dari dokumen resmi bank
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-3 space-y-2">
+            {skills.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <FileText className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <div className="text-sm">Belum ada juknis</div>
+                <div className="text-xs mt-1">
+                  Upload PDF atau paste isi Juknis dari dokumen resmi bank
+                </div>
               </div>
-            </div>
-          ) : (
-            skills.map((skill) => (
-              <SkillCard
-                key={skill.filename}
-                skill={skill}
-                isActive={selectedSkill?.filename === skill.filename}
-                onSelect={() => handleSelect(skill.filename)}
-                onDelete={() => handleDelete(skill.filename)}
-              />
-            ))
-          )}
+            ) : (
+              skills.map((skill) => (
+                <SkillCard
+                  key={skill.filename}
+                  skill={skill}
+                  isActive={selectedSkill?.filename === skill.filename}
+                  onSelect={() => handleSelect(skill.filename)}
+                  onDelete={() => handleDelete(skill.filename)}
+                  onToggleActive={() => handleToggleActive(skill.filename)}
+                />
+              ))
+            )}
+          </div>
+
+          {/* Audit Log */}
+          <JuknisAuditLog />
         </div>
       </div>
 

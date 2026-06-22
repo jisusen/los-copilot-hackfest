@@ -1,9 +1,11 @@
 ---
 name: CRDE Rules Reference
 description: Credit Risk Decision Engine rules and scoring reference
-version: 1.0.0
+version: 1.1.0
 author: Bank Maju Bersama
 trigger: manual
+policy_ref: kta-credit-policy.md
+active: true
 ---
 
 # CRDE Rules Reference

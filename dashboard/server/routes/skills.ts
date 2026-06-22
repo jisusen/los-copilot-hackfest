@@ -7,6 +7,7 @@ import {
   unlinkSync,
   mkdirSync,
 } from "fs";
+import { addAuditLogJuknis } from "../db/dashboardDb";
 
 const ROOT = join(import.meta.dir, "../..");
 const SKILLS_DIR = join(ROOT, "skills");
@@ -25,6 +26,7 @@ export type SkillMeta = {
   trigger: string;
   product: string;
   source: string;
+  active: boolean;
   size: number;
   modified: string;
 };
@@ -82,6 +84,7 @@ export function listSkills(): SkillMeta[] {
         trigger: meta.trigger || "always",
         product: meta.product || "",
         source: meta.source || "",
+        active: meta.active !== "false",
         size: stat.size,
         modified: stat.modified,
       };
@@ -110,6 +113,7 @@ export function getSkill(filename: string): SkillFile | null {
     trigger: meta.trigger || "always",
     product: meta.product || "",
     source: meta.source || "",
+    active: meta.active !== "false",
     size: stat.size,
     modified: stat.modified,
     content,
@@ -148,6 +152,11 @@ const PRODUCT_JUKINS: Record<string, string> = {
   KTA: "kta-juknis.md",
 };
 
+/** Additional credit policy rules per product. */
+const PRODUCT_POLICIES: Record<string, string> = {
+  KTA: "kta-credit-policy.md",
+};
+
 function appendSkillBody(
   parts: string[],
   filename: string,
@@ -155,6 +164,8 @@ function appendSkillBody(
 ): void {
   const file = getSkill(filename);
   if (!file) return;
+  // Skip inactive skills
+  if (!file.active) return;
   const { body } = parseFrontmatter(file.content);
   parts.push(
     `--- ${heading}: ${file.name} (v${file.version}) ---\n${body.trim()}`,
@@ -169,6 +180,13 @@ export function getActiveSkillContent(
   const product = productType.trim().toUpperCase() || "KTA";
   const parts: string[] = [];
 
+  // Load credit policy rules first (comprehensive business rules)
+  const policyFile = PRODUCT_POLICIES[product];
+  if (policyFile) {
+    appendSkillBody(parts, policyFile, "Credit Policy Rules");
+  }
+
+  // Load juknis (prompt template)
   const juknisFile = PRODUCT_JUKINS[product];
   if (juknisFile) {
     appendSkillBody(parts, juknisFile, "Juknis");
@@ -181,6 +199,9 @@ export function getActiveSkillContent(
     );
     if (fallback) appendSkillBody(parts, fallback.filename, "Juknis");
   }
+
+  // Load CRDE rules reference
+  appendSkillBody(parts, "crde-rules.md", "CRDE Rules");
 
   if (locale === "id") {
     appendSkillBody(parts, ID_MEMO_SKILL, "Bahasa");
@@ -228,6 +249,41 @@ export async function handleSkills(req: Request): Promise<Response | null> {
     const filename = url.pathname.split("/api/skills/")[1];
     const ok = deleteSkill(filename);
     return Response.json({ ok });
+  }
+
+  // PATCH /api/skills/:filename/toggle-active — toggle active status
+  if (req.method === "PATCH" && url.pathname.endsWith("/toggle-active")) {
+    const filename = url.pathname.split("/api/skills/")[1].replace("/toggle-active", "");
+    const skill = getSkill(filename);
+    if (!skill) {
+      return Response.json({ error: "Skill not found" }, { status: 404 });
+    }
+    // Toggle active status in frontmatter
+    const content = skill.content;
+    const newActive = !skill.active;
+    const newContent = content.replace(
+      /^active:\s*(true|false)$/m,
+      `active: ${newActive}`
+    );
+    // If no active field exists, add it after the first line of frontmatter
+    if (!content.match(/^active:\s*(true|false)$/m)) {
+      const updated = content.replace(
+        /^(---\n[^-]+)$/,
+        `$1\nactive: ${newActive}`
+      );
+      saveSkill(filename, updated);
+    } else {
+      saveSkill(filename, newContent);
+    }
+    // Log the toggle action
+    addAuditLogJuknis(
+      `Juknis: ${filename}`,
+      `active: ${skill.active}`,
+      `active: ${newActive}`,
+      "system",
+      "TOGGLE_ACTIVE"
+    );
+    return Response.json({ ok: true, active: newActive });
   }
 
   return null;

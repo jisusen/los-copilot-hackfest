@@ -6,6 +6,7 @@ author: Tim Kredit Konsumer
 trigger: memo
 product: locale
 source: manual
+active: true
 ---
 
 # Output Memo — Bahasa Indonesia

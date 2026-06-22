@@ -127,6 +127,21 @@ Seed data: 10 applications mixing product types (KTA, KPR, KKB, Multiguna) and r
 /loans/APP-001?tab=permohonan-kredit
 ```
 
+## Skills System
+
+Skills are Hermes-style `.md` files in `dashboard/skills/` with frontmatter (name, trigger, version, author).
+
+**Active Skills:**
+- `kta-credit-policy.md` — User-defined business rules for KTA credit decisions (DBR, SLIK, AML, income requirements)
+- `kta-juknis.md` — Prompt template for memo generation
+- `crde-rules.md` — CRDE scoring rules reference
+- `memo-bahasa-indonesia.md` — Bahasa Indonesia memo output format
+
+**How Skills Work:**
+- Agent loads skills when generating memos via `getActiveSkillContent()` in `dashboard/server/routes/skills.ts`
+- Skills are loaded per product type (KTA, KPR, KKB, Multiguna)
+- Policy rules are user-defined business guidelines, not just AI prompts
+
 ## Out of Scope (MVP)
 
 Do not implement: real auth (bcrypt/JWT), file uploads, PDF generation, email, real SLIK/AML API calls, test suite, Docker, TypeScript strict mode. Keep it simple — this is a demo.

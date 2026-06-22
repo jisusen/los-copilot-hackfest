@@ -1,17 +1,24 @@
 ---
+active: false
+name: JuknisKTA
+---
+---
 name: Juknis KTA
 description: Panduan analis untuk Kredit Tanpa Agunan — keputusan, batas RAC, dan rekomendasi
-version: 2.0.0
+version: 3.0.0
 author: Tim Kredit Konsumer
 trigger: memo
 source: PDF
 product: KTA
+policy_ref: kta-credit-policy.md
+active: true
 ---
 
 # Juknis KTA — Kredit Tanpa Agunan
 
 > **Sumber kebijakan:** Dokumen Juknis KTA resmi bank (PDF) yang di-upload dan dikelola tim kredit.
 > Copilot memakai isi ini sebagai acuan saat menulis memo — bukan aturan teknis sistem.
+> **Referensi lengkap:** `kta-credit-policy.md` untuk aturan bisnis terperinci.
 
 **Berlaku untuk:** permohonan dengan produk **KTA** (tanpa agunan).
 
