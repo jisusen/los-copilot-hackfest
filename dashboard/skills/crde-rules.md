@@ -5,7 +5,7 @@ version: 1.1.0
 author: Bank Maju Bersama
 trigger: manual
 policy_ref: kta-credit-policy.md
-active: true
+active: false
 ---
 
 # CRDE Rules Reference
