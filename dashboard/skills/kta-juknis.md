@@ -1,8 +1,4 @@
 ---
-active: false
-name: JuknisKTA
----
----
 name: Juknis KTA
 description: Panduan analis untuk Kredit Tanpa Agunan — keputusan, batas RAC, dan rekomendasi
 version: 3.0.0
@@ -11,7 +7,7 @@ trigger: memo
 source: PDF
 product: KTA
 policy_ref: kta-credit-policy.md
-active: true
+active: false
 ---
 
 # Juknis KTA — Kredit Tanpa Agunan

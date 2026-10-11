@@ -6,16 +6,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a **greenfield implementation** of a demo Loan Origination System (LOS) for Indonesian personal loans. The full spec lives in `PRD-demo-los.md`. The app is the "victim" system that Browser Use AI agents navigate autonomously during a hackfest demo — every UI element must have `data-testid` attributes for reliable agent extraction.
 
-**Bank identity:** Bank Maju Bersama Gibran (BMB) — fictional, internal banking tool aesthetic.
+**Bank identity:** Bank CIMB Niaga (hackfest rebrand) — internal banking tool aesthetic, fictional data.
 
 ## Tech Stack
 
 - **Runtime:** Bun 1.1+ (package manager, bundler, HTTP server, SQLite)
-- **Frontend:** React 18 + React Router v6 + Tailwind CSS v3
+- **Frontend:** React 18 + React Router v6 + Tailwind CSS
 - **Backend:** Bun HTTP server (no Express)
 - **Database:** SQLite via `bun:sqlite` (no external DB)
 - **Language:** TypeScript (`.ts` backend, `.tsx` frontend)
-- **Port:** 3001
+- **Port:** 3333
 
 ## Commands
 
@@ -40,8 +40,8 @@ The app is a full-stack monorepo: a Bun HTTP server that serves both the REST AP
 
 **Frontend** (`client/`):
 - `client/main.tsx` → `client/App.tsx` (React Router setup)
-- Three pages: `LoginPage` (`/login`), `LoanQueuePage` (`/loans`), `LoanDetailPage` (`/loans/:id`)
-- `LoanDetailPage` has 7 tabs driven by `?tab=` query param (default: `profil-debitur`)
+- Four pages: `LoginPage` (`/login`), `Dashboard` (`/dashboard`, charts), `LoanQueuePage` (`/loans`), `LoanDetailPage` (`/loans/:id`)
+- `LoanDetailPage` has 10 tabs (`client/components/TabNav.tsx`) driven by `?tab=` query param (default: `data-summary`): `data-summary`, `permohonan-kredit`, `profil-debitur`, `data-keuangan`, `slik-ojk`, `aml-fraud`, `hasil-crde`, `agunan`, `audit-log`, `notes`
 - `client/lib/api.ts` — fetch wrapper for all API calls
 - `client/lib/auth.ts` — session helpers (localStorage-based, no real JWT)
 
@@ -52,31 +52,20 @@ POST /api/auth/logout
 GET  /api/auth/me
 GET  /api/loans             → { loans[], total }
 GET  /api/loans/:id         → { loan (all joined tables) }
+GET  /api/dashboard         → dashboard chart stats
+PATCH /api/loans/:id/status → manual stage change (Approve/Reject/Cancel)
+GET/POST /api/loans/:id/notes
+GET  /api/loans/:id/audit
 POST /api/admin/seed        (dev only, reseeds DB)
 ```
 
-**Hardcoded credentials:** `analyst01`, `analyst02`, `supervisor` — all password `bms2025`
+**Hardcoded credentials:** `analyst01`–`analyst05` and `supervisor` — all password `bms2025`. The Copilot agent rotates `analyst01`–`analyst05` for parallel browser sessions.
 
 ## Visual Design
 
-**Color palette (CSS vars):**
-```css
---color-primary:       #1a3a5c   /* navy — header, sidebar, buttons */
---color-primary-light: #2d5a8e   /* hover states */
---color-accent:        #e8a020   /* amber — badges, highlights */
---color-bg:            #f4f6f8   /* page background */
---color-surface:       #ffffff   /* cards, panels */
---color-border:        #d1d9e0
---color-text:          #1f2d3d
---color-text-muted:    #6b7c93
---color-success:       #1a7f4b
---color-warning:       #c47d0e
---color-danger:        #b91c1c
-```
+**Palette:** Tailwind CDN config is inline in `client/index.html` (ink scale + accent `#8B1A1A`). Fonts: `Open Sans` (Google Fonts).
 
-**Fonts (Google Fonts):** `DM Sans` (display/headers), `IBM Plex Sans` (body), `IBM Plex Mono` (IDs, currency values)
-
-**Layout:** Fixed sidebar (220px) + fixed topbar (56px) + scrollable content (max-width 1200px). Dense enterprise look — not a modern SaaS.
+**Layout:** Fixed sidebar + topbar + scrollable content. Dense enterprise look — not a modern SaaS.
 
 ## data-testid Requirements
 
@@ -87,7 +76,7 @@ Every interactive and data element needs a `data-testid`. The agent relies on th
 | Login inputs | `input-username`, `input-password`, `btn-login`, `error-message` |
 | Loan queue | `loan-queue-table`, `loan-row-{APP-###}`, `loan-link-{APP-###}`, `search-input`, `filter-status`, `filter-product` |
 | Detail header | `loan-detail-id`, `loan-detail-debtor-name`, `loan-detail-status`, `loan-detail-crde-badge` |
-| Tab buttons | `tab-profil-debitur`, `tab-data-keuangan`, `tab-slik-ojk`, `tab-aml-fraud`, `tab-hasil-crde`, `tab-agunan`, `tab-permohonan-kredit` |
+| Tab buttons | `tab-data-summary`, `tab-permohonan-kredit`, `tab-profil-debitur`, `tab-data-keuangan`, `tab-slik-ojk`, `tab-aml-fraud`, `tab-hasil-crde`, `tab-agunan`, `tab-audit-log`, `tab-notes` |
 | Tab containers | `tab-content-{tab-name}` |
 | All data fields | `field-{fieldName}` (wrapper) + `value-{fieldName}` (value span) |
 | AML warning | `aml-warning-banner` (only rendered when flag exists) |
@@ -118,20 +107,23 @@ Seed data: 10 applications mixing product types (KTA, KPR, KKB, Multiguna) and r
 ## Tab URL Pattern
 
 ```
-/loans/APP-001                        → Profil Debitur (default)
+/loans/APP-001                        → Data Summary (AI extraction target)
+/loans/APP-001?tab=permohonan-kredit
+/loans/APP-001?tab=profil-debitur
 /loans/APP-001?tab=data-keuangan
 /loans/APP-001?tab=slik-ojk
 /loans/APP-001?tab=aml-fraud
 /loans/APP-001?tab=hasil-crde
 /loans/APP-001?tab=agunan
-/loans/APP-001?tab=permohonan-kredit
+/loans/APP-001?tab=audit-log
+/loans/APP-001?tab=notes
 ```
 
 ## Skills System
 
 Skills are Hermes-style `.md` files in `dashboard/skills/` with frontmatter (name, trigger, version, author).
 
-**Active Skills:**
+**Skills:**
 - `kta-credit-policy.md` — User-defined business rules for KTA credit decisions (DBR, SLIK, AML, income requirements)
 - `kta-juknis.md` — Prompt template for memo generation
 - `crde-rules.md` — CRDE scoring rules reference
@@ -140,8 +132,9 @@ Skills are Hermes-style `.md` files in `dashboard/skills/` with frontmatter (nam
 **How Skills Work:**
 - Agent loads skills when generating memos via `getActiveSkillContent()` in `dashboard/server/routes/skills.ts`
 - Skills are loaded per product type (KTA, KPR, KKB, Multiguna)
+- Each skill has an `active:` frontmatter flag — inactive skills are skipped by the loader (toggle via Settings → Skills or `PATCH /api/skills/:filename/toggle-active`)
 - Policy rules are user-defined business guidelines, not just AI prompts
 
 ## Out of Scope (MVP)
 
-Do not implement: real auth (bcrypt/JWT), file uploads, PDF generation, email, real SLIK/AML API calls, test suite, Docker, TypeScript strict mode. Keep it simple — this is a demo.
+Do not implement: real auth (bcrypt/JWT), file uploads, PDF generation, email, real SLIK/AML API calls, test suite, TypeScript strict mode. Keep it simple — this is a demo.

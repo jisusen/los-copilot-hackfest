@@ -1,7 +1,9 @@
 import { Database } from 'bun:sqlite';
 import { join } from 'path';
 
-const DB_PATH = process.env.DB_PATH ?? join(import.meta.dir, '../../data/los.db');
+// Default resolves to the repo-root data/ dir (absolute, cwd-independent).
+// dashboard/.env can override with DB_PATH=../data/los.db when run from dashboard/.
+const DB_PATH = process.env.DB_PATH ?? join(import.meta.dir, '../../../data/los.db');
 
 let _db: Database | null = null;
 
