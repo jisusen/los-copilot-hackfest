@@ -2,7 +2,7 @@
 setlocal
 
 echo ===========================================================
-echo   Credit Analyst Copilot - Hackathon Demo Starter
+echo   Credit Analyst Copilot - Demo Starter
 echo ===========================================================
 echo.
 

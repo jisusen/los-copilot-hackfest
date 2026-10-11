@@ -38,7 +38,7 @@ function Stop-ProcessOnPort($port) {
 
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Cyan
-Write-Host "  Credit Analyst Copilot — Hackathon Demo Starter" -ForegroundColor Cyan
+Write-Host "  Credit Analyst Copilot — Demo Starter" -ForegroundColor Cyan
 Write-Host "═══════════════════════════════════════════════════════════════" -ForegroundColor Cyan
 Write-Host ""
 
